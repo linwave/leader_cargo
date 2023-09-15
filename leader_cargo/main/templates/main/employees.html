@@ -1,0 +1,31 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between">
+    <h2>Сотрудники</h2>
+    <a href="{% url 'create_employees' %}" class="btn btn-phoenix-secondary square-icon-btn" >
+        <i class="fa-solid fa-square-plus fa-beat fa-2xl" style="color: #080808;"></i>
+    </a>
+</div>
+{% if employees %}
+{% for employee in employees %}
+<div class="p-3 mb-2 bg-body-secondary" style="transform: rotate(0);">
+    <h4><a href="{{ employee.get_absolute_url_employee }}" class="stretched-link text-decoration-none" id="list-employees">{{ employee.last_name }} {{ employee.first_name }} {{ employee.patronymic }}</a></h4>
+    {{ employee.phone }}<br>
+    {{ employee.town }}<br>
+    {{ employee.role }}<br>
+    {% if employee.status %}
+    Активен<br>
+    {% else %}
+    Заблокирован<br>
+    {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<p>Нет сотрудников</p>
+{% endif %}
+{% endblock %}

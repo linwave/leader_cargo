@@ -1,0 +1,20 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+    <a class="btn btn-success" href="{% url 'create_exchangerates' %}" role="button">Установить курс</a><br><br>
+    {% if currencies %}
+        {% for currency in currencies %}
+        <div class="p-3 mb-2 bg-body-secondary" style="transform: rotate(0);">
+            <span>{{ currency.time_create }}</span><br>
+            ¥ {{ currency.yuan }}<br>
+            $ {{ currency.dollar }}<br>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>Нет курсов</p>
+    {% endif %}
+{% endblock %}

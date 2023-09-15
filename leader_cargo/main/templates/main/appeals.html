@@ -1,0 +1,21 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+    <h1>Заявки</h1>
+    {% if appeals %}
+        {% for appeal in appeals %}
+        <div class="p-3 mb-2 bg-body-secondary" style="transform: rotate(0);">
+            <h4><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.first_name }}</a></h4>
+            {{ appeal.tag }}<br>
+            {{ appeal.goods }}<br>
+            {{ appeal.status }}<br>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>Нет заявок</p>
+    {% endif %}
+{% endblock %}

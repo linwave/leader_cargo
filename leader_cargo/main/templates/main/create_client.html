@@ -1,0 +1,37 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<h2>Добавление нового клиента</h2>
+<form action="{% url 'create_client' %}" method="post" id="create-client-form">
+        <span class="text-danger">{{ form.non_field_errors }}</span>
+        {% csrf_token %}
+        {{ form.phone }}<br>
+        <div class="text-danger">{{ form.phone.errors }}</div>
+        {{ form.first_name }}<br>
+        <div class="text-danger">{{ form.description.errors }}</div>
+        {{ form.description }}<br>
+        <div class="text-danger">{{ form.description.errors }}</div>
+        <div class="password-container">
+                {{ form.password }}
+                <div class="tooltip_my_copy">
+                        <i class="fa-solid fa-copy" id="copy-password-client" onclick="CopyPassClient()" onmouseout="outFunc()"><span class="tooltiptext_my" id="myTooltip">Скопировать</span></i>
+                </div>
+                <div class="tooltip_my_copy">
+                        <i class="fa-solid fa-arrows-rotate" id="refresh-password-client" onclick="RefreshPassClient()"></i>
+                </div>
+        </div><br>
+        <div class="text-danger">{{ form.password.errors }}</div>
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <a class="btn btn-success" href="{% url 'clients' %}" role="button">Отменить</a>
+
+</form>
+<script>
+phone_mask()
+RefreshPassClient("pass-for-copy-client")
+CopyPassClient("pass-for-copy-client")
+</script>
+{% endblock %}

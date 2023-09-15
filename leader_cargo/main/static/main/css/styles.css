@@ -1,0 +1,98 @@
+#list-employees {
+    color: #212529;
+}
+#list-exchangerates {
+    color: #212529;
+}
+#login-form{
+    width: 330px
+}
+#create-employees-form{
+    width: 330px
+}
+#create-client-form{
+    width: 330px
+}
+#create-exchangerates-form{
+    width: 330px
+}
+.password-container{
+    position: relative;
+}
+
+#show-password-login{
+    position: absolute;
+    top: 30%;
+    right: .5%;
+    cursor: pointer;
+	width: 30px;
+	height: 20px;
+}
+
+#show-password, #show-password-card{
+    position: absolute;
+    top: 30%;
+    right: 13.5%;
+    cursor: pointer;
+	width: 30px;
+	height: 20px;
+}
+
+.btn btn-primary {
+  margin: 0 auto;
+  display: block;
+}
+
+#refresh-password-client{
+    position: absolute;
+    top: 30%;
+    right: .5%;
+    cursor: pointer;
+	width: 30px;
+	height: 20px;
+}
+
+
+#copy-password-client{
+    position: absolute;
+    top: 30%;
+    right: 6.5%;
+    cursor: pointer;
+	width: 30px;
+	height: 20px;
+}
+
+
+.tooltip_my_copy .tooltiptext_my {
+    visibility: hidden;
+    width: 140px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 150%;
+    left: 50%;
+    margin-left: -75px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip_my_copy .tooltiptext_my::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #fff transparent transparent transparent;
+}
+
+.tooltip_my_copy:hover .tooltiptext_my {
+    visibility: visible;
+    opacity: 1;
+}
+

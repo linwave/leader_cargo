@@ -1,0 +1,27 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<h2>Установка курса валют</h2>
+<form action="{% url 'create_exchangerates' %}" method="post" id="create-exchangerates-form">
+        <span class="text-danger">{{ form.non_field_errors }}</span>
+        {% csrf_token %}
+        <h5 class="fw-bold">{{ today }}</h5>
+        <label class="form-label">{{ form.yuan.label }}:</label>
+        {{ form.yuan }}<br>
+        <div class="text-danger">{{ form.yuan.errors }}</div>
+        <label class="form-label">{{ form.dollar.label }}:</label>
+        {{ form.dollar }}<br>
+        <div class="text-danger">{{ form.dollar.errors }}</div>
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <a class="btn btn-success" href="{% url 'exchangerates' %}" role="button">Отменить</a>
+
+</form>
+<script>
+yuan_pattern()
+dollar_pattern()
+</script>
+{% endblock %}
