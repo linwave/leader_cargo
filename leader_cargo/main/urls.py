@@ -21,6 +21,7 @@ urlpatterns = [
     path('appeals/card-appeal/<int:appeal_id>', views.CardAppealsView.as_view(), name='card_appeal'),
     path('appeals/card-appeal/<int:appeal_id>/create-goods', views.AddGoodsView.as_view(), name='create_goods'),
     path('appeals/card-appeal/<int:appeal_id>/card-goods/<int:goods_id>', views.CardGoodsView.as_view(), name='card_goods'),
+    path('appeals/card-appeal/<int:appeal_id>/delete-goods/<int:goods_id>', views.DeleteGoodsView.as_view(), name='delete_goods'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:

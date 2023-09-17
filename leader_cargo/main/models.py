@@ -123,7 +123,7 @@ class Appeals(models.Model):
     time_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.client} {self.manager} {self.buyer}"
+        return f"{self.tag}"
 
     class Meta:
         verbose_name = 'Список заявок'
@@ -159,7 +159,7 @@ class Goods(models.Model):
     status = models.BooleanField(default=True, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} {self.price_rmb} {self.status}"
+        return f"{self.name}"
 
     class Meta:
         verbose_name = 'Список товаров'

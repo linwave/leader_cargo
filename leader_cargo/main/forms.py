@@ -1,7 +1,7 @@
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 from .models import ExchangeRates, CustomUser, Appeals, Goods
-from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField
+from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
 
 
 class LoginUserForm(AuthenticationForm):
@@ -27,6 +27,12 @@ class AddAppealsForm(ModelForm):
                 'placeholder': 'Введите название заявки',
             }),
         }
+
+
+class UpdateStatusAppealsForm(ModelForm):
+    class Meta:
+        model = Appeals
+        fields = ["client"]
 
 
 class AddGoodsForm(ModelForm):
@@ -100,12 +106,11 @@ class CardGoodsForm(ModelForm):
                 'type': 'text',
                 'placeholder': 'Ссылка на товар',
             }),
-            # "photo_good": ImageField(attrs={
-            #     'class': 'form-control',
-            #     'id': 'photo_good',
-            #     'type': 'text',
-            #     'placeholder': 'Ссылка на товар',
-            # }),
+            "photo_good": ClearableFileInput(attrs={
+                'class': 'form-control',
+                'id': 'photo_good',
+                'initial_text': 'lol',
+            }),
             "quantity": TextInput(attrs={
                 'class': 'form-control',
                 'type': 'text',

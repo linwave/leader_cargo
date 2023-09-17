@@ -14,22 +14,11 @@
 <h6 >Общая сумма: {{ goods_itog }}</h6>
 
 
-{% if appeal.status != 'В работе' %}
-<form method="post" id="update_form" >{% csrf_token %}</form>
+
+
 <a class="btn btn-success" href="{% url 'create_goods' appeal.pk %}" role="button">Добавить товар</a>
-<a href="javascript:void()" onclick="update_question()" class="btn btn-primary">Отправить в работу менеджеру</a>
-<script>
-                        function update_question() {
-                            if (confirm("Вы уверены?")) {
-                                document.getElementById('update_form').submit()
-                                }
-                        }
-</script>
+<a class="btn btn-primary" href="{% url 'appeals' %}" role="button">Отправить в работу менеджеру</a>
 <a class="btn btn-secondary" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
-{% else %}
-<a class="btn btn-success" href="#" role="button">Добавить товар</a>
-<a class="btn btn-secondary" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
-{% endif %}
 {% if all_goods %}
 {% for good in all_goods %}
 <div class="card text-dark bg-light mb-3 " style="max-width: 540px;">
@@ -42,45 +31,22 @@
                 <h5 class="card-title"><a href="#" class="text-decoration-none" id="list-employees">{{ good.name }}</a></h5>
                 <p class="card-text">Цена за шт: ¥ {{ good.price_rmb }}</p>
                 <p class="card-text">Всего штук: {{ good.quantity }}</p>
-                {% if good.price_delivery %}
                 <p class="card-text">Доставка по Китаю: {{ good.price_delivery }}</p>
-                {% else %}
-                <p class="card-text">Доставка по Китаю: 0</p>
-                {% endif %}
             </div>
         </div>
     </div>
     <div class="row g-2">
         <div class="card-body">
-                {% if appeal.status != 'В работе' %}
                 <a href="{{ good.link_url }}" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
-                {% else %}
-                <a href="#" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
-                {% endif %}
                 <p class="card-text">Описание: {{ good.product_description|truncatewords:30 }}</p>
                 <p class="card-text"><small class="text-muted">{{ good.time_create }}</small></p>
             <div class="row">
                 <div class="col-6">
-                    {% if appeal.status != 'В работе' %}
                     <a href="{% url 'card_goods' appeal.pk good.pk %}" class="btn btn-success">Редактировать</a>
-                    {% else %}
-                    <a href="#" class="btn btn-success">Редактировать</a>
-                    {% endif %}
                 </div>
                 <div class="col-6">
-                    {% if appeal.status != 'В работе' %}
-                    <form id="delete_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
-                    <a href="javascript:void()" onclick="delete_question()" class="btn btn-danger">Удалить</a>
-                    <script>
-                        function delete_question() {
-                            if (confirm("Вы уверены?")) {
-                                document.getElementById('delete_form').submit()
-                                }
-                        }
-                    </script>
-                    {% else %}
-                    <a href="#" class="btn btn-danger">Удалить</a>
-                    {% endif %}
+                    <!-- Button trigger modal -->
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#exampleModal">Удалить</button>
                 </div>
             </div>
         </div>
@@ -103,6 +69,7 @@
       <div class="modal-body">
       </div>
       <div class="modal-footer">
+          <a href="{% url 'delete_goods' appeal.pk good.pk %}" class="btn btn-danger">Удалить</a>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отменить</button>
 
       </div>

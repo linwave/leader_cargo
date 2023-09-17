@@ -8,7 +8,7 @@
 <a class="btn btn-success" href="{% url 'create_client' %}" role="button">Добавить клиента</a><br><br>
 {% if all_clients %}
 {% for client in all_clients %}
-<div class="p-3 mb-2 bg-body-secondary" style="transform: rotate(0);">
+<div class="p-2 mb-2 bg-body-secondary" style="transform: rotate(0);">
     <a href="{{ client.get_absolute_url_client }}" class="stretched-link text-decoration-none" id="list-employees">{{ client.first_name }}</a><br>
     {{ client.phone }}<br>
     {{ client.description }}<br>

@@ -11,6 +11,7 @@
         {% csrf_token %}
         {{ form.name }}<br>
         <div class="text-danger">{{ form.name.errors }}</div>
+
         {{ form.link_url }}<br>
         <div class="text-danger">{{ form.link_url.errors }}</div>
         {{ form.photo_good }}<br>

@@ -4,52 +4,23 @@
 {% endblock %}
 
 {% block content %}
-<h2>Редактирование заявки: {{ appeal.tag }}</h2>
-<h6>Статус заявки: {{ appeal.status }}</h6>
-<h6 >Клиент: {{ client_fio }}</h6>
-<h6 >Менеджер: {{ manager_fio }}</h6>
-<h6 >Количество позиций: {{ all_goods|length }}</h6>
-<h6 >Сумма выкупа: {{ goods_vycup }}</h6>
-<h6 >Сумма логистики: {{ goods_log }}</h6>
-<h6 >Общая сумма: {{ goods_itog }}</h6>
-
-<a class="btn btn-success" href="{% url 'create_goods' appeal.id %}" role="button">Добавить товар</a>
-<a class="btn btn-primary" href="{% url 'appeals' %}" role="button">Отправить в работу менеджеру</a>
-<a class="btn btn-secondary" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
-{% if all_goods %}
-{% for good in all_goods %}
-<div class="card text-dark bg-light mb-3 " style="max-width: 540px;">
-    <div class="row g-0">
-        <div class="col-md-4">
-            <img src="{{ good.photo_good }}" class="img-fluid rounded-start" alt="Generic placeholder image">
-        </div>
-        <div class="col-md-8">
-            <div class="card-body">
-                <h5 class="card-title"><a href="{{ good.get_absolute_url }}" class="text-decoration-none" id="list-employees">{{ good.name }}</a></h5>
-                <p class="card-text">Цена за шт: ¥ {{ good.price_rmb }}</p>
-                <p class="card-text">Количество: {{ good.quantity }}</p>
-                Ссылка на товар: <a href="{{ good.link_url }}" class="card-text">{{ good.link_url|truncatechars:20 }}</a>
-                <p class="card-text">Описание: {{ good.product_description|truncatewords:50 }}</p>
-<p class="card-text"><small class="text-muted">{{ good.time_create }}</small></p>
-            </div>
-        </div>
-    </div>
-    <div class="row g-0">
-        <div class="col-md-4">
-            <div class="card-body">
-            <a href="{{ good.get_absolute_url }}" class="btn btn-success">Редактировать</a>
-            </div></div>
-
-        <div class="text-end col-md-8">
-            <div class="card-body">
-            <a href="{{ good.delete }}" class="btn btn-danger">Удалить</a>
-            </div>
-        </div>
-    </div>
-
-</div>
-{% endfor %}
-{% else %}
-<p>Нет товаров</p>
-{% endif %}
+<h2>Редактирование товара</h2>
+<form method="post" enctype="multipart/form-data" id="create-client-form">
+        <span class="text-danger">{{ form.non_field_errors }}</span>
+        {% csrf_token %}
+        {{ form.name }}<br>
+        <div class="text-danger">{{ form.name.errors }}</div>
+        {{ form.link_url }}<br>
+        <div class="text-danger">{{ form.link_url.errors }}</div>
+        {{ form.photo_good }}<br>
+        <div class="text-danger">{{ form.photo_good.errors }}</div>
+        {{ form.quantity }}<br>
+        <div class="text-danger">{{ form.quantity.errors }}</div>
+        {{ form.price_rmb }}<br>
+        <div class="text-danger">{{ form.price_rmb.errors }}</div>
+        {{ form.product_description }}<br>
+        <div class="text-danger">{{ form.product_description.errors }}</div>
+        <button type="submit" class="btn btn-success">Изменить</button>
+        <a class="btn btn-success" href="{% url 'card_appeal' appeal_id_form %}" role="button">Отменить</a>
+</form>
 {% endblock %}
