@@ -261,7 +261,10 @@ class ClientsView(LoginRequiredMixin, DataMixin, ListView):
         return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
 
     def get_queryset(self):
-        return CustomUser.objects.filter(role__in=['Клиент']).order_by('-time_create')
+        if self.request.user.role == 'Менеджер':
+            return CustomUser.objects.filter(role__in=['Клиент'], manager=self.request.user.pk).order_by('-time_create')
+        elif self.request.user.role == 'Супер Администратор':
+            return CustomUser.objects.filter(role__in=['Клиент']).order_by('-time_create')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -399,7 +402,7 @@ class AddAppealsView(LoginRequiredMixin, DataMixin, CreateView):
             new_data.manager = self.request.user.manager
         new_data.status = statuses[0]
         new_data.save()
-        return redirect('appeals')
+        return redirect('card_appeal', new_data.pk)
 
     def form_invalid(self, form):
         form.add_error(None, f'Ошибка создания заявки')

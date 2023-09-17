@@ -1,4 +1,5 @@
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.core.exceptions import ValidationError
 
 from .models import ExchangeRates, CustomUser, Appeals, Goods
 from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
@@ -260,6 +261,12 @@ class AddEmployeesForm(ModelForm):
                 'class': 'form-control',
             })
         }
+
+    def clean_phone(self):
+        phone = self.cleaned_data['phone']
+        if len(phone) != 18:
+            raise ValidationError('Короткий номер телефона')
+        return phone
 
 
 class CardEmployeesForm(ModelForm):
