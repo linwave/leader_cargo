@@ -7,7 +7,7 @@
 #login-form{
     width: 330px
 }
-#create-employees-form{
+#create-employees-form, #card-employees-form{
     width: 330px
 }
 #create-client-form{
