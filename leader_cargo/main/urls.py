@@ -1,7 +1,8 @@
+from django.conf import settings
 from django.urls import path
 from . import views
-from django.conf import settings
 from django.conf.urls.static import static
+
 
 urlpatterns = [
     path('', views.ExchangeRatesView.as_view(), name='home'),
@@ -15,7 +16,12 @@ urlpatterns = [
     path('clients/', views.ClientsView.as_view(), name='clients'),
     path('clients/create-client/', views.AddClientView.as_view(), name='create_client'),
     path('clients/card-client/<int:client_id>/', views.CardClientsView.as_view(), name='card_client'),
-    path('appeals/', views.AppealsManagerView.as_view(), name='appeals'),
-    path('new-appeal/', views.new_appeal, name='new_appeal'),
-    path('card-appeal/', views.new_appeal, name='card_appeal'),
+    path('appeals/', views.AppealsView.as_view(), name='appeals'),
+    path('appeals/new-appeal/', views.AddAppealsView.as_view(), name='create_appeal'),
+    path('appeals/card-appeal/<int:appeal_id>', views.CardAppealsView.as_view(), name='card_appeal'),
+    path('appeals/card-appeal/<int:appeal_id>/create-goods', views.AddGoodsView.as_view(), name='create_goods'),
+    path('appeals/card-appeal/<int:appeal_id>/card-goods/<int:goods_id>', views.CardGoodsView.as_view(), name='card_goods'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,21 +1,33 @@
 {% extends 'main/base.html' %}
-
+{% load static %}
 {% block title %}
 {{ title }}
 {% endblock %}
 
 {% block content %}
-    <h1>Заявки</h1>
-    {% if appeals %}
-        {% for appeal in appeals %}
-        <div class="p-3 mb-2 bg-body-secondary" style="transform: rotate(0);">
-            <h4><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.first_name }}</a></h4>
-            {{ appeal.tag }}<br>
-            {{ appeal.goods }}<br>
-            {{ appeal.status }}<br>
+<a class="btn btn-success" href="{% url 'create_appeal' %}" role="button">Новая заявка</a><br><br>
+{% if all_appeals %}
+{% for appeal in all_appeals %}
+<div class="card text-dark bg-light mb-3 " style="max-width: 540px;">
+    <div class="row g-0">
+        <div class="col-md-4">
+            {% if appeal.get_appeal_photo %}
+            <img src="{{ appeal.get_appeal_photo.url }}" class="img-fluid rounded-start" alt="fff">
+            {% else %}
+            <img src="{% static 'main/images/image-solid.svg' %}" class="img-fluid rounded-start" alt="fff">
+            {% endif %}
         </div>
-        {% endfor %}
-    {% else %}
-        <p>Нет заявок</p>
-    {% endif %}
+        <div class="col-md-8">
+            <div class="card-body">
+                <h5 class="card-title"><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a></h5>
+                <p class="card-text">{{ appeal.status }}</p>
+                <p class="card-text"><small class="text-muted">{{ appeal.time_create }}</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<p>Нет заявок</p>
+{% endif %}
 {% endblock %}

@@ -1,18 +1,16 @@
 import datetime
 import re
 from django.contrib.auth import logout, authenticate, login
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
-from django.http import HttpResponse
 from django.shortcuts import redirect
 import string
 import random
 
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView
 
-from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm
+from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm
 from .models import *
 from .utils import DataMixin
 
@@ -23,6 +21,13 @@ menu = [
     {'title': 'Курсы валют', 'url_name': 'exchangerates'},
     {'title': 'Клиенты', 'url_name': 'clients'},
     {'title': 'Заявки', 'url_name': 'appeals'},
+]
+statuses = [
+    'Новая',
+    'В работе',
+    'Выкуп и доставка',
+    'Доставка',
+    'Завершено',
 ]
 
 
@@ -44,16 +49,6 @@ def last_currency():
 
 
 # Заглушки
-@login_required
-def new_appeal(request):
-    return HttpResponse("Создание заявки")
-
-
-@login_required
-def card_appeal(request):
-    return HttpResponse("Карточка заявки")
-
-
 def logout_user(request):
     logout(request)
     return redirect('login')
@@ -141,7 +136,12 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
         else:
             if request.user.role in self.role_have_perm:
                 return super().dispatch(request, *args, **kwargs)
-            return self.handle_no_permission()
+            elif request.user.role == 'Клиент':
+                return redirect('appeals')
+            elif request.user.role == 'Менеджер':
+                return redirect('clients')
+            elif request.user.role == 'Закупщик':
+                return self.handle_no_permission()
 
 
 class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
@@ -354,20 +354,159 @@ class CardClientsView(LoginRequiredMixin, DataMixin, UpdateView):
             return self.handle_no_permission()
 
 
-class AppealsManagerView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 3
+class AppealsView(LoginRequiredMixin, DataMixin, ListView):
+    paginate_by = 10
     model = Appeals
     template_name = 'main/appeals.html'
-    context_object_name = 'appeals'
+    context_object_name = 'all_appeals'
     login_url = reverse_lazy('login')
     role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
 
     def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Заявки")
-        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+        return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        return Appeals.objects.all().order_by('pk')
+        return Appeals.objects.filter(client=self.request.user.pk).order_by('-time_create')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class AddAppealsView(LoginRequiredMixin, DataMixin, CreateView):
+    form_class = AddAppealsForm
+    model = Appeals
+    template_name = 'main/create_appeal.html'
+    context_object_name = 'appeals'
+    success_url = reverse_lazy('card_appeal')
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        c_def = self.get_user_context(title="Новая заявка")
+        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+
+    def form_valid(self, form):
+        new_data = form.save(commit=False)
+        if self.request.user.role == 'Клиент':
+            new_data.client = self.request.user.pk
+            new_data.manager = self.request.user.manager
+        new_data.status = statuses[0]
+        new_data.save()
+        return redirect('appeals')
+
+    def form_invalid(self, form):
+        form.add_error(None, f'Ошибка создания заявки')
+        return super(AddAppealsView, self).form_invalid(form)
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class CardAppealsView(LoginRequiredMixin, DataMixin, DetailView):
+    paginate_by = 10
+    pk_url_kwarg = 'appeal_id'
+    model = Appeals
+    context_object_name = 'appeal'
+    template_name = 'main/card_appeal.html'
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['client_fio'] = self.request.user
+        context['all_goods'] = context['appeal'].goods_set.all().order_by('-time_create')
+        context['goods_vycup'] = 0
+        context['goods_log'] = 0
+        context['goods_itog'] = 0
+        for goods in context['all_goods']:
+            context['goods_vycup'] = context['goods_vycup'] + float(goods.price_rmb*goods.quantity)
+            if goods.price_delivery:
+                context['goods_log'] = context['goods_log'] + float(goods.price_delivery)
+            context['goods_itog'] = float(context['goods_vycup']) + float(context['goods_log'])
+        client, manager = CustomUser.objects.filter(pk__in=[context['appeal'].client, context['appeal'].manager])
+        context['client_fio'] = f"{client.last_name} {client.first_name} {client.patronymic} {client.phone}"
+        context['manager_fio'] = f"{manager.last_name} {manager.first_name} {manager.patronymic} {manager.phone}"
+        c_def = self.get_user_context(title="Карточка заявки")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class AddGoodsView(LoginRequiredMixin, DataMixin, CreateView):
+    pk_url_kwarg = 'appeal_id'
+    form_class = AddGoodsForm
+    model = Goods
+    template_name = 'main/create_goods.html'
+    success_url = reverse_lazy('card_appeal')
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["appeal_id_form"] = self.kwargs['appeal_id']
+        c_def = self.get_user_context(title="Добавление нового товара")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def form_valid(self, form):
+        new_data = form.save(commit=False)
+        new_data.appeal_id = Appeals.objects.get(pk=self.kwargs['appeal_id'])
+        new_data.save()
+        return redirect('card_appeal', appeal_id=self.kwargs['appeal_id'])
+
+    def form_invalid(self, form):
+        form.add_error(None, f'Ошибка добавления товара')
+        return super(AddGoodsView, self).form_invalid(form)
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class CardGoodsView(LoginRequiredMixin, DataMixin, UpdateView):
+    model = Goods
+    form_class = CardGoodsForm
+    template_name = 'main/card_goods.html'
+    pk_url_kwarg = 'goods_id'
+    context_object_name = 'goods'
+    success_url = reverse_lazy('card_appeal')
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        c_def = self.get_user_context(title="Карточка товара")
+        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+
+    def form_valid(self, form):
+        new_data = form.save(commit=False)
+        new_data.appeal_id = Appeals.objects.get(pk=form.cleaned_data['password'])
+        new_data.save()
+        return redirect('card_appeal')
+
+    def form_invalid(self, form):
+        form.add_error(None, f'Ошибка изменения данных товара')
+        return super(CardGoodsView, self).form_invalid(form)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:

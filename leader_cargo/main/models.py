@@ -114,17 +114,16 @@ class ExchangeRates(models.Model):
 
 
 class Appeals(models.Model):
-    client = models.IntegerField('ID клиента', blank=True)
-    manager = models.IntegerField('ID менеджера', blank=True)
-    buyer = models.IntegerField('ID закупщика', blank=True)
-    goods = models.ForeignKey('Goods', on_delete=models.PROTECT)
+    client = models.IntegerField('ID клиента', blank=True, null=True)
+    manager = models.IntegerField('ID менеджера', blank=True, null=True)
+    buyer = models.IntegerField('ID закупщика', blank=True, null=True)
     tag = models.CharField('Тег заявки', max_length=50)
     status = models.CharField('Статус заявки', max_length=50)
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.client} {self.manager} {self.buyer} {self.goods}"
+        return f"{self.client} {self.manager} {self.buyer}"
 
     class Meta:
         verbose_name = 'Список заявок'
@@ -133,20 +132,31 @@ class Appeals(models.Model):
     def get_absolute_url(self):
         return reverse('card_appeal', kwargs={'appeal_id': self.pk})
 
+    def get_appeal_photo(self):
+        for good in self.goods_set.all():
+            if good.photo_good:
+                return good.photo_good
+# def user_directory_path(instance, filename):
+#     # file will be uploaded to MEDIA_ROOT / user_<id>/<filename>
+#     return 'photos/goods/user_{0}/{1}'.format(instance.user.id, filename)
+
 
 class Goods(models.Model):
-    name = models.CharField('Название товара', max_length=50)
-    link_url = models.CharField('Ссылка на товар', max_length=50)
-    product_description = models.CharField('Описание товара', max_length=50)
+    name = models.CharField('Название товара', max_length=128, blank=False, null=True)
+    photo_good = models.ImageField(verbose_name='Фото товара', upload_to='photos/goods/%Y/%m/%d/')
+    # photo_good = models.ImageField(verbose_name='Фото товара', upload_to=content_file_name)
+    link_url = models.CharField('Ссылка на товар', max_length=200, blank=False)
+    product_description = models.CharField('Описание товара', max_length=500, blank=False)
     price_rmb = models.FloatField(verbose_name='Цена товара в Китае в юанях', blank=False, null=True)
     quantity = models.FloatField(verbose_name='Количество', blank=False, null=True)
-    price_delivery = models.FloatField(verbose_name='Стоимость доставки', blank=False, null=True)
+    price_delivery = models.FloatField(verbose_name='Стоимость доставки', blank=True, null=True)
     price_purchase = models.FloatField(verbose_name='Закупочная цена', blank=True, null=True)
     price_site = models.FloatField(verbose_name='Цена на сайте', blank=True, null=True)
     price_delivery_real = models.FloatField(verbose_name='Стоимость доставки реальная', blank=True, null=True)
+    appeal_id = models.ForeignKey('Appeals', on_delete=models.PROTECT, blank=True, null=True)
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
-    status = models.BooleanField(default=True)
+    status = models.BooleanField(default=True, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} {self.price_rmb} {self.status}"
@@ -154,3 +164,6 @@ class Goods(models.Model):
     class Meta:
         verbose_name = 'Список товаров'
         verbose_name_plural = 'Список товаров'
+
+    # def get_absolute_url(self):
+    #     return reverse('card_goods', kwargs={'goods_id': self.pk, 'appeal_id': self.appeal_id})

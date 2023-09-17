@@ -1,7 +1,7 @@
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
-from .models import ExchangeRates, CustomUser
-from django.forms import ModelForm, TextInput, Select, CharField, Textarea
+from .models import ExchangeRates, CustomUser, Appeals, Goods
+from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField
 
 
 class LoginUserForm(AuthenticationForm):
@@ -13,6 +13,118 @@ class LoginUserForm(AuthenticationForm):
                                                                                 'placeholder': "Введите пароль",
                                                                                 "type": "password",
                                                                                 "id": "inputPassword5"}))
+
+
+class AddAppealsForm(ModelForm):
+    class Meta:
+        model = Appeals
+        fields = ["tag"]
+        widgets = {
+            "tag": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'tag',
+                'type': 'text',
+                'placeholder': 'Введите название заявки',
+            }),
+        }
+
+
+class AddGoodsForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = Goods
+        fields = "__all__"
+        widgets = {
+            "name": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'name',
+                'type': 'text',
+                'placeholder': 'Введите наименование товара',
+            }),
+            "link_url": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'link_url',
+                'type': 'text',
+                'placeholder': 'Ссылка на товар',
+            }),
+            # "photo_good": ImageField(attrs={
+            #     'class': 'form-control',
+            #     'id': 'photo_good',
+            #     'type': 'text',
+            #     'placeholder': 'Ссылка на товар',
+            # }),
+            "quantity": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'quantity',
+                'placeholder': 'Количество товара',
+            }),
+            "price_rmb": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_rmb',
+                'placeholder': 'Цена за шт. в юанях',
+            }),
+            "product_description": Textarea(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'product_description',
+                'placeholder': 'Дать ключевые характеристики - описание/требования',
+            }),
+        }
+
+
+class CardGoodsForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = Goods
+        fields = "__all__"
+        widgets = {
+            "name": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'name',
+                'type': 'text',
+                'placeholder': 'Введите наименование товара',
+            }),
+            "link_url": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'link_url',
+                'type': 'text',
+                'placeholder': 'Ссылка на товар',
+            }),
+            # "photo_good": ImageField(attrs={
+            #     'class': 'form-control',
+            #     'id': 'photo_good',
+            #     'type': 'text',
+            #     'placeholder': 'Ссылка на товар',
+            # }),
+            "quantity": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'quantity',
+                'placeholder': 'Количество товара',
+            }),
+            "price_rmb": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_rmb',
+                'placeholder': 'Цена за шт. в юанях',
+            }),
+            "product_description": Textarea(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'product_description',
+                'placeholder': 'Дать ключевые характеристики - описание/требования',
+            }),
+        }
 
 
 class AddClientsForm(ModelForm):
@@ -195,3 +307,5 @@ class CardEmployeesForm(ModelForm):
                 'class': 'form-control',
             })
         }
+
+

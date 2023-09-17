@@ -1,0 +1,27 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<h2>Добавление нового товара</h2>
+<form action="{% url 'create_goods' appeal_id_form %}" method="post" enctype="multipart/form-data" id="create-client-form">
+        <span class="text-danger">{{ form.non_field_errors }}</span>
+        {% csrf_token %}
+        {{ form.name }}<br>
+        <div class="text-danger">{{ form.name.errors }}</div>
+        {{ form.link_url }}<br>
+        <div class="text-danger">{{ form.link_url.errors }}</div>
+        {{ form.photo_good }}<br>
+        <div class="text-danger">{{ form.photo_good.errors }}</div>
+        {{ form.quantity }}<br>
+        <div class="text-danger">{{ form.quantity.errors }}</div>
+        {{ form.price_rmb }}<br>
+        <div class="text-danger">{{ form.price_rmb.errors }}</div>
+        {{ form.product_description }}<br>
+        <div class="text-danger">{{ form.product_description.errors }}</div>
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <a class="btn btn-success" href="{% url 'card_appeal' appeal_id_form %}" role="button">Отменить</a>
+</form>
+{% endblock %}
