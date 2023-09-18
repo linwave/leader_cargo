@@ -168,7 +168,7 @@ class Goods(models.Model):
     def get_itog(self):
         summ = 0
         if self.price_rmb and self.quantity:
-            summ = summ + float(self.price_rmb.replace(' ', ''))*float(self.quantity.replace(' ', ''))
+            summ = summ + float(self.price_rmb.replace(' ', '').replace(',', '.'))*float(self.quantity.replace(' ', '').replace(',', '.'))
         if self.price_delivery:
-            summ = summ + float(self.price_delivery.replace(' ', ''))
+            summ = summ + float(self.price_delivery.replace(' ', '').replace(',', '.'))
         return summ
