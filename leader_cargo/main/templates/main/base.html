@@ -21,7 +21,8 @@
     <div class="container-fluid d-flex flex-column flex-md-row align-items-center pb-2 mb-3 border-bottom">
         <a href="{% url 'home' %}" class="d-flex align-items-center link-body-emphasis text-decoration-none">
             <img src="{% static 'main/images/logo-1.svg' %}" width="40" height="32" class="me-2" id="logo">
-            <span class="fs-3">Транслогистик</span>
+            <span class="fs-2">Транслогистик <span class="fs-5"> {% if user.is_authenticated %}{{ user.first_name }}{% endif %}</span></span>
+
         </a>
         {% if user.is_authenticated %}
         {% if user.role == 'Супер Администратор' or user.role == 'Администратор'%}

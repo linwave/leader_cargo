@@ -437,7 +437,7 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
         context['goods_itog_for_each'] = 0
         for goods in context['all_goods']:
             if goods.price_rmb and goods.quantity:
-                context['goods_vycup'] = context['goods_vycup'] + float(goods.price_rmb*goods.quantity)
+                context['goods_vycup'] = context['goods_vycup'] + float(goods.price_rmb)*float(goods.quantity)
             if goods.price_delivery:
                 context['goods_log'] = context['goods_log'] + float(goods.price_delivery)
             context['goods_itog'] = float(context['goods_vycup']) + float(context['goods_log'])

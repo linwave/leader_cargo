@@ -49,22 +49,22 @@
             <div class="card-body">
                 <h5 class="card-title"><a href="#" class="text-decoration-none" id="list-employees">{{ good.name }}</a></h5>
                 {% if good.price_rmb %}
-                <p class="card-text">Цена за шт: ¥ {{ good.price_rmb }}</p>
+                <p class="card-text">Цена за шт: ¥ {{ good.price_rmb|floatformat:"2g" }}</p>
                 {% else %}
                 <p class="card-text">Цена за шт: ¥ 0</p>
                 {% endif %}
                 {% if good.quantity %}
-                <p class="card-text">Всего штук: {{ good.quantity }}</p>
+                <p class="card-text">Всего штук: {{ good.quantity|floatformat:"2g" }}</p>
                 {% else %}
                 <p class="card-text">Всего штук: 0</p>
                 {% endif %}
                 {% if good.price_delivery %}
-                <p class="card-text">Доставка по Китаю: {{ good.price_delivery }}</p>
+                <p class="card-text">Доставка по Китаю: {{ good.price_delivery|floatformat:"2g" }}</p>
                 {% else %}
                 <p class="card-text">Доставка по Китаю: 0</p>
                 {% endif %}
                 {% if good.get_itog %}
-                <p class="card-text">Итог: {{ good.get_itog }}</p>
+                <p class="card-text">Итог: {{ good.get_itog|floatformat:"2g" }}</p>
                 {% else %}
                 <p class="card-text">Итог: 0</p>
                 {% endif %}
