@@ -165,5 +165,5 @@ class Goods(models.Model):
         verbose_name = 'Список товаров'
         verbose_name_plural = 'Список товаров'
 
-    # def get_absolute_url(self):
-    #     return reverse('card_goods', kwargs={'goods_id': self.pk, 'appeal_id': self.appeal_id})
+    def get_absolute_url(self):
+        return reverse('card_goods', kwargs={'goods_id': self.pk, 'appeal_id': self.appeal_id})
