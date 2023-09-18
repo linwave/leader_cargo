@@ -45,8 +45,16 @@
         <div class="col-md-6">
             <div class="card-body">
                 <h5 class="card-title"><a href="#" class="text-decoration-none" id="list-employees">{{ good.name }}</a></h5>
+                {% if good.price_rmb %}
                 <p class="card-text">Цена за шт: ¥ {{ good.price_rmb }}</p>
+                {% else %}
+                <p class="card-text">Цена за шт: ¥ 0</p>
+                {% endif %}
+                {% if good.quantity %}
                 <p class="card-text">Всего штук: {{ good.quantity }}</p>
+                {% else %}
+                <p class="card-text">Всего штук: 0</p>
+                {% endif %}
                 {% if good.price_delivery %}
                 <p class="card-text">Доставка по Китаю: {{ good.price_delivery }}</p>
                 {% else %}
@@ -58,11 +66,19 @@
     <div class="row g-2">
         <div class="card-body">
                 {% if appeal.status != 'В работе' %}
+                {% if good.link_url %}
                 <a href="{{ good.link_url }}" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
+                {% else %}
+                <p class="card-text">Ссылка: Не указано</p>
+                {% endif %}
                 {% else %}
                 <a href="#" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
                 {% endif %}
+                {% if good.product_description %}
                 <p class="card-text">Описание: {{ good.product_description|truncatewords:30 }}</p>
+                {% else %}
+                <p class="card-text">Описание: Не указано</p>
+                {% endif %}
                 <p class="card-text"><small class="text-muted">{{ good.time_create }}</small></p>
             <div class="row">
                 <div class="col-6">

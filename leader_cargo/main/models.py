@@ -143,7 +143,7 @@ class Appeals(models.Model):
 
 class Goods(models.Model):
     name = models.CharField('Название товара', max_length=128, blank=False, null=True)
-    photo_good = models.ImageField(verbose_name='Фото товара', upload_to='photos/goods/%Y/%m/%d/')
+    photo_good = models.ImageField(verbose_name='Фото товара', upload_to='photos/goods/%Y/%m/%d/', blank=True, null=True)
     # photo_good = models.ImageField(verbose_name='Фото товара', upload_to=content_file_name)
     link_url = models.CharField('Ссылка на товар', max_length=200, blank=True, null=True)
     product_description = models.CharField('Описание товара', max_length=500, blank=True, null=True)
