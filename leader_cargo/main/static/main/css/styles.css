@@ -38,11 +38,6 @@
 	height: 20px;
 }
 
-.btn btn-primary {
-  margin: 0 auto;
-  display: block;
-}
-
 #refresh-password-client{
     position: absolute;
     top: 30%;

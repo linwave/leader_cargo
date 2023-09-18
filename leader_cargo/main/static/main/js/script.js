@@ -111,7 +111,11 @@ function outFunc() {
 function integer_positive_pattern(MyId){
 var field = document.getElementById(MyId);
 var integer_options = {
-  mask: Number,
+    mask: Number,
+    padFractionalZeros: false,  // if true, then pads zeros at end to the length of scale
+    normalizeZeros: true,  // appends or removes zeros at ends
+    radix: ',',  // fractional delimiter
+    mapToRadix: ['.'],
     min: 0,
     max: 10000000000,
     thousandsSeparator: ' '

@@ -146,7 +146,7 @@ class Goods(models.Model):
     photo_good = models.ImageField(verbose_name='Фото товара', upload_to='photos/goods/%Y/%m/%d/', blank=True, null=True)
     # photo_good = models.ImageField(verbose_name='Фото товара', upload_to=content_file_name)
     link_url = models.CharField('Ссылка на товар', max_length=200, blank=True, null=True)
-    product_description = models.CharField('Описание товара', max_length=500, blank=True, null=True)
+    product_description = models.CharField('Описание товара', max_length=1024, blank=True, null=True)
     price_rmb = models.CharField(verbose_name='Цена товара в Китае в юанях', max_length=50, blank=True, null=True)
     quantity = models.CharField(verbose_name='Количество', max_length=50, blank=True, null=True)
     price_delivery = models.CharField(verbose_name='Стоимость доставки', max_length=50, blank=True, null=True)
@@ -168,7 +168,7 @@ class Goods(models.Model):
     def get_itog(self):
         summ = 0
         if self.price_rmb and self.quantity:
-            summ = summ + float(self.price_rmb)*float(self.quantity)
+            summ = summ + float(self.price_rmb.replace(' ', ''))*float(self.quantity.replace(' ', ''))
         if self.price_delivery:
-            summ = summ + float(self.price_delivery)
+            summ = summ + float(self.price_delivery.replace(' ', ''))
         return summ
