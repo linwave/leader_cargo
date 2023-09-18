@@ -107,3 +107,14 @@ function outFunc() {
   var tooltip = document.getElementById("myTooltip");
   tooltip.innerHTML = "Скопировать";
 }
+
+function integer_positive_pattern(MyId){
+var field = document.getElementById(MyId);
+var integer_options = {
+  mask: Number,
+    min: 0,
+    max: 10000000000,
+    thousandsSeparator: ' '
+};
+var mask_integer_positive = IMask(field, integer_options);
+}
