@@ -18,11 +18,12 @@
 <body>
 <script src="https://unpkg.com/imask"></script>
 <script src="{% static 'main/js/script.js' %}"></script>
-<div class="container-fluid d-flex flex-column flex-md-row align-items-center pb-0 mb-2 border-bottom">
-    <a href="{% url 'home' %}" class="d-flex align-items-center link-body-emphasis text-decoration-none">
-        <img src="{% static 'main/images/logo-1.svg' %}" width="40" height="32" class="me-2" id="logo">
-        <span class="fs-2">Транслогистик <span class="fs-5">{% if user.is_authenticated %}<i class="fa-solid fa-user"></i>{{ user.first_name }}{% endif %}</span></span>
+<div class="container-fluid d-flex flex-column flex-md-row align-items-center pb-0 mb-3 border-bottom">
+    <a href="{% url 'home' %}" class="d-inline-flex pb-2 align-items-center link-body-emphasis text-decoration-none">
+        <img src="{% static 'main/images/logo-1.svg' %}" width="40" height="32" class="me-1" id="logo">
+        <span class="fs-2">Транслогистик </span>
     </a>
+    {% if user.is_authenticated %}<span class="d-inline-flex pt-0 mt-2 mt-md-0 ms-md-auto "><i class="fa-solid fa-user pt-1"></i>{{ user.first_name }}</span>{% endif %}
     {% if user.is_authenticated %}
     {% if user.role == 'Супер Администратор' or user.role == 'Администратор'%}
     {% if last_currency %}
@@ -42,11 +43,11 @@
     {% elif last_currency.dollar %}
     <span class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >¥ Курс ожидается  $ {{ last_currency.dollar }}</span>
     {% else %}
-    <span class="d-inline-flex mt-2 ms-md-auto link-body-emphasis text-decoration-none" ><span class="font-weight-bold">¥ Курс ожидается $ Курс ожидается</span></span>
+    <span class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" ><span class="font-weight-bold">¥ Курс ожидается $ Курс ожидается</span></span>
     {% endif %}
     {% endif %}
     {% if user.role == 'Клиент'%}
-    <span class="d-inline-flex mt-2 ms-md-auto text-decoration-none">
+    <span class="d-inline-flex mt-2 mt-md-0 ms-md-auto text-decoration-none">
                 <i class="fa-solid fa-wallet"> &ensp;</i>
                 <i class="fa-solid fa-ruble-sign"> 1000&ensp;</i>
                 <i class="fa-solid fa-dollar-sign"> 1000&ensp;</i>
@@ -54,7 +55,6 @@
             </span>
     {% endif %}
     <nav class="navbar navbar-expand d-inline-flex mt-0 mt-md-0 ms-md-auto">
-
         <div class="container-fluid">
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">

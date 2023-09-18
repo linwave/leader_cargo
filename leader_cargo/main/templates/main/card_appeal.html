@@ -64,111 +64,201 @@
     <a class="btn btn-secondary btn-sm" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
     {% else %}
     <a class="btn btn-secondary btn-sm" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+    {% endif %}
 </div>
-{% endif %}
 <div class="container">
-    {% if all_goods %}
-    {% for good in all_goods %}
-    <div class="card border-secondary text-dark bg-light mb-3 " style="max-width: 580px;">
-        <div class="row g-0">
-            <div class="col-md-5">
-                {% if good.photo_good %}
-                <img src="{{ good.photo_good.url }}" class="img-fluid rounded-start" alt="Generic placeholder image">
-                {% else %}
-                <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="Generic placeholder image">
-                {% endif %}
-            </div>
-            <div class="col-md-7">
-                <div class="card-body">
-                    <h5 class="card-title"><a href="#" class="text-decoration-none" id="list-employees">{{ good.name }}</a></h5>
-                    <table class="table table-hover table-bordered mb-0">
-                        <tbody>
-                        <tr class="table-light">
-                            {% if good.price_rmb %}
-                            <td  width="160px">Цена за шт:</td>
-                            <td  width="40px">¥{{ good.price_rmb }}</td>
-                            {% else %}
-                            <td>Цена за шт:</td>
-                            <td>¥ 0</td>
-                            {% endif %}
-                        </tr>
-                        <tr class="table-light">
-                            {% if good.quantity %}
-                            <td>Всего штук:</td>
-                            <td>{{ good.quantity }}</td>
-                            {% else %}
-                            <td>Всего штук:</td>
-                            <td>0</td>
-                            {% endif %}
-                        </tr>
-                        <tr class="table-light">
-                            {% if good.price_delivery %}
-                            <td>Доставка по Китаю:</td>
-                            <td>¥{{ good.price_delivery }}</td>
-                            {% else %}
-                            <td>Доставка по Китаю:</td>
-                            <td>¥ 0</td>
-                            {% endif %}
-                        </tr>
-                        <tr class="table-light">
-                            {% if good.get_itog %}
-                            <td>Итог:</td>
-                            <td>¥{{ good.get_itog|floatformat:"2g" }}</td>
-                            {% else %}
-                            <td>Итог:</td>
-                            <td>¥ 0</td>
-                            {% endif %}
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="row g-0">
-            <div class="card-body">
-                {% if appeal.status != 'В работе' %}
-                {% if good.link_url %}
-                <a href="{{ good.link_url }}" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
-                {% else %}
-                <p class="card-text">Ссылка: Не указано</p>
-                {% endif %}
-                {% else %}
-                <a href="#" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
-                {% endif %}
-                {% if good.product_description %}
-                <p class="card-text">Описание: {{ good.product_description|truncatewords:30 }}</p>
-                {% else %}
-                <p class="card-text">Описание: Не указано</p>
-                {% endif %}
-                <p class="card-text"><small class="text-muted">{{ good.time_create }}</small></p>
-                <div class="row">
-                    <div class="col-6">
-                        {% if appeal.status != 'В работе' %}
-                        <a href="{% url 'card_goods' appeal.pk good.pk %}" class="btn btn-success btn-sm">Редактировать</a>
+    <div class="row g-0">
+        {% if all_goods %}
+        {% for good in all_goods %}
+        <div class="col-sm-6">
+            <div class="card border-secondary text-dark bg-light mb-3 w-100" style="max-width: 580px;">
+                <div class="row g-0">
+                    <div class="col-md-5">
+                        {% if good.photo_good %}
+                        <img src="{{ good.photo_good.url }}" class="img-fluid rounded-start" alt="Generic placeholder image">
                         {% else %}
+                        <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="Generic placeholder image">
                         {% endif %}
                     </div>
-                    <div class="col-6">
-                        <div align="right">
-                            {% if appeal.status != 'В работе' %}
-                            <form id="delete_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
-                            <a href="javascript:void()" onclick="delete_question()" class="btn btn-danger btn-sm">Удалить</a>
-                            <script>
+                    <div class="col-md-7">
+                        <div class="card-body">
+                            <div align="center">
+                                <h5 class="card-title"><a href="#" class="text-decoration-none" id="list-employees">{{ good.name }}</a></h5>
+                            </div>
+                            <table class="table table-hover table-bordered mb-0">
+                                <tbody>
+                                <tr class="table-light">
+                                    {% if good.price_rmb %}
+                                    <td  width="160px">Цена за шт:</td>
+                                    <td  width="40px">¥{{ good.price_rmb }}</td>
+                                    {% else %}
+                                    <td>Цена за шт:</td>
+                                    <td>¥ 0</td>
+                                    {% endif %}
+                                </tr>
+                                <tr class="table-light">
+                                    {% if good.quantity %}
+                                    <td>Всего штук:</td>
+                                    <td>{{ good.quantity }}</td>
+                                    {% else %}
+                                    <td>Всего штук:</td>
+                                    <td>0</td>
+                                    {% endif %}
+                                </tr>
+                                <tr class="table-light">
+                                    {% if good.price_delivery %}
+                                    <td>Доставка по Китаю:</td>
+                                    <td>¥{{ good.price_delivery }}</td>
+                                    {% else %}
+                                    <td>Доставка по Китаю:</td>
+                                    <td>¥ 0</td>
+                                    {% endif %}
+                                </tr>
+                                <tr class="table-light">
+                                    {% if good.get_itog %}
+                                    <td>Итог:</td>
+                                    <td>¥{{ good.get_itog|floatformat:"2g" }}</td>
+                                    {% else %}
+                                    <td>Итог:</td>
+                                    <td>¥ 0</td>
+                                    {% endif %}
+                                </tr>
+                                <tr class="table-light">
+                                    {% if good.price_purchase %}
+                                    <td>Выкуп:</td>
+                                    <td>¥{{ good.price_purchase }}</td>
+                                    {% else %}
+                                    <td>Выкуп:</td>
+                                    <td>₽ 0</td>
+                                    {% endif %}
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-0">
+                    <div class="card-body">
+                        <table class="table table-hover table-bordered">
+                            <tbody>
+                            <tr class="table-light">
+                                {% if good.price_delivery_real %}
+                                <td  width="160px">Доставка в РФ:</td>
+                                <td  width="40px">¥{{ good.price_delivery_real }}</td>
+                                {% else %}
+                                <td>Доставка в РФ:</td>
+                                <td>$ 0</td>
+                                {% endif %}
+                            </tr>
+                            <tr class="table-light">
+                                {% if good.price_delivery_real %}
+                                <td>Упаковка:</td>
+                                <td>{{ good.price_delivery_real }}</td>
+                                {% else %}
+                                <td>Упаковка:</td>
+                                <td>$ 0</td>
+                                {% endif %}
+                            </tr>
+                            <tr class="table-light">
+                                {% if good.price_delivery_real %}
+                                <td>Страховка:</td>
+                                <td>{{ good.price_delivery_real }}</td>
+                                {% else %}
+                                <td>Страховка:</td>
+                                <td>$ 0</td>
+                                {% endif %}
+                            </tr>
+                            <tr class="table-light">
+                                {% if good.price_delivery_real %}
+                                <td>ПРР:</td>
+                                <td>{{ good.price_delivery_real }}</td>
+                                {% else %}
+                                <td>ПРР:</td>
+                                <td>$ 0</td>
+                                {% endif %}
+                            </tr>
+                            <tr class="table-light">
+                                {% if good.price_delivery_real %}
+                                <td>Итого логистика:</td>
+                                <td>{{ good.price_delivery_real }}</td>
+                                {% else %}
+                                <td>Итого логистика:</td>
+                                <td>$ 0</td>
+                                {% endif %}
+                            </tr>
+                            </tbody>
+                        </table>
+                        <table class="table table-hover table-bordered">
+                            <tbody>
+                            <tr class="table-light">
+                                {% if good.price_delivery_real %}
+                                <td>Стоимость в РФ:</td>
+                                <td>{{ good.price_delivery_real }}</td>
+                                {% else %}
+                                <td>Стоимость в РФ:</td>
+                                <td>₽ 0</td>
+                                {% endif %}
+                            </tr>
+                            <tr class="table-light">
+                                {% if good.price_delivery_real %}
+                                <td>Итого в РФ:</td>
+                                <td>{{ good.price_delivery_real }}</td>
+                                {% else %}
+                                <td>Итого в РФ:</td>
+                                <td>₽ 0</td>
+                                {% endif %}
+                            </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                </div>
+                <div class="row g-0">
+                    <div class="card-body">
+                        {% if appeal.status != 'В работе' %}
+                        {% if good.link_url %}
+                        <a href="{{ good.link_url }}" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
+                        {% else %}
+                        <p class="card-text">Ссылка: Не указано</p>
+                        {% endif %}
+                        {% else %}
+                        <a href="#" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
+                        {% endif %}
+                        {% if good.product_description %}
+                        <p class="card-text">Описание: {{ good.product_description|truncatewords:30 }}</p>
+                        {% else %}
+                        <p class="card-text">Описание: Не указано</p>
+                        {% endif %}
+                        <p class="card-text"><small class="text-muted">{{ good.time_create }}</small></p>
+                        <div class="row">
+                            <div class="col-6">
+                                {% if appeal.status != 'В работе' %}
+                                <a href="{% url 'card_goods' appeal.pk good.pk %}" class="btn btn-success btn-sm">Редактировать</a>
+                                {% else %}
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                <div align="right">
+                                    {% if appeal.status != 'В работе' %}
+                                    <form id="delete_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
+                                    <a href="javascript:void()" onclick="delete_question()" class="btn btn-danger btn-sm">Удалить</a>
+                                    <script>
                         function delete_question() {
                             if (confirm("Вы уверены?")) {
                                 document.getElementById('delete_form').submit()
                                 }
                         }
                     </script>
-                            {% else %}
-                            {% endif %}
+                                    {% else %}
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 {% else %}
 <p>Нет товаров</p>

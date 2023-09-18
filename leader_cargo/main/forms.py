@@ -211,6 +211,12 @@ class CardClientsForm(ModelForm):
             }),
         }
 
+    def clean_phone(self):
+        phone = self.cleaned_data['phone']
+        if len(phone) != 18:
+            raise ValidationError('Короткий номер телефона')
+        return phone
+
 
 class AddExchangeRatesForm(ModelForm):
     class Meta:

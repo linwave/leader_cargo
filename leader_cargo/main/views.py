@@ -371,7 +371,12 @@ class AppealsView(LoginRequiredMixin, DataMixin, ListView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        return Appeals.objects.filter(client=self.request.user.pk).order_by('-time_create')
+        if self.request.user.role == 'Клиент':
+            return Appeals.objects.filter(client=self.request.user.pk).order_by('-time_create')
+        elif self.request.user.role == 'Менеджер':
+            return Appeals.objects.filter(manager=self.request.user.pk).order_by('-time_create')
+        else:
+            return Appeals.objects.all().order_by('-time_create')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
