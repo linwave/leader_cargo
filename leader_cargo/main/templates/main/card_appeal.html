@@ -42,7 +42,7 @@
             {% if good.photo_good %}
             <img src="{{ good.photo_good.url }}" class="img-fluid rounded-start" alt="Generic placeholder image">
             {% else %}
-            <img src="{% static 'main/images/image-regular.svg' %}" class="img-fluid rounded-start" alt="Generic placeholder image">
+            <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="Generic placeholder image">
             {% endif %}
         </div>
         <div class="col-md-6">
@@ -62,6 +62,11 @@
                 <p class="card-text">Доставка по Китаю: {{ good.price_delivery }}</p>
                 {% else %}
                 <p class="card-text">Доставка по Китаю: 0</p>
+                {% endif %}
+                {% if good.get_itog %}
+                <p class="card-text">Итог: {{ good.get_itog }}</p>
+                {% else %}
+                <p class="card-text">Итог: 0</p>
                 {% endif %}
             </div>
         </div>

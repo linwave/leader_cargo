@@ -14,7 +14,7 @@
             {% if appeal.get_appeal_photo %}
             <img src="{{ appeal.get_appeal_photo.url }}" class="img-fluid rounded-start" alt="fff">
             {% else %}
-            <img src="{% static 'main/images/image-regular.svg' %}" class="img-fluid rounded-start" alt="fff">
+            <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="fff">
             {% endif %}
         </div>
         <div class="col-md-8">

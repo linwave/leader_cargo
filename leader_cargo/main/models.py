@@ -165,5 +165,10 @@ class Goods(models.Model):
         verbose_name = 'Список товаров'
         verbose_name_plural = 'Список товаров'
 
-    def get_absolute_url(self):
-        return reverse('card_goods', kwargs={'goods_id': self.pk, 'appeal_id': self.appeal_id})
+    def get_itog(self):
+        summ = 0
+        if self.price_rmb and self.quantity:
+            summ = summ + (self.price_rmb * self.quantity)
+        if self.price_delivery:
+            summ = summ + self.price_delivery
+        return summ

@@ -18,6 +18,8 @@
         <div class="text-danger">{{ form.quantity.errors }}</div>
         {{ form.price_rmb }}<br>
         <div class="text-danger">{{ form.price_rmb.errors }}</div>
+        {{ form.price_delivery }}<br>
+        <div class="text-danger">{{ form.price_delivery.errors }}</div>
         {{ form.product_description }}<br>
         <div class="text-danger">{{ form.product_description.errors }}</div>
         <button type="submit" class="btn btn-success">Изменить</button>
@@ -26,5 +28,6 @@
 <script>
 integer_positive_pattern('quantity')
 integer_positive_pattern('price_rmb')
+integer_positive_pattern('price_delivery')
 </script>
 {% endblock %}

@@ -76,6 +76,12 @@ class AddGoodsForm(ModelForm):
                 'id': 'price_rmb',
                 'placeholder': 'Цена за шт. в юанях',
             }),
+            "price_delivery": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_delivery',
+                'placeholder': 'Цена доставки по Китаю',
+            }),
             "product_description": Textarea(attrs={
                 'class': 'form-control',
                 'type': 'text',
@@ -123,6 +129,12 @@ class CardGoodsForm(ModelForm):
                 'type': 'text',
                 'id': 'price_rmb',
                 'placeholder': 'Цена за шт. в юанях',
+            }),
+            "price_delivery": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_delivery',
+                'placeholder': 'Цена доставки по Китаю',
             }),
             "product_description": Textarea(attrs={
                 'class': 'form-control',
