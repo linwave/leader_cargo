@@ -5,28 +5,38 @@
 {% endblock %}
 
 {% block content %}
-<a class="btn btn-success" href="{% url 'create_appeal' %}" role="button">Новая заявка</a><br><br>
-{% if all_appeals %}
-{% for appeal in all_appeals %}
-<div class="card text-dark bg-light mb-3 border-secondary" style="max-width: 540px;">
+<div class="container">
+    <a class="btn btn-success shadow" href="{% url 'create_appeal' %}" role="button">Новая заявка</a><br><br>
+</div>
+<div class="container">
     <div class="row g-0">
-        <div class="col-md-4">
-            {% if appeal.get_appeal_photo %}
-            <img src="{{ appeal.get_appeal_photo.url }}" class="img-fluid rounded-start" alt="fff">
-            {% else %}
-            <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="fff">
-            {% endif %}
-        </div>
-        <div class="col-md-8">
-            <div class="card-body">
-                <h5 class="card-title"><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a></h5>
-                <span class="card-text">{{ appeal.status }}</span>
-                <p class="card-text"><small class="text-muted">{{ appeal.time_create }}</small></p>
+        {% if all_appeals %}
+        {% for appeal in all_appeals %}
+        <div class="col-sm-4">
+            <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 400px;">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if appeal.get_appeal_photo %}
+                        <img src="{{ appeal.get_appeal_photo.url }}" class="img-fluid rounded-start">
+                        {% else %}
+                        <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="fff">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h5 class="card-title"><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a></h5>
+                            <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.first_name }}</span><br>
+                            <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.phone }}</span><br>
+                            <span class="card-text" style="font-size: .9rem;">{{ appeal.status }}</span>
+                            <p class="card-text"><small class="text-muted">{{ appeal.time_create }}</small></p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
 </div>
-{% endfor %}
 {% else %}
 <p>Нет заявок</p>
 {% endif %}

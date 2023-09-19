@@ -136,6 +136,9 @@ class Appeals(models.Model):
         for good in self.goods_set.all():
             if good.photo_good:
                 return good.photo_good
+
+    def get_client(self):
+        return CustomUser.objects.get(pk=self.client)
 # def user_directory_path(instance, filename):
 #     # file will be uploaded to MEDIA_ROOT / user_<id>/<filename>
 #     return 'photos/goods/user_{0}/{1}'.format(instance.user.id, filename)

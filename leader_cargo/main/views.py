@@ -469,27 +469,6 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
             return self.handle_no_permission()
 
 
-class DeleteGoodsView(LoginRequiredMixin, DataMixin, DeleteView):
-    model = Goods
-    template_name = 'main/card_appeal.html'
-    pk_url_kwarg = 'goods_id'
-    role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
-    success_url = reverse_lazy('card_appeal')
-
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.delete()
-        return redirect('card_appeal', appeal_id=self.kwargs['appeal_id'])
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return self.handle_no_permission()
-
-
 class AddGoodsView(LoginRequiredMixin, DataMixin, CreateView):
     pk_url_kwarg = 'appeal_id'
     form_class = AddGoodsForm
@@ -549,6 +528,27 @@ class CardGoodsView(LoginRequiredMixin, DataMixin, UpdateView):
     def form_invalid(self, form):
         form.add_error(None, f'Ошибка изменения данных товара')
         return super(CardGoodsView, self).form_invalid(form)
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class DeleteGoodsView(LoginRequiredMixin, DataMixin, DeleteView):
+    model = Goods
+    template_name = 'main/card_appeal.html'
+    pk_url_kwarg = 'goods_id'
+    role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
+    success_url = reverse_lazy('card_appeal')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        return redirect('card_appeal', appeal_id=self.kwargs['appeal_id'])
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:

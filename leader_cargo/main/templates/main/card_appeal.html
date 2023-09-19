@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="container">
-    <table class="table table-sm table-hover table-bordered">
+    <table class="table table-sm table-hover table-bordered shadow p-1  bg-white rounded">
         <thead>
         <tr class="table-secondary">
             <th scope="col" colspan="2" align="center">{% if appeal.status != 'В работе' %}
@@ -52,8 +52,8 @@
 <div class="container">
     {% if appeal.status != 'В работе' %}
     <form method="post" id="update_form" >{% csrf_token %}</form>
-    <a class="btn btn-success btn-sm" href="{% url 'create_goods' appeal.pk %}" role="button">Добавить товар</a>
-    <a href="javascript:void()" onclick="update_question()" class="btn btn-primary btn-sm">Отправить в работу менеджеру</a>
+    <a class="btn btn-success btn-sm shadow" href="{% url 'create_goods' appeal.pk %}" role="button">Добавить товар</a>
+    <a href="javascript:void()" onclick="update_question()" class="btn btn-primary btn-sm shadow">Отправить в работу менеджеру</a>
     <script>
                         function update_question() {
                             if (confirm("Вы уверены?")) {
@@ -61,9 +61,9 @@
                                 }
                         }
 </script>
-    <a class="btn btn-secondary btn-sm" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+    <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
     {% else %}
-    <a class="btn btn-secondary btn-sm" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+    <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
     {% endif %}
 </div>
 <div class="container">
@@ -71,13 +71,13 @@
         {% if all_goods %}
         {% for good in all_goods %}
         <div class="col-sm-6">
-            <div class="card border-secondary text-dark bg-light mb-3 w-100" style="max-width: 580px;">
+            <div class="card border-secondary text-dark  mb-3 w-100 shadow p-1 rounded" style="max-width: 580px;">
                 <div class="row g-0">
                     <div class="col-md-5">
                         {% if good.photo_good %}
-                        <img src="{{ good.photo_good.url }}" class="img-fluid rounded-start" alt="Generic placeholder image">
+                        <img src="{{ good.photo_good.url }}" class="img-fluid rounded-start">
                         {% else %}
-                        <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="Generic placeholder image">
+                        <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start">
                         {% endif %}
                     </div>
                     <div class="col-md-7">
