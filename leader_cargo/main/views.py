@@ -382,11 +382,9 @@ class AppealsView(LoginRequiredMixin, DataMixin, ListView):
         elif self.request.user.role == 'Менеджер':
             if self.request.GET.getlist('client') and not self.request.GET.getlist('status'):
                 return Appeals.objects.filter(Q(manager=self.request.user.pk) &
-                                              Q(client__in=self.request.GET.getlist('client')) |
-                                              Q(status__in=self.request.GET.getlist('status'))).order_by('-time_create')
+                                              Q(client__in=self.request.GET.getlist('client'))).order_by('-time_create')
             elif not self.request.GET.getlist('client') and self.request.GET.getlist('status'):
                 return Appeals.objects.filter(Q(manager=self.request.user.pk) &
-                                              Q(client__in=self.request.GET.getlist('client')) |
                                               Q(status__in=self.request.GET.getlist('status'))).order_by('-time_create')
             elif not self.request.GET.getlist('client') and self.request.GET.getlist('status'):
                 return Appeals.objects.filter(Q(manager=self.request.user.pk) &
