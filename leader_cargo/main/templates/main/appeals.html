@@ -6,8 +6,56 @@
 
 {% block content %}
 <div class="container">
-    <a class="btn btn-success shadow" href="{% url 'create_appeal' %}" role="button">Новая заявка</a><br><br>
+    <div class="row">
+        <div class="col-auto m-1">
+            <a class="btn btn-success btn-sm shadow" href="{% url 'create_appeal' %}" role="button">Новая заявка</a>
+        </div>
+        {% if user.role != 'Клиент' %}
+        <div class="w-100 d-block d-sm-none"></div>
+        <div class="col-auto m-1">
+            <div class="btn-group">
+                {% if client_now %}
+                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ client_now }}
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    Все клиенты
+                </button>
+                {% endif %}
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}">Все клиенты</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-auto m-1">
+            <div class="btn-group">
+                {% if status_now %}
+                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ status_now|join:"" }}
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    Все статусы
+                </button>
+                {% endif %}
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}">Все статусы</a></li>
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Черновик">Черновик</a></li>
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Новая">Новая</a></li>
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=В работе">В работе</a></li>
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Просчёт">Просчёт</a></li>
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Просчёт готов">Просчёт готов</a></li>
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Выкуп и проверка">Выкуп и проверка</a></li>
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Доставка">Доставка</a></li>
+                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Завершено">Завершено</a></li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </div>
+<br>
 <div class="container">
     <div class="row g-0">
         {% if all_appeals %}

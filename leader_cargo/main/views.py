@@ -3,6 +3,7 @@ import re
 from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
+from django.db.models import Q
 from django.shortcuts import redirect
 import string
 import random
@@ -23,9 +24,12 @@ menu = [
     {'title': 'Заявки', 'url_name': 'appeals'},
 ]
 statuses = [
+    'Черновик',
     'Новая',
     'В работе',
-    'Выкуп и доставка',
+    'Просчёт',
+    'Просчёт готов',
+    'Выкуп и проверка',
     'Доставка',
     'Завершено',
 ]
@@ -368,12 +372,26 @@ class AppealsView(LoginRequiredMixin, DataMixin, ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Заявки")
+        context['status_now'] = self.request.GET.getlist('status')
+        context['client_now'] = self.request.GET.getlist('client')
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
         if self.request.user.role == 'Клиент':
             return Appeals.objects.filter(client=self.request.user.pk).order_by('-time_create')
         elif self.request.user.role == 'Менеджер':
+            if self.request.GET.getlist('client') and not self.request.GET.getlist('status'):
+                return Appeals.objects.filter(Q(manager=self.request.user.pk) &
+                                              Q(client__in=self.request.GET.getlist('client')) |
+                                              Q(status__in=self.request.GET.getlist('status'))).order_by('-time_create')
+            elif not self.request.GET.getlist('client') and self.request.GET.getlist('status'):
+                return Appeals.objects.filter(Q(manager=self.request.user.pk) &
+                                              Q(client__in=self.request.GET.getlist('client')) |
+                                              Q(status__in=self.request.GET.getlist('status'))).order_by('-time_create')
+            elif not self.request.GET.getlist('client') and self.request.GET.getlist('status'):
+                return Appeals.objects.filter(Q(manager=self.request.user.pk) &
+                                              Q(client__in=self.request.GET.getlist('client')) &
+                                              Q(status__in=self.request.GET.getlist('status'))).order_by('-time_create')
             return Appeals.objects.filter(manager=self.request.user.pk).order_by('-time_create')
         else:
             return Appeals.objects.all().order_by('-time_create')
@@ -405,7 +423,7 @@ class AddAppealsView(LoginRequiredMixin, DataMixin, CreateView):
         if self.request.user.role == 'Клиент':
             new_data.client = self.request.user.pk
             new_data.manager = self.request.user.manager
-        new_data.status = statuses[0]
+        new_data.status = statuses[1]
         new_data.save()
         return redirect('card_appeal', new_data.pk)
 
@@ -456,7 +474,7 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
         new_data = form.save(commit=False)
         if self.request.user.role == 'Клиент':
             new_data.client = self.request.user.pk
-        new_data.status = statuses[1]
+        new_data.status = statuses[2]
         new_data.save()
         return redirect('card_appeal', appeal_id=self.kwargs['appeal_id'])
 
