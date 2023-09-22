@@ -1,16 +1,100 @@
-{% extends 'main/base.html' %}
-{% load static %}
-{% block title %}
-{{ title }}
-{% endblock %}
 
 {% block content %}
+<span class="text-danger">{{ from.non_field_errors }}</span>
+{% if user.role == 'Клиент' %}
+<span class="text-danger">{{ form.non_field_errors }}</span>
 <div class="container">
     <table class="table table-sm table-hover table-bordered shadow p-1  bg-white rounded">
         <thead>
         <tr class="table-secondary">
-            <th scope="col" colspan="2" align="center">{% if appeal.status != 'В работе' %}
-                <h2>Редактирование: {{ appeal.tag }}</h2>
+            <th scope="col" colspan="2" align="center">
+                {% if appeal.status == 'Новая' %}
+                <form method="post" id="update_appeal_form_client">
+                    {% csrf_token %}
+                    <div class="edit-appeal-container">
+                        <h2>{{ edit_form_client.tag }} <i class="fa-solid fa-pen-to-square" id="edit-appeal-client" onclick="update_appeal_client()"></i></h2>
+                        <script>
+                        function update_appeal_client()
+                        {
+                            document.getElementById('update_appeal_form_client').submit()
+                        }
+                        </script>
+                    </div>
+                </form>
+                {% else %}
+                <h2>{{ appeal.tag }}</h2>
+                {% endif %}
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr class="table-light">
+            <td width="200"><h6>Статус заявки:</h6></td>
+            <td ><h6>{{ appeal.status }}</h6></td>
+        </tr>
+        <tr class="table-light">
+            <td><h6 >Менеджер:</h6></td>
+            <td><h6 >{{ manager_fio }}</h6></td>
+        </tr>
+        <tr class="table-light">
+            <td><h6 >Количество позиций:</h6></td>
+            <td><h6 >{{ all_goods|length }}</h6></td>
+        </tr>
+        <tr class="table-light">
+            <td><h6 >Выкуп:</h6></td>
+            {% if goods_vycup %}
+            <td><h6 >¥ {{ goods_vycup|floatformat:"g" }}</h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
+        </tr>
+        <tr class="table-light">
+            <td><h6 >Логистика:</h6></td>
+            {% if appeal.logistic_price %}
+            <td><h6 > $ {{ appeal.logistic_price|floatformat:"g" }} </h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
+        </tr>
+        <tr class="table-light">
+            <td><h6 >Страховка:</h6></td>
+            {% if appeal.insurance_price %}
+            <td><h6 > $ {{ appeal.insurance_price|floatformat:"g" }} </h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
+        </tr>
+        <tr class="table-light">
+            <td><h6 >Упаковка:</h6></td>
+            {% if appeal.packaging_price %}
+            <td><h6 > $ {{ appeal.packaging_price|floatformat:"g" }} </h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
+        </tr>
+        <tr class="table-light">
+            <td><h6 >ПРР:</h6></td>
+            {% if appeal.prr_price %}
+            <td><h6 > $ {{ appeal.prr_price|floatformat:"g" }} </h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% elif user.role == 'Менеджер' %}
+<div class="container">
+    <table class="table table-sm table-hover table-bordered shadow p-1  bg-white rounded">
+        <thead>
+        <tr class="table-secondary">
+            <th scope="col" colspan="2" align="center">
+                {% if appeal.status == 'Черновик' or appeal.status == 'В работе' or appeal.status == 'Просчёт готов' or appeal.status == 'Доставка' %}
+                <form method="post" action="{% url 'edit_appeal' appeal.pk %}">
+                    {% csrf_token %}
+                    <div class="edit-appeal-container">
+                        <h2>{{ edit_form_manager.tag }} <i class="fa-solid fa-pen-to-square" id="edit-appeal-manager"></i></h2>
+                    </div>
+                </form>
                 {% else %}
                 <h2>{{ appeal.tag }}</h2>
                 {% endif %}
@@ -27,45 +111,86 @@
             <td><h6 >{{ client_fio }}</h6></td>
         </tr>
         <tr class="table-light">
-            <td><h6 >Менеджер:</h6></td>
-            <td><h6 >{{ manager_fio }}</h6></td>
-        </tr>
-        <tr class="table-light">
             <td><h6 >Количество позиций:</h6></td>
             <td><h6 >{{ all_goods|length }}</h6></td>
         </tr>
         <tr class="table-light">
-            <td><h6 >Сумма выкупа:</h6></td>
-            <td><h6 >¥ {{ goods_vycup|floatformat:"g" }} ₽ $</h6></td>
+            <td><h6 >Выкуп:</h6></td>
+            {% if goods_vycup %}
+            <td><h6 >¥ {{ goods_vycup|floatformat:"g" }}</h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
         </tr>
         <tr class="table-light">
-            <td><h6 >Сумма логистики:</h6></td>
-            <td><h6 >¥ {{ goods_log|floatformat:"g" }} ₽ $</h6></td>
+            <td><h6 >Логистика:</h6></td>
+            {% if appeal.logistic_price %}
+            <td><h6 > $ {{ appeal.logistic_price|floatformat:"g" }} </h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
         </tr>
         <tr class="table-light">
-            <td><h6 >Общая сумма:</h6></td>
-            <td><h6 >¥ {{ goods_itog|floatformat:"g" }} ₽ $</h6></td>
+            <td><h6 >Страховка:</h6></td>
+            {% if appeal.insurance_price %}
+            <td><h6 > $ {{ appeal.insurance_price|floatformat:"g" }} </h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
         </tr>
+        <tr class="table-light">
+            <td><h6 >Упаковка:</h6></td>
+            {% if appeal.packaging_price %}
+            <td><h6 > $ {{ appeal.packaging_price|floatformat:"g" }} </h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
+        </tr>
+        <tr class="table-light">
+            <td><h6 >ПРР:</h6></td>
+            {% if appeal.prr_price %}
+            <td><h6 > $ {{ appeal.prr_price|floatformat:"g" }} </h6></td>
+            {% else %}
+            <td><h6 > - </h6></td>
+            {% endif %}
         </tbody>
     </table>
 </div>
+{% endif %}
+
+
 <div class="container">
-    {% if appeal.status != 'В работе' %}
-    <form method="post" id="update_form" >{% csrf_token %}</form>
+    {% if user.role == 'Менеджер' %}
+    {% if appeal.status == 'Новая' %}
+    <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+    {% elif appeal.status == 'В работе' %}
     <a class="btn btn-success btn-sm shadow" href="{% url 'create_goods' appeal.pk %}" role="button">Добавить товар</a>
-    <a href="javascript:void()" onclick="update_question()" class="btn btn-primary btn-sm shadow">Отправить в работу менеджеру</a>
-    <script>
-                        function update_question() {
-                            if (confirm("Вы уверены?")) {
-                                document.getElementById('update_form').submit()
-                                }
-                        }
-</script>
     <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
     {% else %}
     <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
     {% endif %}
+    {% elif user.role == 'Клиент' %}
+    {% if appeal.status == 'Новая' %}
+    <form method="post" id="for_manager_appeal_form" >{% csrf_token %}</form>
+    <a class="btn btn-success btn-sm shadow" href="{% url 'create_goods' appeal.pk %}" role="button">Добавить товар</a>
+    <a href="javascript:void()" onclick="for_manager_appeal_question()" class="btn btn-primary btn-sm shadow">Отправить в работу менеджеру</a>
+    <script>
+                        function for_manager_appeal_question() {
+                            if (confirm("Вы уверены?")) {
+                                document.getElementById('for_manager_appeal_form').submit()
+                                }
+                        }
+    </script>
+    <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+    {% elif appeal.status == 'В работе' %}
+    <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+    {% else %}
+    <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+    {% endif %}
+    {% endif %}
 </div>
+
+{% if user.role == 'Клиент' %}
 <div class="container">
     <div class="row g-0">
         {% if all_goods %}
@@ -84,6 +209,134 @@
                         <div class="card-body">
                             <div align="center">
                                 <h5 class="card-title"><a href="#" class="text-decoration-none" id="list-employees">{{ good.name }}</a></h5>
+                            </div>
+                            <table class="table table-hover table-bordered mb-0">
+                                <tbody>
+                                <tr class="table-light">
+                                    {% if good.price_rmb %}
+                                    <td  width="160px">Цена за шт:</td>
+                                    <td  width="40px">¥{{ good.price_rmb }}</td>
+                                    {% else %}
+                                    <td>Цена за шт:</td>
+                                    <td>¥ 0</td>
+                                    {% endif %}
+                                </tr>
+                                <tr class="table-light">
+                                    {% if good.quantity %}
+                                    <td>Всего штук:</td>
+                                    <td>{{ good.quantity }}</td>
+                                    {% else %}
+                                    <td>Всего штук:</td>
+                                    <td>0</td>
+                                    {% endif %}
+                                </tr>
+                                <tr class="table-light">
+                                    {% if good.price_delivery %}
+                                    <td>Доставка по Китаю:</td>
+                                    <td>¥{{ good.price_delivery }}</td>
+                                    {% else %}
+                                    <td>Доставка по Китаю:</td>
+                                    <td>¥ 0</td>
+                                    {% endif %}
+                                </tr>
+                                <tr class="table-light">
+                                    {% if good.get_itog %}
+                                    <td>Итог:</td>
+                                    <td>¥{{ good.get_itog|floatformat:"2g" }}</td>
+                                    {% else %}
+                                    <td>Итог:</td>
+                                    <td>¥ 0</td>
+                                    {% endif %}
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-0">
+                    <div class="card-body">
+                        <table class="table table-hover table-bordered">
+                            <tbody>
+                            <tr class="table-light">
+                                {% if good.price_delivery_real %}
+                                <td  width="160px">Доставка в РФ:</td>
+                                <td  width="40px">¥{{ good.price_delivery_real }}</td>
+                                {% else %}
+                                <td>Доставка в РФ:</td>
+                                <td>-</td>
+                                {% endif %}
+                            </tr>
+                            </tbody>
+                        </table>
+                        {% if appeal.status == 'Новая' %}
+                        {% if good.link_url %}
+                        <a href="{{ good.link_url }}" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
+                        {% else %}
+                        <p class="card-text">Ссылка: Не указано</p>
+                        {% endif %}
+                        {% else %}
+                        <a href="#" class="card-text" target="_blank">{{ good.link_url|truncatechars:40 }}</a>
+                        {% endif %}
+                        {% if good.product_description %}
+                        <p class="card-text">{{ good.product_description|truncatewords:30 }}</p>
+                        {% else %}
+                        <p class="card-text">Описание: Не указано</p>
+                        {% endif %}
+                        <p class="card-text"><small class="text-muted">{{ good.time_create }}</small></p>
+                        <div class="row">
+                            <div class="col-6">
+                                {% if appeal.status == 'Новая' %}
+                                <a href="{% url 'card_goods' appeal.pk good.pk %}" class="btn btn-success btn-sm">Редактировать</a>
+                                {% else %}
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                <div align="right">
+                                    {% if appeal.status == 'Новая' %}
+                                    <form id="delete_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
+                                    <a href="javascript:void()" onclick="delete_question()" class="btn btn-danger btn-sm">Удалить</a>
+                                    <script>
+                                    function delete_question() {
+                                        if (confirm("Вы уверены?")) {
+                                        document.getElementById('delete_form').submit()
+                                        }
+                                    }
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    {% endif %}
+                    </div>
+                </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>Нет товаров</p>
+        {% endif %}
+    </div>
+</div>
+
+{% elif user.role == 'Менеджер' %}
+<div class="container">
+    <div class="row g-0">
+        {% if all_goods %}
+        {% for good in all_goods %}
+        <div class="col-sm-6">
+            <div class="card border-secondary text-dark  mb-3 w-100 shadow p-1 rounded" style="max-width: 580px;">
+                <div class="row g-0">
+                    <div class="col-md-5">
+                        {% if good.photo_good %}
+                        <img src="{{ good.photo_good.url }}" class="img-fluid rounded-start">
+                        {% else %}
+                        <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card-body">
+                            <div align="center">
+                                <h5 class="card-title"><a href="#" class="text-decoration-none" id="list-goods-manager">{{ good.name }}</a></h5>
                             </div>
                             <table class="table table-hover table-bordered mb-0">
                                 <tbody>
@@ -210,7 +463,7 @@
                             </tr>
                             </tbody>
                         </table>
-                        </div>
+                    </div>
                 </div>
                 <div class="row g-0">
                     <div class="card-body">
@@ -239,15 +492,15 @@
                             <div class="col-6">
                                 <div align="right">
                                     {% if appeal.status != 'В работе' %}
-                                    <form id="delete_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
+                                    <form id="delete_goods_manager_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
                                     <a href="javascript:void()" onclick="delete_question()" class="btn btn-danger btn-sm">Удалить</a>
                                     <script>
-                        function delete_question() {
-                            if (confirm("Вы уверены?")) {
-                                document.getElementById('delete_form').submit()
-                                }
-                        }
-                    </script>
+                                    function delete_question() {
+                                        if (confirm("Вы уверены?")) {
+                                        document.getElementById('delete_goods_manager_form').submit()
+                                        }
+                                    }
+                                    </script>
                                     {% else %}
                                     {% endif %}
                                 </div>
@@ -258,12 +511,12 @@
             </div>
         </div>
         {% endfor %}
+        {% else %}
+        <p>Нет товаров</p>
+        {% endif %}
     </div>
 </div>
-{% else %}
-<p>Нет товаров</p>
 {% endif %}
-
 <!-- Modal -->
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-sm">

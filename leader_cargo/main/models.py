@@ -117,8 +117,12 @@ class Appeals(models.Model):
     client = models.IntegerField('ID клиента', blank=True, null=True)
     manager = models.IntegerField('ID менеджера', blank=True, null=True)
     buyer = models.IntegerField('ID закупщика', blank=True, null=True)
-    tag = models.CharField('Тег заявки', max_length=50)
-    status = models.CharField('Статус заявки', max_length=50)
+    tag = models.CharField('Тег заявки', max_length=50, unique=True)
+    logistic_price = models.CharField(verbose_name='Логистика', max_length=50, blank=True, null=True)
+    insurance_price = models.CharField(verbose_name='Страховка', max_length=50, blank=True, null=True)
+    packaging_price = models.CharField(verbose_name='Упаковка', max_length=50, blank=True, null=True)
+    prr_price = models.CharField(verbose_name='ПРР', max_length=50, blank=True, null=True)
+    status = models.CharField('Статус заявки', max_length=50, blank=True, null=True)
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
 
@@ -139,23 +143,22 @@ class Appeals(models.Model):
 
     def get_client(self):
         return CustomUser.objects.get(pk=self.client)
-# def user_directory_path(instance, filename):
-#     # file will be uploaded to MEDIA_ROOT / user_<id>/<filename>
-#     return 'photos/goods/user_{0}/{1}'.format(instance.user.id, filename)
 
 
 class Goods(models.Model):
     name = models.CharField('Название товара', max_length=128, blank=False, null=True)
     photo_good = models.ImageField(verbose_name='Фото товара', upload_to='photos/goods/%Y/%m/%d/', blank=True, null=True)
-    # photo_good = models.ImageField(verbose_name='Фото товара', upload_to=content_file_name)
-    link_url = models.CharField('Ссылка на товар', max_length=200, blank=True, null=True)
+    link_url = models.CharField('Ссылка на товар', max_length=500, blank=True, null=True)
     product_description = models.CharField('Описание товара', max_length=1024, blank=True, null=True)
-    price_rmb = models.CharField(verbose_name='Цена товара в Китае в юанях', max_length=50, blank=True, null=True)
     quantity = models.CharField(verbose_name='Количество', max_length=50, blank=True, null=True)
+    price_rmb = models.CharField(verbose_name='Цена товара в Китае в юанях', max_length=50, blank=True, null=True)
+    price_purchase = models.CharField(verbose_name='Закупочная цена', max_length=50, blank=True, null=True)
+    price_site = models.CharField(verbose_name='Цена на сайте', max_length=50, blank=True, null=True)
     price_delivery = models.CharField(verbose_name='Стоимость доставки', max_length=50, blank=True, null=True)
-    price_purchase = models.FloatField(verbose_name='Закупочная цена', blank=True, null=True)
-    price_site = models.FloatField(verbose_name='Цена на сайте', blank=True, null=True)
-    price_delivery_real = models.FloatField(verbose_name='Стоимость доставки реальная', blank=True, null=True)
+    price_delivery_real = models.CharField(verbose_name='Стоимость доставки реальная', max_length=50, blank=True, null=True)
+    price_delivery_rf = models.CharField(verbose_name='Стоимость доставки в РФ', max_length=50, blank=True, null=True)
+    price_delivery_rf_real = models.CharField(verbose_name='Стоимость доставки в РФ реальная', max_length=50, blank=True, null=True)
+
     appeal_id = models.ForeignKey('Appeals', on_delete=models.PROTECT, blank=True, null=True)
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
@@ -168,10 +171,30 @@ class Goods(models.Model):
         verbose_name = 'Список товаров'
         verbose_name_plural = 'Список товаров'
 
-    def get_itog(self):
-        summ = 0
+    def get_result_yuan(self):
+        result = 0
         if self.price_rmb and self.quantity:
-            summ = summ + float(self.price_rmb.replace(' ', '').replace(',', '.'))*float(self.quantity.replace(' ', '').replace(',', '.'))
+            result = result + float(self.price_rmb.replace(' ', '').replace(',', '.'))*float(self.quantity.replace(' ', '').replace(',', '.'))
         if self.price_delivery:
-            summ = summ + float(self.price_delivery.replace(' ', '').replace(',', '.'))
-        return summ
+            result = result + float(self.price_delivery.replace(' ', '').replace(',', '.'))
+        return result
+
+    def get_result_self_yuan(self):
+        result = 0
+        if self.price_purchase and self.quantity:
+            result = result + float(self.price_purchase.replace(' ', '').replace(',', '.'))*float(self.quantity.replace(' ', '').replace(',', '.'))
+        if self.price_delivery_real:
+            result = result + float(self.price_delivery_real.replace(' ', '').replace(',', '.'))
+        return result
+
+    def company_profit_yuan(self):
+        result = 0
+        if self.get_result_yuan() and self.get_result_self_yuan():
+            result = self.get_result_yuan() - self.get_result_self_yuan()
+        return result
+
+    def company_profit_dollar(self):
+        result = 0
+        if self.price_delivery_rf and self.price_delivery_rf_real:
+            result = result + float(self.price_delivery_rf.replace(' ', '').replace(',', '.')) - float(self.price_delivery_rf_real.replace(' ', '').replace(',', '.'))
+        return result

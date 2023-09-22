@@ -108,6 +108,7 @@ function outFunc() {
   tooltip.innerHTML = "Скопировать";
 }
 
+
 function integer_positive_pattern(MyId){
 var field = document.getElementById(MyId);
 var integer_options = {
@@ -121,4 +122,25 @@ var integer_options = {
     thousandsSeparator: ' '
 };
 var mask_integer_positive = IMask(field, integer_options);
+}
+
+function dollar_positive_pattern(MyId){
+IMask(
+  document.getElementById(MyId),
+  {
+    mask: '$num',
+    blocks: {
+      num: {
+        mask: Number,
+        padFractionalZeros: false,  // if true, then pads zeros at end to the length of scale
+        normalizeZeros: true,  // appends or removes zeros at ends
+        radix: ',',  // fractional delimiter
+        mapToRadix: ['.'],
+        min: 0,
+        max: 10000000000,
+        thousandsSeparator: ' '
+      }
+    }
+  }
+)
 }

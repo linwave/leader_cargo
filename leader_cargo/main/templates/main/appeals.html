@@ -7,9 +7,11 @@
 {% block content %}
 <div class="container">
     <div class="row">
+        {% if user.role == 'Менеджер' or user.role == 'Клиент' or user.role == 'Супер Администратор' %}
         <div class="col-auto m-1">
             <a class="btn btn-success btn-sm shadow" href="{% url 'create_appeal' %}" role="button">Новая заявка</a>
         </div>
+        {% endif %}
         {% if user.role != 'Клиент' %}
         <div class="w-100 d-block d-sm-none"></div>
         <div class="col-auto m-1">

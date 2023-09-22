@@ -11,7 +11,8 @@ import random
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 
-from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm
+from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
+    UpdateAppealsManagerForm
 from .models import *
 from .utils import DataMixin
 
@@ -362,7 +363,7 @@ class CardClientsView(LoginRequiredMixin, DataMixin, UpdateView):
 
 
 class AppealsView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 10
+    paginate_by = 12
     model = Appeals
     template_name = 'main/appeals.html'
     context_object_name = 'all_appeals'
@@ -410,7 +411,7 @@ class AddAppealsView(LoginRequiredMixin, DataMixin, CreateView):
     context_object_name = 'appeals'
     success_url = reverse_lazy('card_appeal')
     login_url = reverse_lazy('login')
-    role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
+    role_have_perm = ['Супер Администратор', 'Менеджер', 'Клиент']
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Новая заявка")
@@ -421,7 +422,10 @@ class AddAppealsView(LoginRequiredMixin, DataMixin, CreateView):
         if self.request.user.role == 'Клиент':
             new_data.client = self.request.user.pk
             new_data.manager = self.request.user.manager
-        new_data.status = statuses[1]
+            new_data.status = statuses[1]
+        elif self.request.user.role == 'Менеджер':
+            new_data.manager = self.request.user.pk
+            new_data.status = statuses[0]
         new_data.save()
         return redirect('card_appeal', new_data.pk)
 
@@ -443,35 +447,70 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
     pk_url_kwarg = 'appeal_id'
     model = Appeals
     form_class = UpdateStatusAppealsForm
+    form_client = UpdateAppealsClientForm
+    form_manager = UpdateAppealsManagerForm
     context_object_name = 'appeal'
-    template_name = 'main/card_appeal.html'
+
     login_url = reverse_lazy('login')
     role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
 
+    def get_template_names(self):
+        if self.request.user.role == 'Клиент':
+            template_name = 'main/card_appeal_client.html'
+            return template_name
+        elif self.request.user.role == 'Менеджер':
+            template_name = 'main/card_appeal_manager.html'
+            return template_name
+
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['client_fio'] = self.request.user
         context['all_goods'] = context['appeal'].goods_set.all().order_by('-time_create')
         context['goods_vycup'] = 0
         context['goods_log'] = 0
         context['goods_itog'] = 0
-        context['goods_itog_for_each'] = 0
         for goods in context['all_goods']:
             if goods.price_rmb and goods.quantity:
-                context['goods_vycup'] = context['goods_vycup'] + float(goods.price_rmb.replace(' ', '').replace(',', '.'))*float(goods.quantity.replace(' ', '').replace(',', '.'))
+                context['goods_vycup'] = context['goods_vycup'] + \
+                                         float(goods.price_rmb.replace(' ', '').replace(',', '.'))*float(goods.quantity.replace(' ', '').replace(',', '.'))
             if goods.price_delivery:
                 context['goods_log'] = context['goods_log'] + float(goods.price_delivery.replace(' ', '').replace(',', '.'))
             context['goods_itog'] = float(context['goods_vycup']) + float(context['goods_log'])
-        client, manager = CustomUser.objects.filter(pk__in=[context['appeal'].client, context['appeal'].manager])
-        context['client_fio'] = f"{client.last_name} {client.first_name} {client.patronymic} {client.phone}"
-        context['manager_fio'] = f"{manager.last_name} {manager.first_name} {manager.patronymic} {manager.phone}"
+        if self.object.status == statuses[0]:
+            manager = CustomUser.objects.get(pk=self.object.manager)
+            context['manager_fio'] = f"{manager.last_name} {manager.first_name} {manager.patronymic} {manager.phone}"
+        elif self.object.status == statuses[1] or self.object.status == statuses[2]:
+            client, manager = CustomUser.objects.filter(pk__in=[self.object.client, self.object.manager])
+            context['client_fio'] = f"{client.last_name} {client.first_name} {client.patronymic} {client.phone}"
+            context['manager_fio'] = f"{manager.last_name} {manager.first_name} {manager.patronymic} {manager.phone}"
+        context['edit_form_client'] = self.form_client(instance=self.object)
+        context['edit_form_manager'] = self.form_manager(instance=self.object)
         c_def = self.get_user_context(title="Карточка заявки")
         return dict(list(context.items()) + list(c_def.items()))
 
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.request.user.role == 'Клиент':
+            if self.request.POST.get('tag'):
+                new_data = self.form_client(self.request.POST, instance=self.object)
+                if new_data.is_valid():
+                    new_data.save()
+                else:
+                    new_data.add_error(None, f'Такое название заявки уже существует')
+                    return super(CardAppealsView, self).form_invalid(new_data)
+                return redirect('card_appeal', appeal_id=self.kwargs['appeal_id'])
+        elif self.request.user.role == 'Менеджер':
+            if self.request.POST.get('tag'):
+                new_data = self.form_manager(self.request.POST, instance=self.object)
+                if new_data.is_valid():
+                    new_data.save()
+                else:
+                    new_data.add_error(None, new_data.errors)
+                    return super(CardAppealsView, self).form_invalid(new_data)
+                return redirect('card_appeal', appeal_id=self.kwargs['appeal_id'])
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
         new_data = form.save(commit=False)
-        if self.request.user.role == 'Клиент':
-            new_data.client = self.request.user.pk
         new_data.status = statuses[2]
         new_data.save()
         return redirect('card_appeal', appeal_id=self.kwargs['appeal_id'])
@@ -556,7 +595,6 @@ class CardGoodsView(LoginRequiredMixin, DataMixin, UpdateView):
 
 class DeleteGoodsView(LoginRequiredMixin, DataMixin, DeleteView):
     model = Goods
-    template_name = 'main/card_appeal.html'
     pk_url_kwarg = 'goods_id'
     role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
     success_url = reverse_lazy('card_appeal')

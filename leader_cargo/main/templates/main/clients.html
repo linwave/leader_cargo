@@ -1,5 +1,5 @@
 {% extends 'main/base.html' %}
-
+{% load static %}
 {% block title %}
 {{ title }}
 {% endblock %}
@@ -8,11 +8,23 @@
 <a class="btn btn-success shadow" href="{% url 'create_client' %}" role="button">Добавить клиента</a><br><br>
 {% if all_clients %}
 {% for client in all_clients %}
-<div class="p-2 mb-2 bg-body-secondary shadow" style="transform: rotate(0);">
-    <a href="{{ client.get_absolute_url_client }}" class="stretched-link text-decoration-none" id="list-employees">{{ client.first_name }}</a><br>
-    {{ client.phone }}<br>
-    {{ client.description }}<br>
-</div>
+<div class="col-sm-4">
+            <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 360px;">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        <img src="{% static 'main/images/user-regular.svg' %}" class="img-fluid rounded-start" alt="fff">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h5 class="card-title"><a href="{{ client.get_absolute_url_client }}" class="stretched-link text-decoration-none" id="list-employees">{{ client.first_name }}</a></h5>
+                            <span class="card-text" style="font-size: .9rem;">{{ client.phone }}</span><br>
+                            <span class="card-text" style="font-size: .9rem;">{{ client.description }}</span><br>
+                            <p class="card-text"><small class="text-muted">{{ client.time_create }}</small></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 {% endfor %}
 {% else %}
 <p>Нет клиентов</p>

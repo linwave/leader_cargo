@@ -33,7 +33,78 @@ class AddAppealsForm(ModelForm):
 class UpdateStatusAppealsForm(ModelForm):
     class Meta:
         model = Appeals
-        fields = ["client"]
+        fields = ["status"]
+
+
+class UpdateAppealsClientForm(ModelForm):
+    class Meta:
+        model = Appeals
+        fields = ["tag"]
+        widgets = {
+            "tag": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'tag',
+                'type': 'text',
+                'placeholder': 'Редактирование имени заявки',
+                'style': "font-size: 1em;"
+            }),
+        }
+
+
+class UpdateAppealsManagerForm(ModelForm):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     clients = [
+    #         (12, 'Менеджер'),
+    #         (12, 'Закупщик'),
+    #     ]
+    #     self.fields["client"].widget.attrs.update({"class": 'form-control'})
+    #     self.fields["client"].choices = clients
+
+    class Meta:
+        model = Appeals
+        fields = ["tag", "logistic_price", "insurance_price", "packaging_price", "prr_price", "client"]
+        widgets = {
+            "tag": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'tag',
+                'type': 'text',
+                'placeholder': 'Редактирование имени заявки',
+                'style': "font-size: 1em;background-color: #f8f9fa;"
+            }),
+            "logistic_price": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'logistic_price',
+                'type': 'text',
+                'placeholder': '-',
+                # 'style': 'background-color: #f8f9fa;border: 0px;',
+                # 'style': 'border: 0px;'
+            }),
+            "insurance_price": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'insurance_price',
+                'type': 'text',
+                'placeholder': '-',
+            }),
+            "packaging_price": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'packaging_price',
+                'type': 'text',
+                'placeholder': '-',
+            }),
+            "prr_price": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'prr_price',
+                'type': 'text',
+                'placeholder': '-',
+            }),
+            "client": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'client',
+                'type': 'text',
+                'placeholder': '-',
+            }),
+        }
 
 
 class AddGoodsForm(ModelForm):
@@ -74,19 +145,49 @@ class AddGoodsForm(ModelForm):
                 'class': 'form-control',
                 'type': 'text',
                 'id': 'price_rmb',
-                'placeholder': 'Цена за шт. в юанях 00,00',
+                'placeholder': 'Цена за шт. в ¥ 00,00',
             }),
             "price_delivery": TextInput(attrs={
                 'class': 'form-control',
                 'type': 'text',
                 'id': 'price_delivery',
-                'placeholder': 'Цена доставки по Китаю 00,00',
+                'placeholder': 'Цена доставки по Китаю в ¥ 00,00',
             }),
             "product_description": Textarea(attrs={
                 'class': 'form-control',
                 'type': 'text',
                 'id': 'product_description',
                 'placeholder': 'Дать ключевые характеристики - описание/требования',
+            }),
+            "price_purchase": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_purchase',
+                'placeholder': 'Цена за шт Себестоимость - ¥',
+            }),
+            "price_site": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_site',
+                'placeholder': 'Цена за шт На сайте - ¥',
+            }),
+            "price_delivery_real": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_delivery_real',
+                'placeholder': 'Доставка по Китаю Себестоимость - ¥',
+            }),
+            "price_delivery_rf": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_delivery_rf',
+                'placeholder': 'Доставка в РФ - $',
+            }),
+            "price_delivery_rf_real": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_delivery_rf_real',
+                'placeholder': 'Доставка Себестоимость - $',
             }),
         }
 
@@ -141,6 +242,36 @@ class CardGoodsForm(ModelForm):
                 'type': 'text',
                 'id': 'product_description',
                 'placeholder': 'Дать ключевые характеристики - описание/требования',
+            }),
+            "price_purchase": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_purchase',
+                'placeholder': 'Цена за шт Себестоимость - ¥',
+            }),
+            "price_site": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_site',
+                'placeholder': 'Цена за шт На сайте - ¥',
+            }),
+            "price_delivery_real": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_delivery_real',
+                'placeholder': 'Доставка по Китаю Себестоимость - ¥',
+            }),
+            "price_delivery_rf": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_delivery_rf',
+                'placeholder': 'Доставка в РФ - $',
+            }),
+            "price_delivery_rf_real": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'id': 'price_delivery_rf_real',
+                'placeholder': 'Доставка Себестоимость - $',
             }),
         }
 
