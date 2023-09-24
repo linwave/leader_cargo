@@ -36,7 +36,11 @@
             </tr>
             <tr class="table-light">
                 <td><h6 >Клиент:</h6></td>
+                {% if appeal.status == 'Черновик' %}
                 <td><h6 >{{ edit_form_manager.client }}</h6></td>
+                {% else %}
+                <td><h6 >{{ client_fio }}</h6></td>
+                {% endif %}
             </tr>
             <tr class="table-light">
                 <td><h6 >Количество позиций:</h6></td>

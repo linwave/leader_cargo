@@ -65,14 +65,14 @@
         <div class="col-sm-4">
             <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 400px;">
                 <div class="row g-0">
-                    <div class="col-md-4">
+                    <div class="col-3">
                         {% if appeal.get_appeal_photo %}
                         <img src="{{ appeal.get_appeal_photo.url }}" class="img-fluid rounded-start">
                         {% else %}
                         <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="fff">
                         {% endif %}
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-9">
                         <div class="card-body">
                             <h5 class="card-title"><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a></h5>
                             <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.first_name }}</span><br>
