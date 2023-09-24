@@ -129,37 +129,37 @@
                                 <tbody>
                                 <tr class="table-light">
                                     {% if good.price_rmb %}
-                                    <td  width="160px">Цена за шт:</td>
+                                    <td  width="160px">Цена за шт</td>
                                     <td  width="40px">¥{{ good.price_rmb }}</td>
                                     {% else %}
-                                    <td>Цена за шт:</td>
+                                    <td>Цена за шт</td>
                                     <td>¥ 0</td>
                                     {% endif %}
                                 </tr>
                                 <tr class="table-light">
                                     {% if good.quantity %}
-                                    <td>Всего штук:</td>
+                                    <td>Всего, шт</td>
                                     <td>{{ good.quantity }}</td>
                                     {% else %}
-                                    <td>Всего штук:</td>
+                                    <td>Всего, шт</td>
                                     <td>0</td>
                                     {% endif %}
                                 </tr>
                                 <tr class="table-light">
                                     {% if good.price_delivery %}
-                                    <td>Доставка по Китаю:</td>
+                                    <td>Доставка по Китаю</td>
                                     <td>¥{{ good.price_delivery }}</td>
                                     {% else %}
-                                    <td>Доставка по Китаю:</td>
+                                    <td>Доставка по Китаю</td>
                                     <td>¥ 0</td>
                                     {% endif %}
                                 </tr>
                                 <tr class="table-light">
                                     {% if good.get_result_yuan %}
-                                    <td>Итог в ¥:</td>
+                                    <td>Итого</td>
                                     <td>¥{{ good.get_result_yuan|floatformat:"2g" }}</td>
                                     {% else %}
-                                    <td>Итог в ¥:</td>
+                                    <td>Итого</td>
                                     <td>¥ 0</td>
                                     {% endif %}
                                 </tr>
@@ -174,10 +174,10 @@
                             <tbody>
                             <tr class="table-light">
                                 {% if good.price_delivery_rf %}
-                                <td  width="150px">Доставка в РФ - $:</td>
-                                <td  width="80px">¥{{ good.price_delivery_rf }}</td>
+                                <td  width="150px">Доставка в РФ</td>
+                                <td  width="80px">${{ good.price_delivery_rf }}</td>
                                 {% else %}
-                                <td>Доставка в РФ - $:</td>
+                                <td>Доставка в РФ</td>
                                 <td>-</td>
                                 {% endif %}
                             </tr>
