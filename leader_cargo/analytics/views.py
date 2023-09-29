@@ -69,197 +69,201 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         file_carrier.save()
         self.message['success_articles'] = []
         self.message['warning_articles'] = []
-        if file_carrier.name_carrier == 'Ян':
-            dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
-            sheet = dataframe.active
-            for row in range(6, sheet.max_row):
-                if sheet[row][0].value:
-                    article = str(sheet[row][0].value)
-                    name_goods = str(sheet[row][1].value) if sheet[row][1].value else ""
-                    number_of_seats = str(sheet[row][2].value)
-                    weight = str(sheet[row][4].value) if sheet[row][4].value else ""
-                    volume = str(sheet[row][5].value) if sheet[row][5].value else ""
-                    transportation_tariff = str(sheet[row][6].value) if sheet[row][6].value else ""
-                    cost_goods = str(sheet[row][7].value) if sheet[row][7].value else ""
-                    insurance_cost = str(sheet[row][8].value) if sheet[row][8].value else ""
-                    packaging_cost = str(sheet[row][9].value) if sheet[row][9].value else ""
-                    time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][11].value, 0) if sheet[row][11].value else ""
-                    total_cost = str(sheet[row][13].value) if sheet[row][13].value else ""
-                    check = False
-                    old_articles = CargoArticle.objects.filter(article=article)
-                    for old in old_articles:
-                        if old.article == article and old.name_goods == name_goods and old.status == 'В пути':
-                            check = True
-                            self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
-                            break
-                    if not check:
-                        self.message['success_articles'].append(article)
-                        CargoArticle.objects.create(
-                            article=article,
-                            name_goods=name_goods,
-                            number_of_seats=number_of_seats,
-                            weight=weight,
-                            volume=volume,
-                            transportation_tariff=transportation_tariff,
-                            cost_goods=cost_goods,
-                            insurance_cost=insurance_cost,
-                            packaging_cost=packaging_cost,
-                            time_from_china=make_aware(time_from_china),
-                            total_cost=total_cost,
-                            cargo_id=file_carrier,
-                        )
-                else:
-                    break
-        elif file_carrier.name_carrier == 'Валька':
-            dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
-            sheet = dataframe.active
-            for row in range(792, sheet.max_row):
-                if sheet[row][4].value and sheet[row][3].value and sheet[row][2].value:
-                    article = str(sheet[row][4].value)
-                    name_goods = str(sheet[row][6].value) if sheet[row][6].value else ""
-                    number_of_seats = str(sheet[row][7].value)
-                    weight = str(sheet[row][8].value) if sheet[row][8].value else ""
-                    volume = str(sheet[row][9].value) if sheet[row][9].value else ""
-                    transportation_tariff = str(round(float(sheet[row][12].value)/float(sheet[row][8].value), 2))
-                    cost_goods = str(sheet[row][13].value) if sheet[row][13].value else ""
-                    insurance_cost = str(sheet[row][14].value) if sheet[row][14].value else ""
-                    packaging_cost = str(sheet[row][15].value) if sheet[row][15].value else ""
-                    try:
-                        time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][3].value, 0) if sheet[row][3].value else ""
-                    except TypeError:
-                        time_from_china = sheet[row][3].value
-                    total_cost = str(sheet[row][16].value) if sheet[row][16].value else ""
-                    check = False
-                    old_articles = CargoArticle.objects.filter(article=article)
-                    for old in old_articles:
-                        if old.article == article and old.name_goods == name_goods and old.number_of_seats == number_of_seats and old.cost_goods == cost_goods and old.insurance_cost == insurance_cost\
-                                and old.weight == weight and old.volume == volume and old.transportation_tariff == transportation_tariff and old.packaging_cost == packaging_cost \
-                                and old.time_from_china == make_aware(time_from_china) and old.total_cost == total_cost:
-                            check = True
-                            break
-                    if not check:
-                        self.message['success_articles'].append(article)
-                        CargoArticle.objects.create(
-                            article=article,
-                            name_goods=name_goods,
-                            number_of_seats=number_of_seats,
-                            weight=weight,
-                            volume=volume,
-                            transportation_tariff=transportation_tariff,
-                            cost_goods=cost_goods,
-                            insurance_cost=insurance_cost,
-                            packaging_cost=packaging_cost,
-                            time_from_china=make_aware(time_from_china),
-                            total_cost=total_cost,
-                            cargo_id=file_carrier,
-                        )
-                else:
-                    break
-        elif file_carrier.name_carrier == 'Мурад':
-            dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
-            sheet = dataframe.active
-            for row in range(2, sheet.max_row + 1):
-                if sheet[row][5].value:
-                    if sheet[row][5].value.find("（") != -1:
-                        article = str(sheet[row][5].value.split("（")[0].replace(" ", "")) + '\n' + str(sheet[row][3].value)
-                        if sheet[row][5].value.find("）") != -1:
-                            name_goods = str(sheet[row][5].value.split("（")[1].replace(" ", "").replace("）", ""))
-                        else:
-                            name_goods = str(sheet[row][5].value.split("（")[1].replace(" ", "").replace(")", ""))
+        self.message['error'] = ''
+        try:
+            if file_carrier.name_carrier == 'Ян':
+                dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
+                sheet = dataframe.active
+                for row in range(6, sheet.max_row):
+                    if sheet[row][0].value:
+                        article = str(sheet[row][0].value)
+                        name_goods = str(sheet[row][1].value) if sheet[row][1].value else ""
+                        number_of_seats = str(sheet[row][2].value)
+                        weight = str(sheet[row][4].value) if sheet[row][4].value else ""
+                        volume = str(sheet[row][5].value) if sheet[row][5].value else ""
+                        transportation_tariff = str(sheet[row][6].value) if sheet[row][6].value else ""
+                        cost_goods = str(sheet[row][7].value) if sheet[row][7].value else ""
+                        insurance_cost = str(sheet[row][8].value) if sheet[row][8].value else ""
+                        packaging_cost = str(sheet[row][9].value) if sheet[row][9].value else ""
+                        time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][11].value, 0) if sheet[row][11].value else ""
+                        total_cost = str(sheet[row][13].value) if sheet[row][13].value else ""
+                        check = False
+                        old_articles = CargoArticle.objects.filter(article=article)
+                        for old in old_articles:
+                            if old.article == article and old.name_goods == name_goods and old.status == 'В пути':
+                                check = True
+                                self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
+                                break
+                        if not check:
+                            self.message['success_articles'].append(article)
+                            CargoArticle.objects.create(
+                                article=article,
+                                name_goods=name_goods,
+                                number_of_seats=number_of_seats,
+                                weight=weight,
+                                volume=volume,
+                                transportation_tariff=transportation_tariff,
+                                cost_goods=cost_goods,
+                                insurance_cost=insurance_cost,
+                                packaging_cost=packaging_cost,
+                                time_from_china=make_aware(time_from_china),
+                                total_cost=total_cost,
+                                cargo_id=file_carrier,
+                            )
                     else:
-                        article = str(sheet[row][5].value.split("(")[0].replace(" ", "")) + '\n' + str(sheet[row][3].value)
-                        if sheet[row][5].value.find("）") != -1:
-                            name_goods = str(sheet[row][5].value.split("(")[1].replace(" ", "").replace("）", ""))
-                        else:
-                            name_goods = str(sheet[row][5].value.split("(")[1].replace(" ", "").replace(")", ""))
-                    number_of_seats = str(sheet[row][4].value)
-                    weight = str(sheet[row][6].value) if sheet[row][4].value else ""
-                    volume = str(sheet[row][7].value) if sheet[row][5].value else ""
-                    transportation_tariff = str(sheet[row][15].value) if sheet[row][15].value else ""
-                    cost_goods = str(sheet[row][12].value) if sheet[row][12].value else ""
-                    insurance_cost = str(sheet[row][13].value) if sheet[row][13].value else ""
-                    packaging_cost = str(sheet[row][14].value) if sheet[row][14].value else ""
-                    try:
-                        time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][1].value, 0) if sheet[row][1].value else ""
-                    except TypeError:
-                        time_from_china = sheet[row][1].value if sheet[row][1].value else ""
-                    total_cost = str(sheet[row][18].value) if sheet[row][18].value else ""
-                    check = False
-                    old_articles = CargoArticle.objects.filter(article=article)
-                    for old in old_articles:
-                        if old.article == article and old.name_goods == name_goods and old.status == 'В пути':
-                            check = True
-                            self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
-                            break
-                    if not check:
-                        self.message['success_articles'].append(article)
-                        CargoArticle.objects.create(
-                            article=article,
-                            name_goods=name_goods,
-                            number_of_seats=number_of_seats,
-                            weight=weight,
-                            volume=volume,
-                            transportation_tariff=transportation_tariff,
-                            cost_goods=cost_goods,
-                            insurance_cost=insurance_cost,
-                            packaging_cost=packaging_cost,
-                            time_from_china=make_aware(time_from_china),
-                            total_cost=total_cost,
-                            cargo_id=file_carrier,
-                        )
-        elif file_carrier.name_carrier == 'Гелик':
-            workbook = xlrd.open_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}")
-            sheet = workbook.sheet_by_index(0)
-            for row in range(7, sheet.nrows):
-                if sheet[row][1].value:
-                    if sheet[2][1].value.find(":") != -1:
-                        article = str(sheet[2][1].value.split(":")[1].replace(" ", ""))
-                    else:
-                        article = str(sheet[2][1].value.split("：")[1].replace(" ", ""))
-                    name_goods = str(sheet[row][1].value) if sheet[row][1].value else ""
-                    number_of_seats = str(sheet[row][2].value)
-                    weight = str(sheet[row][3].value) if sheet[row][3].value else ""
-                    volume = str(sheet[row][4].value) if sheet[row][4].value else ""
-                    transportation_tariff = str(sheet[row][5].value) if sheet[row][5].value else ""
-                    cost_goods = str(sheet[row][8].value) if sheet[row][8].value else ""
-                    insurance_cost = str(sheet[row][9].value) if sheet[row][9].value else ""
-                    packaging_cost = str(sheet[row][6].value) if sheet[row][6].value else ""
-                    if sheet[4][7].value.find(":") != -1:
+                        break
+            elif file_carrier.name_carrier == 'Валька':
+                dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
+                sheet = dataframe.active
+                for row in range(792, sheet.max_row):
+                    if sheet[row][4].value and sheet[row][3].value and sheet[row][2].value:
+                        article = str(sheet[row][4].value)
+                        name_goods = str(sheet[row][6].value) if sheet[row][6].value else ""
+                        number_of_seats = str(sheet[row][7].value)
+                        weight = str(sheet[row][8].value) if sheet[row][8].value else ""
+                        volume = str(sheet[row][9].value) if sheet[row][9].value else ""
+                        transportation_tariff = str(round(float(sheet[row][12].value) / float(sheet[row][8].value), 2))
+                        cost_goods = str(sheet[row][13].value) if sheet[row][13].value else ""
+                        insurance_cost = str(sheet[row][14].value) if sheet[row][14].value else ""
+                        packaging_cost = str(sheet[row][15].value) if sheet[row][15].value else ""
                         try:
-                            time_from_china = xlrd.xldate.xldate_as_datetime(sheet[4][7].value.split(":")[1].replace(" ", ""), 0)
+                            time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][3].value, 0) if sheet[row][3].value else ""
                         except TypeError:
-                            time_from_china = datetime.datetime.strptime(sheet[4][7].value.split(":")[1].replace(" ", ""), '%Y/%m/%d')
+                            time_from_china = sheet[row][3].value
+                        total_cost = str(sheet[row][16].value) if sheet[row][16].value else ""
+                        check = False
+                        old_articles = CargoArticle.objects.filter(article=article)
+                        for old in old_articles:
+                            if old.article == article and old.name_goods == name_goods and old.number_of_seats == number_of_seats and old.cost_goods == cost_goods and old.insurance_cost == insurance_cost \
+                                    and old.weight == weight and old.volume == volume and old.transportation_tariff == transportation_tariff and old.packaging_cost == packaging_cost \
+                                    and old.time_from_china == make_aware(time_from_china) and old.total_cost == total_cost:
+                                check = True
+                                break
+                        if not check:
+                            self.message['success_articles'].append(article)
+                            CargoArticle.objects.create(
+                                article=article,
+                                name_goods=name_goods,
+                                number_of_seats=number_of_seats,
+                                weight=weight,
+                                volume=volume,
+                                transportation_tariff=transportation_tariff,
+                                cost_goods=cost_goods,
+                                insurance_cost=insurance_cost,
+                                packaging_cost=packaging_cost,
+                                time_from_china=make_aware(time_from_china),
+                                total_cost=total_cost,
+                                cargo_id=file_carrier,
+                            )
                     else:
+                        break
+            elif file_carrier.name_carrier == 'Мурад':
+                dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
+                sheet = dataframe.active
+                for row in range(2, sheet.max_row + 1):
+                    if sheet[row][5].value:
+                        if sheet[row][5].value.find("（") != -1:
+                            article = str(sheet[row][5].value.split("（")[0].replace(" ", "")) + '\n' + str(sheet[row][3].value)
+                            if sheet[row][5].value.find("）") != -1:
+                                name_goods = str(sheet[row][5].value.split("（")[1].replace(" ", "").replace("）", ""))
+                            else:
+                                name_goods = str(sheet[row][5].value.split("（")[1].replace(" ", "").replace(")", ""))
+                        else:
+                            article = str(sheet[row][5].value.split("(")[0].replace(" ", "")) + '\n' + str(sheet[row][3].value)
+                            if sheet[row][5].value.find("）") != -1:
+                                name_goods = str(sheet[row][5].value.split("(")[1].replace(" ", "").replace("）", ""))
+                            else:
+                                name_goods = str(sheet[row][5].value.split("(")[1].replace(" ", "").replace(")", ""))
+                        number_of_seats = str(sheet[row][4].value)
+                        weight = str(sheet[row][6].value) if sheet[row][4].value else ""
+                        volume = str(sheet[row][7].value) if sheet[row][5].value else ""
+                        transportation_tariff = str(sheet[row][15].value) if sheet[row][15].value else ""
+                        cost_goods = str(sheet[row][12].value) if sheet[row][12].value else ""
+                        insurance_cost = str(sheet[row][13].value) if sheet[row][13].value else ""
+                        packaging_cost = str(sheet[row][14].value) if sheet[row][14].value else ""
                         try:
-                            time_from_china = xlrd.xldate.xldate_as_datetime(sheet[4][7].value.split("：")[1].replace(" ", ""), 0)
+                            time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][1].value, 0) if sheet[row][1].value else ""
                         except TypeError:
-                            time_from_china = datetime.datetime.strptime(sheet[4][7].value.split("：")[1].replace(" ", ""), '%Y/%m/%d')
-                    total_cost = str(sheet[row][11].value) if sheet[row][11].value else ""
-                    check = False
-                    old_articles = CargoArticle.objects.filter(article=article)
-                    for old in old_articles:
-                        if old.article == article and old.name_goods == name_goods and old.status == 'В пути':
-                            check = True
-                            self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
-                            break
-                    if not check:
-                        self.message['success_articles'].append(article)
-                        CargoArticle.objects.create(
-                            article=article,
-                            name_goods=name_goods,
-                            number_of_seats=number_of_seats,
-                            weight=weight,
-                            volume=volume,
-                            transportation_tariff=transportation_tariff,
-                            cost_goods=cost_goods,
-                            insurance_cost=insurance_cost,
-                            packaging_cost=packaging_cost,
-                            time_from_china=make_aware(time_from_china),
-                            total_cost=total_cost,
-                            cargo_id=file_carrier,
-                        )
-                else:
-                    break
+                            time_from_china = sheet[row][1].value if sheet[row][1].value else ""
+                        total_cost = str(sheet[row][18].value) if sheet[row][18].value else ""
+                        check = False
+                        old_articles = CargoArticle.objects.filter(article=article)
+                        for old in old_articles:
+                            if old.article == article and old.name_goods == name_goods and old.status == 'В пути':
+                                check = True
+                                self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
+                                break
+                        if not check:
+                            self.message['success_articles'].append(article)
+                            CargoArticle.objects.create(
+                                article=article,
+                                name_goods=name_goods,
+                                number_of_seats=number_of_seats,
+                                weight=weight,
+                                volume=volume,
+                                transportation_tariff=transportation_tariff,
+                                cost_goods=cost_goods,
+                                insurance_cost=insurance_cost,
+                                packaging_cost=packaging_cost,
+                                time_from_china=make_aware(time_from_china),
+                                total_cost=total_cost,
+                                cargo_id=file_carrier,
+                            )
+            elif file_carrier.name_carrier == 'Гелик':
+                workbook = xlrd.open_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}")
+                sheet = workbook.sheet_by_index(0)
+                for row in range(7, sheet.nrows):
+                    if sheet[row][1].value:
+                        if sheet[2][1].value.find(":") != -1:
+                            article = str(sheet[2][1].value.split(":")[1].replace(" ", ""))
+                        else:
+                            article = str(sheet[2][1].value.split("：")[1].replace(" ", ""))
+                        name_goods = str(sheet[row][1].value) if sheet[row][1].value else ""
+                        number_of_seats = str(sheet[row][2].value)
+                        weight = str(sheet[row][3].value) if sheet[row][3].value else ""
+                        volume = str(sheet[row][4].value) if sheet[row][4].value else ""
+                        transportation_tariff = str(sheet[row][5].value) if sheet[row][5].value else ""
+                        cost_goods = str(sheet[row][8].value) if sheet[row][8].value else ""
+                        insurance_cost = str(sheet[row][9].value) if sheet[row][9].value else ""
+                        packaging_cost = str(sheet[row][6].value) if sheet[row][6].value else ""
+                        if sheet[4][7].value.find(":") != -1:
+                            try:
+                                time_from_china = xlrd.xldate.xldate_as_datetime(sheet[4][7].value.split(":")[1].replace(" ", ""), 0)
+                            except TypeError:
+                                time_from_china = datetime.datetime.strptime(sheet[4][7].value.split(":")[1].replace(" ", ""), '%Y/%m/%d')
+                        else:
+                            try:
+                                time_from_china = xlrd.xldate.xldate_as_datetime(sheet[4][7].value.split("：")[1].replace(" ", ""), 0)
+                            except TypeError:
+                                time_from_china = datetime.datetime.strptime(sheet[4][7].value.split("：")[1].replace(" ", ""), '%Y/%m/%d')
+                        total_cost = str(sheet[row][11].value) if sheet[row][11].value else ""
+                        check = False
+                        old_articles = CargoArticle.objects.filter(article=article)
+                        for old in old_articles:
+                            if old.article == article and old.name_goods == name_goods and old.status == 'В пути':
+                                check = True
+                                self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
+                                break
+                        if not check:
+                            self.message['success_articles'].append(article)
+                            CargoArticle.objects.create(
+                                article=article,
+                                name_goods=name_goods,
+                                number_of_seats=number_of_seats,
+                                weight=weight,
+                                volume=volume,
+                                transportation_tariff=transportation_tariff,
+                                cost_goods=cost_goods,
+                                insurance_cost=insurance_cost,
+                                packaging_cost=packaging_cost,
+                                time_from_china=make_aware(time_from_china),
+                                total_cost=total_cost,
+                                cargo_id=file_carrier,
+                            )
+                    else:
+                        break
+        except Exception as e:
+            self.message['error'] = e
         self.message['update'] = True
         return self.render_to_response(self.get_context_data())
 
