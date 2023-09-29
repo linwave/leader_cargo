@@ -1,6 +1,8 @@
 import datetime
 
-from .models import ExchangeRates
+from django.utils.timezone import make_aware
+
+from .models import CargoArticle
 
 menu_super_admin = [
     # {'title': 'Главная', 'url_name': 'home'},
@@ -44,19 +46,7 @@ menu_logist = [
 ]
 
 
-def last_currency():
-    try:
-        curs = ExchangeRates.objects.filter(time_create__date=datetime.date.today()).order_by('-time_create')[:1][0]
-        # print(ExchangeRates.objects.filter(time_create__date=datetime.datetime.today().date()))
-        curs.yuan = str(format(float(curs.yuan), '.2f'))
-        curs.dollar = str(format(float(curs.dollar), '.2f'))
-        return curs
-    except IndexError:
-        return False
-
-
-class DataMixin:
-
+class DataMixinAll:
     def get_user_context(self, **kwargs):
         context = kwargs
         if self.request.user.is_authenticated:
@@ -72,6 +62,5 @@ class DataMixin:
                 context['menu'] = menu_buyer
             elif self.request.user.role == 'Клиент':
                 context['menu'] = menu_client
-        context['last_currency'] = last_currency()
         context['today'] = datetime.datetime.date(datetime.datetime.now()).strftime("%d.%m.%y")
         return context

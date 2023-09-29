@@ -75,8 +75,10 @@
                     <div class="col-9">
                         <div class="card-body">
                             <h5 class="card-title"><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a></h5>
+                            {% if user.role != 'Клиент' %}
                             <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.first_name }}</span><br>
                             <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.phone }}</span><br>
+                            {% endif %}
                             <span class="card-text" style="font-size: .9rem;">{{ appeal.status }}</span>
                             <p class="card-text"><small class="text-muted">{{ appeal.time_create }}</small></p>
                         </div>

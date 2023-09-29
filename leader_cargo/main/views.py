@@ -73,6 +73,8 @@ class LoginUser(DataMixin, LoginView):
             return reverse_lazy('home')
         elif self.request.user.role == 'Администратор':
             return reverse_lazy('home')
+        elif self.request.user.role == 'Логист':
+            return reverse_lazy('carrier')
         elif self.request.user.role == 'Менеджер':
             return reverse_lazy('clients')
         else:
@@ -86,6 +88,8 @@ class LoginUser(DataMixin, LoginView):
                 return redirect('home')
             elif self.request.user.role == 'Администратор':
                 return redirect('home')
+            elif self.request.user.role == 'Логист':
+                return redirect('carrier')
             elif self.request.user.role == 'Менеджер':
                 return redirect('clients')
             else:
@@ -146,7 +150,9 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
             elif request.user.role == 'Менеджер':
                 return redirect('clients')
             elif request.user.role == 'Закупщик':
-                return self.handle_no_permission()
+                return redirect('appeals')
+            elif request.user.role == 'Логист':
+                return redirect('carrier')
 
 
 class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
@@ -450,7 +456,6 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
     form_client = UpdateAppealsClientForm
     form_manager = UpdateAppealsManagerForm
     context_object_name = 'appeal'
-
     login_url = reverse_lazy('login')
     role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
 
@@ -489,6 +494,10 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        current_client = None
+        if self.object.client:
+            current_client = self.object.client
+        print(current_client)
         if self.request.user.role == 'Клиент':
             if self.request.POST.get('tag'):
                 new_data = self.form_client(self.request.POST, instance=self.object)
@@ -502,6 +511,10 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
             if self.request.POST.get('tag'):
                 new_data = self.form_manager(self.request.POST, instance=self.object)
                 if new_data.is_valid():
+                    print(self.object.client)
+                    if not self.object.client:
+                        new_data.client = current_client
+                        print(new_data.client)
                     new_data.save()
                 else:
                     new_data.add_error(None, new_data.errors)
