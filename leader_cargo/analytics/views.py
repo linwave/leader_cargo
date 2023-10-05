@@ -4,7 +4,7 @@ import os
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView
 
 from .forms import AddCarrierFilesForm, UpdateStatusArticleForm
@@ -286,7 +286,10 @@ class UpdateArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
         else:
             article.status = 'Прибыл в РФ'
         article.save()
-        return redirect('carrier')
+        base_url = reverse('carrier')
+        query_string = request.META['QUERY_STRING']
+        url = '{}?{}'.format(base_url, query_string)
+        return redirect(url)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -307,7 +310,10 @@ class DeleteArticleView(LoginRequiredMixin, DataMixinAll, DeleteView):
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.delete()
-        return redirect('carrier')
+        base_url = reverse('carrier')
+        query_string = request.META['QUERY_STRING']
+        url = '{}?{}'.format(base_url, query_string)
+        return redirect(url)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:

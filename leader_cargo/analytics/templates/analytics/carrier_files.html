@@ -42,22 +42,22 @@
 </script>
 <br>
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-  <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-  </symbol>
-  <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-  </symbol>
-  <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-  </symbol>
+    <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+    </symbol>
+    <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+    </symbol>
+    <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+    </symbol>
 </svg>
 {% if message.error %}
 <div class="alert alert-warning d-flex align-items-center" role="alert">
-  <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-  <div>
-    {{ message.error|join:"<br>" }}
-  </div>
+    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+    <div>
+        {{ message.error|join:"<br>" }}
+    </div>
 </div>
 {% endif %}
 {% if message.success_articles %}
@@ -89,7 +89,7 @@
         <tr>
             <th scope="col">#</th>
             <th scope="col" width="200px">Артикул</th>
-            <th scope="col" width="120px">Статус</th>
+            <th scope="col" width="120px" style="text-align: center;">Статус</th>
             <th scope="col">Наименование товара</th>
             <th scope="col">Кол-мест</th>
             <th scope="col">Вес, кг</th>
@@ -100,6 +100,15 @@
             <th scope="col">Стоимость упаковки</th>
             <th scope="col">Дата отправки с Китайского склада</th>
             <th scope="col">Итоговая стоимость перевозки</th>
+            <th scope="col">ПРР</th>
+            <th scope="col">Оплата ТАТ</th>
+            <th scope="col">Оплачено клиентом</th>
+            {% if user.role == 'Логист' %}
+            <th scope="col">Оплачено перевозчику</th>
+            {% endif %}
+            <th scope="col">Дата прибытия груза в РФ</th>
+            <th scope="col">Дата выдачи груза</th>
+            <th scope="col">Кол-во дней в пути</th>
             {% if user.role == 'Логист' %}
             <th scope="col">Удаление</th>
             {% endif %}
@@ -112,7 +121,7 @@
             <th scope="row">{{ forloop.counter }}</th>
             <td>{{ article.article }}</td>
             {% if user.role == 'Логист' %}
-            <td><form id="update_article_form{{ article.pk }}" action="{% url 'update_article' article.pk %}" method="post">{% csrf_token %}</form>
+            <td style="text-align: center;"><form id="update_article_form{{ article.pk }}" action="{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}" method="post">{% csrf_token %}</form>
                 {% if article.status == 'В пути' %}
                 <p class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal2{{ article.pk }}">{{ article.status }}</p>
                 {% else %}
@@ -145,7 +154,7 @@
             <td><p>{{ article.status }}</p></td>
             {% endif %}
             <td>{{ article.name_goods }}</td>
-            <td>{{ article.number_of_seats|floatformat:"0g" }}</td>
+            <td style="text-align: center;">{{ article.number_of_seats|floatformat:"0g" }}</td>
             <td>{{ article.weight }}</td>
             <td>{{ article.volume|floatformat:"2g" }}</td>
             <td>{{ article.transportation_tariff }}</td>
@@ -158,8 +167,43 @@
             <td>{{ article.packaging_cost }}</td>
             <td>{{ article.time_from_china|date:"d F Y" }}</td>
             <td>{{ article.total_cost|floatformat:"0g"}}</td>
+            <td>
+                {{ article.prr|floatformat:"2g"}}
+                {% if user.role == 'Логист' %}
+                <i class="fa-solid fa-pen-to-square" id="edit-article-prr-{{ article.pk }}" onclick="update_article_prr_{{ article.pk }}()"></i>
+                {% endif %}
+            </td>
+            <td>
+                {{ article.tat_cost|floatformat:"2g"}}
+                {% if user.role == 'Логист' %}
+                <i class="fa-solid fa-pen-to-square" id="edit-article-tat_cost-{{ article.pk }}" onclick="update_article_tat_cost_{{ article.pk }}()"></i>
+                {% endif %}
+            </td>
+            <td>{{ article.paid_by_the_client_status}}</td>
             {% if user.role == 'Логист' %}
-            <td><form id="delete_article_form{{ article.pk }}" action="{% url 'delete_article' article.pk %}" method="post">{% csrf_token %}</form>
+            <td>{{ article.payment_to_the_carrier_status}}</td>
+            {% endif %}
+            <td>
+                {% if article.time_cargo_arrival_to_RF %}
+                {{ article.time_cargo_arrival_to_RF|date:"d F Y" }}
+                {% else %}
+                {% endif %}
+                {% if user.role == 'Логист' %}
+                <i class="fa-solid fa-pen-to-square" id="edit-article-time_cargo_arrival_to_RF-{{ article.pk }}" onclick="update_article_time_cargo_arrival_to_RF_{{ article.pk }}()"></i>
+                {% endif %}
+            </td>
+            <td>
+                {% if article.time_cargo_release %}
+                {{ article.time_cargo_release|date:"d F Y" }}
+                {% else %}
+                {% endif %}
+                {% if user.role == 'Логист' %}
+                <i class="fa-solid fa-pen-to-square" id="edit-article-time_cargo_release-{{ article.pk }}" onclick="update_article_time_cargo_release_{{ article.pk }}()"></i>
+                {% endif %}
+            </td>
+            <td style="text-align: center;">{{ article.get_number_of_days_on_the_way}}</td>
+            {% if user.role == 'Логист' %}
+            <td><form id="delete_article_form{{ article.pk }}" action="{% url 'delete_article' article.pk %}?{{ request.META.QUERY_STRING }}" method="post">{% csrf_token %}</form>
                 <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal3{{ article.pk }}">Удалить</p>
                 <div class="modal fade" id="exampleModal3{{ article.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
@@ -180,8 +224,8 @@
         </tr>
         {% endfor %}
         {% else %}
-        <tr>
-            <td colspan="14">Нет данных</td>
+        <tr align="center">
+            <td colspan="22" >Нет данных</td>
         </tr>
         {% endif %}
         </tbody>
