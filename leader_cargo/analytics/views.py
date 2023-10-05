@@ -69,10 +69,10 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         file_carrier.save()
         self.message['success_articles'] = []
         self.message['warning_articles'] = []
-        self.message['error'] = ''
+        self.message['error'] = []
         try:
             if file_carrier.name_carrier == 'Ян':
-                dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
+                dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'media', str(file_carrier.file_path)), data_only=True)
                 sheet = dataframe.active
                 for row in range(6, sheet.max_row):
                     if sheet[row][0].value:
@@ -263,7 +263,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     else:
                         break
         except Exception as e:
-            self.message['error'] = e
+            self.message['error'].append(e)
         self.message['update'] = True
         return self.render_to_response(self.get_context_data())
 
