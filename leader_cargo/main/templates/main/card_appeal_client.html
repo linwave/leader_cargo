@@ -205,15 +205,22 @@
                             </div>
                             <div class="col-6">
                                 <div align="right">
-                                    <form id="delete_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
-                                    <a href="javascript:void()" onclick="delete_question()" class="btn btn-danger btn-sm">Удалить</a>
-                                    <script>
-                                    function delete_question() {
-                                        if (confirm("Вы уверены?")) {
-                                        document.getElementById('delete_form').submit()
-                                        }
-                                    }
-                                    </script>
+                                    <form id="delete_goods_form{{ good.pk }}" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
+                                    <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete_goods_modal{{ good.pk }}">Удалить</p>
+                                    <div class="modal fade" id="delete_goods_modal{{ good.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="delete_goods_modal_label{{ good.pk }}">Вы уверены, что хотите удалить товар?</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button form="delete_goods_form{{ good.pk }}" type="submit" class="btn btn-danger">Удалить</button>
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

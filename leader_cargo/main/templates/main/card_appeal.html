@@ -293,23 +293,30 @@
                             <div class="col-6">
                                 <div align="right">
                                     {% if appeal.status == 'Новая' %}
-                                    <form id="delete_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
-                                    <a href="javascript:void()" onclick="delete_question()" class="btn btn-danger btn-sm">Удалить</a>
-                                    <script>
-                                    function delete_question() {
-                                        if (confirm("Вы уверены?")) {
-                                        document.getElementById('delete_form').submit()
-                                        }
-                                    }
-                                    </script>
+                                    <form id="delete_goods_form{{ good.pk }}" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
+                                    <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete_goods_modal{{ good.pk }}">Удалить</p>
+                                    <div class="modal fade" id="delete_goods_modal{{ good.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="delete_goods_modal_label{{ good.pk }}">Вы уверены, что хотите удалить товар?</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button form="delete_goods_form{{ good.pk }}" type="submit" class="btn btn-danger">Удалить</button>
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     {% else %}
                     {% endif %}
-                    </div>
                 </div>
+            </div>
         </div>
         {% endfor %}
         {% else %}
@@ -492,15 +499,22 @@
                             <div class="col-6">
                                 <div align="right">
                                     {% if appeal.status != 'В работе' %}
-                                    <form id="delete_goods_manager_form" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
-                                    <a href="javascript:void()" onclick="delete_question()" class="btn btn-danger btn-sm">Удалить</a>
-                                    <script>
-                                    function delete_question() {
-                                        if (confirm("Вы уверены?")) {
-                                        document.getElementById('delete_goods_manager_form').submit()
-                                        }
-                                    }
-                                    </script>
+                                    <form id="delete_goods_client_form{{ good.pk }}" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
+                                    <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete_goods_client_modal{{ good.pk }}">Удалить</p>
+                                    <div class="modal fade" id="delete_goods_client_modal{{ good.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="delete_goods_client_modal_label{{ good.pk }}">Вы уверены, что хотите удалить товар?</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button form="delete_goods_client_form{{ good.pk }}" type="submit" class="btn btn-danger">Удалить</button>
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     {% else %}
                                     {% endif %}
                                 </div>
@@ -517,20 +531,4 @@
     </div>
 </div>
 {% endif %}
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Вы уверены?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отменить</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
