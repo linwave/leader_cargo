@@ -61,6 +61,8 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
             if art.status:
                 context['all_weight'] = context['all_weight'] + float(art.weight)
                 context['all_volume'] = context['all_volume'] + float(art.volume)
+        context['vputi'] = 'В пути'
+        context['pribil'] = 'Прибыл в РФ'
         c_def = self.get_user_context(title="Учет грузов")
         return dict(list(context.items()) + list(c_def.items()))
 
@@ -279,7 +281,10 @@ class UpdateArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         article = CargoArticle.objects.get(pk=self.object.pk)
-        article.status = 'Прибыл в РФ'
+        if article.status == 'Прибыл в РФ':
+            article.status = 'В пути'
+        else:
+            article.status = 'Прибыл в РФ'
         article.save()
         return redirect('carrier')
 
