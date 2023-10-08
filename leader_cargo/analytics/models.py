@@ -37,6 +37,7 @@ class CargoArticle(models.Model):
         ('Не оплачено', 'Не оплачено'),
     ]
     article = models.CharField(max_length=50, verbose_name='Артикул')
+    responsible_manager = models.CharField(max_length=100, verbose_name='Отвественный менеджер', blank=True, null=True)
     name_goods = models.CharField(max_length=50, verbose_name='Наименование товара', blank=True, null=True)
     number_of_seats = models.CharField(max_length=50, verbose_name='Количество мест')
     weight = models.CharField(max_length=50, verbose_name='Вес, кг')
@@ -76,3 +77,9 @@ class CargoArticle(models.Model):
         else:
             return ''
 
+    def update_status_article(self):
+        if self.status == 'Прибыл в РФ':
+            self.status = 'В пути'
+        else:
+            self.status = 'Прибыл в РФ'
+        self.save()

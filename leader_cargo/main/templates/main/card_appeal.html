@@ -1,6 +1,6 @@
 
 {% block content %}
-<span class="text-danger">{{ from.non_field_errors }}</span>
+<span class="text-danger">{{ form.non_field_errors }}</span>
 {% if user.role == 'Клиент' %}
 <span class="text-danger">{{ form.non_field_errors }}</span>
 <div class="container">

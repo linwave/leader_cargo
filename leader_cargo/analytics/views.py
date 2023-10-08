@@ -7,7 +7,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView
 
-from .forms import AddCarrierFilesForm, UpdateStatusArticleForm
+from .forms import AddCarrierFilesForm, EditTableArticleForm, EditTableManagerArticleForm
 from .utils import DataMixinAll
 from .models import CargoFiles, CargoArticle
 
@@ -50,6 +50,16 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         else:
             context['status_now'] = 'Все статусы'
             context['all_articles'] = CargoArticle.objects.filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d'))).order_by('-time_from_china')
+        context['form_article'] = []
+        for article in context['all_articles']:
+            context['form_article'].append({
+                'art': article.pk,
+                'f': EditTableArticleForm(instance=article,
+                                          initial={
+                                              'time_cargo_arrival_to_RF': (article.time_cargo_arrival_to_RF+datetime.timedelta(hours=3)).strftime("%Y-%m-%d") if article.time_cargo_arrival_to_RF else article.time_cargo_arrival_to_RF,
+                                              'time_cargo_release': (article.time_cargo_release+datetime.timedelta(hours=3)).strftime("%Y-%m-%d") if article.time_cargo_release else article.time_cargo_release,
+                                          })
+            })
         context['all_weight'] = 0
         context['all_volume'] = 0
         if self.message['update']:
@@ -267,29 +277,61 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         except Exception as e:
             self.message['error'].append(e)
         self.message['update'] = True
-        return self.render_to_response(self.get_context_data())
+        return redirect('{}?{}'.format(reverse('carrier'), self.request.META['QUERY_STRING']))
 
 
-class UpdateArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
+def change_article_status(request, article_id):
+    role_have_perm = ['Супер Администратор', 'Логист']
+    if request.user.role in role_have_perm:
+        article = CargoArticle.objects.get(pk=article_id)
+        article.update_status_article()
+    return redirect(request.META.get('HTTP_REFERER'))
+
+
+class EditTableArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
     model = CargoArticle
-    form_class = UpdateStatusArticleForm
+    form_class = EditTableArticleForm
     pk_url_kwarg = 'article_id'
     role_have_perm = ['Супер Администратор', 'Логист']
     success_url = reverse_lazy('carrier')
     login_url = reverse_lazy('login')
+    
+    def form_valid(self, form):
+        file_carrier = form.save(commit=False)
+        file_carrier.save()
+        return redirect(self.request.META.get('HTTP_REFERER')+f'#article-{self.object.pk}')
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        article = CargoArticle.objects.get(pk=self.object.pk)
-        if article.status == 'Прибыл в РФ':
-            article.status = 'В пути'
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
         else:
-            article.status = 'Прибыл в РФ'
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+def change_article_for_manager(request, article_id):
+    role_have_perm = ['Супер Администратор', 'Менеджер']
+    if request.user.role in role_have_perm:
+        article = CargoArticle.objects.get(pk=article_id)
+        article.paid_by_the_client_status = request.GET.get('paid_by_the_client_status')
         article.save()
-        base_url = reverse('carrier')
-        query_string = request.META['QUERY_STRING']
-        url = '{}?{}'.format(base_url, query_string)
-        return redirect(url)
+        return redirect(request.META.get('HTTP_REFERER') + f'#article-{article.pk}')
+    return redirect(request.META.get('HTTP_REFERER'))
+
+
+class EditTableManagerArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
+    model = CargoArticle
+    form_class = EditTableManagerArticleForm
+    pk_url_kwarg = 'article_id'
+    role_have_perm = ['Супер Администратор', 'Менеджер']
+    success_url = reverse_lazy('carrier')
+    login_url = reverse_lazy('login')
+
+    def form_valid(self, form):
+        file_carrier = form.save(commit=False)
+        file_carrier.save()
+        return redirect(self.request.META.get('HTTP_REFERER')+f'#article-{self.object.pk}')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -310,10 +352,7 @@ class DeleteArticleView(LoginRequiredMixin, DataMixinAll, DeleteView):
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.delete()
-        base_url = reverse('carrier')
-        query_string = request.META['QUERY_STRING']
-        url = '{}?{}'.format(base_url, query_string)
-        return redirect(url)
+        return redirect(request.META.get('HTTP_REFERER'))
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
