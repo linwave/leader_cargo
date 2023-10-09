@@ -11,6 +11,11 @@ menu_super_admin = [
     {'title': 'Заявки', 'url_name': 'appeals'},
 ]
 
+menu_rop = [
+    {'title': 'Система мониторинга', 'url_name': 'monitoring'},
+    {'title': 'Учет грузов', 'url_name': 'carrier'},
+]
+
 menu_admin = [
     # {'title': 'Главная', 'url_name': 'home'},
     # {'title': 'Авторизация', 'url_name': 'login'},
@@ -62,6 +67,8 @@ class DataMixin:
         if self.request.user.is_authenticated:
             if self.request.user.role == 'Супер Администратор':
                 context['menu'] = menu_super_admin
+            elif self.request.user.role == 'РОП':
+                context['menu'] = menu_rop
             elif self.request.user.role == 'Администратор':
                 context['menu'] = menu_admin
             elif self.request.user.role == 'Логист':

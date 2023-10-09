@@ -1,0 +1,114 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+    </symbol>
+    <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+    </symbol>
+    <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+    </symbol>
+</svg>
+<h2>Таблица результатов за {% now "F" %}</h2>
+<div class="table-responsive m-3" style="position: absolute;left:0px;height:750px;">
+    <table class="table table-bordered table-striped table-hover" >
+        <thead class="table-warning align-middle">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">ФИО</th>
+            <th scope="col">% от плана</th>
+            <th scope="col">План</th>
+            <th scope="col">Чистая прибыль</th>
+            <th scope="col">Объем принятых средств</th>
+            <th scope="col">Маржа %</th>
+            <th scope="col">Файлы закуп.</th>
+            <th scope="col">Новых клиентов</th>
+            <th scope="col">Сумма КП</th>
+            <th scope="col">Оплачено/КП</th>
+            <th scope="col">Теплые лиды</th>
+            <th scope="col">Сделки по теплым лидам</th>
+            <th scope="col">Конверсия ТЛ</th>
+            <th scope="col">Звонков</th>
+            <th scope="col">Время исх/вх</th>
+            <th scope="col">Время в среднем</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for manager, value in all_data.items %}
+        <tr align="center">
+            <th scope="row">{{ forloop.counter }}</th>
+            <td>{{ value.fio }}</td>
+            <td>{{ value.procent_plan|default:""|floatformat:"0g" }}%</td>
+            <td>{{ value.manager_monthly_net_profit_plan|default:"" }}</td>
+            <td>{{ value.net_profit|default:""|floatformat:"2g" }}</td>
+            <td>{{ value.amount_of_accepted_funds|default:""|floatformat:"0g" }}</td>
+            <td>{{ value.marga|default:""|floatformat:"1g" }} %</td>
+            <td>{{ value.buyer_files|default:""|floatformat:"0g" }}</td>
+            <td>{{ value.new_clients|default:"0"|floatformat:"0g" }}</td>
+            <td>{{ value.sum_CP|default:"0"|floatformat:"0g" }}</td>
+            <td>{{ value.paid_CP|default:"0"|floatformat:"0g" }}</td>
+            <td>{{ value.warm_clients|default:"0"|floatformat:"0g" }}</td>
+            <td>{{ value.warm_clients_success|default:"0"|floatformat:"0g" }}</td>
+            <td>{{ value.conversion|default:"0"|floatformat:"0g" }} %</td>
+            <td>{{ value.sum_calls|default:"0"|floatformat:"0g" }}</td>
+            <td>{{ value.sum_duration_calls|default:"0"|floatformat:"0g" }}</td>
+            <td>{{ value.average_duration_calls|default:"0"|floatformat:"2g" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="alert alert-primary d-flex align-items-center" role="alert">
+        <div class="container">
+        <h2 align="center"><i class="fa-solid fa-trophy fa-xl"></i>Конкурс</h2>
+        <h3 align="center">Клиент который приносит в месяц от 200 000 до 400 000 (заявки каждую неделю)</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover" >
+                <thead class="table-secondary align-middle">
+                <tr align="center">
+                    <th scope="col" >Условия</th>
+                    {% for manager, value in all_data.items %}
+                    <td>{{ value.fio }}</td>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+
+                <tr align="center">
+                    <th scope="row">Звонки <span class="text-danger">(сколько еще нужно)</span></th>
+                    {% for manager, value in all_data.items %}
+                    <td scope="row">{{ value.calls_need|floatformat:"0g" }}</td>
+                    {% endfor %}
+                </tr>
+                <tr align="center">
+                    <th scope="row">Длительность звонка <span class="text-danger">(план 1,5 мин)</span></th>
+                    {% for manager, value in all_data.items %}
+                    <td scope="row">{{ value.calls_duration_need|floatformat:"2g" }}</td>
+                    {% endfor %}
+                </tr>
+                <tr align="center">
+                    <th scope="row">Новых клиентов <span class="text-danger">(план 3, маржа от 15к)</span></th>
+                    {% for manager, value in all_data.items %}
+                    <td scope="row">{{ value.new_clients_need|default:"0"|floatformat:"0g" }}</td>
+                    {% endfor %}
+                </tr>
+                <tr align="center">
+                    <th scope="row">Прибыль от существующих клиентов <span class="text-danger">(сколько еще нужно)</span></th>
+                    {% for manager, value in all_data.items %}
+                    <td scope="row">{{ value.new_clients_net_profit_need|floatformat:"0g" }}</td>
+                    {% endfor %}
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>
+</div>
+
+{% endblock %}

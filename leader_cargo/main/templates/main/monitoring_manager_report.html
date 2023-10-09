@@ -1,0 +1,143 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-auto m-2">
+        <h2>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h2>
+
+    </div>
+    <div class="col-auto m-2">
+        <span class="btn btn-primary btn shadow" role="button">{{ month }}</span>
+    </div>
+</div>
+<div class="table-responsive m-3" style="position: absolute;left:0px;height:750px;overflow-y: scroll">
+    <table class="table table-bordered table-striped table-hover" >
+        <thead class="table-warning align-middle">
+        <tr>
+            <th scope="col">Дата</th>
+            <th scope="col">Чистая прибыль в компанию</th>
+            <th scope="col">Привлеченные средства в компанию</th>
+            <th scope="col">Количество привлеченных новых клиентов</th>
+            <th scope="col">Количество заявок закупщикам</th>
+            <th scope="col">Сумма выставленных КП</th>
+            <th scope="col">Количество входящих качественных заявок</th>
+            <th scope="col">Количество совершенных сделок по заявкам</th>
+            <th scope="col">Количество отправленных грузов</th>
+            <th scope="col">Количество выданных грузов</th>
+            <th scope="col">Вес отправленных грузов</th>
+            <th scope="col">Объем отправленных грузов</th>
+            <th scope="col">Количество звонков</th>
+            <th scope="col">Длительность разговоров</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for day in all_days %}
+        {% if day in day_reports %}
+        <div class="modal fade" id="edit-table-report-edit-{{ forloop.counter }}" tabindex="-1" aria-labelledby="edit-table-report-edit-label-{{ forloop.counter }}" aria-hidden="true">
+            <div class="modal-dialog ">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="edit-table-report-edit-label-{{ forloop.counter }}">Изменение отчета сотрудника {{ day }}<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% for fm in form_day_report %}
+                        {% if fm.day == day %}
+                        <form method="post" id="edit-report-edit-{{ forloop.counter }}" action="{% url 'monitoring_manager_edit_report' manager.pk fm.report_id %}?{{ request.META.QUERY_STRING }}">
+                            {% csrf_token %}
+                            {% for line in fm.f %}
+                            {{ line.label }}
+                            {{ line }}
+                            {% endfor %}
+                        </form>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="modal-footer">
+                        <button form="edit-report-edit-{{ forloop.counter }}" type="submit" class="btn btn-success">Изменить</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <tr data-bs-toggle="modal" data-bs-target="#edit-table-report-edit-{{ forloop.counter }}">
+            {% for report in manager_reports %}
+            {% if report.report_upload_date|date:"d.m.Y" == day %}
+            <th> {{ report.report_upload_date|date:"d.m.Y" }} </th>
+            <th> {{ report.net_profit_to_the_company|default:"" }} </th>
+            <th> {{ report.raised_funds_to_the_company|default:"" }} </th>
+            <th> {{ report.number_of_new_clients_attracted|default:"" }} </th>
+            <th> {{ report.number_of_applications_to_buyers|default:"" }} </th>
+            <th> {{ report.amount_of_issued_CP|default:"" }} </th>
+            <th> {{ report.number_of_incoming_quality_applications|default:"" }} </th>
+            <th> {{ report.number_of_completed_transactions_based_on_orders|default:"" }} </th>
+            <th> {{ report.number_of_shipments_sent|default:"" }} </th>
+            <th> {{ report.number_of_goods_issued|default:"" }} </th>
+            <th> {{ report.weight_of_goods_sent|default:"" }} </th>
+            <th> {{ report.volume_of_cargo_sent|default:"" }} </th>
+            <th> {{ report.number_of_calls|default:"" }} </th>
+            <th> {{ report.duration_of_calls|default:"" }} </th>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% else %}
+        <div class="modal fade" id="edit-table-report-{{ forloop.counter }}" tabindex="-1" aria-labelledby="edit-table-report-label-{{ forloop.counter }}" aria-hidden="true">
+            <div class="modal-dialog ">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="edit-table-report-label-{{ forloop.counter }}">Добавление отчета сотрудника {{ day }}<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% for fm in form_day_report %}
+                        {% if fm.day == day %}
+                        <form method="post" id="edit-report-{{ forloop.counter }}" action="{% url 'monitoring_manager_add_report' manager.pk day %}?{{ request.META.QUERY_STRING }}">
+                            {% csrf_token %}
+                            {% for line in fm.f %}
+                            {{ line.label }}
+                            {{ line }}
+                            {% endfor %}
+                        </form>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="modal-footer">
+                        <button form="edit-report-{{ forloop.counter }}" type="submit" class="btn btn-success">Добавить</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <tr data-bs-toggle="modal" data-bs-target="#edit-table-report-{{ forloop.counter }}">
+            <th >{{ day }}</th>
+            <th colspan="20"></th>
+        </tr>
+        {% endif %}
+
+
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    let element = document.querySelectorAll('input[class="form-control"]');
+    let maskOptions = {
+        mask: Number,
+        padFractionalZeros: false,  // if true, then pads zeros at end to the length of scale
+        normalizeZeros: true,  // appends or removes zeros at ends
+        radix: ',',  // fractional delimiter
+        mapToRadix: ['.'],
+        min: 0,
+        max: 10000000000,
+        thousandsSeparator: ' '
+    };
+    for (let i = 0; i < element.length; i++){
+        let mask = IMask(element[i], maskOptions);
+    }
+</script>
+{% endblock %}

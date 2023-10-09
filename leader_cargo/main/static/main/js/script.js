@@ -144,3 +144,8 @@ IMask(
   }
 )
 }
+
+function submit_any_form(MyForm)
+{
+    document.getElementById(MyForm).submit()
+}

@@ -1,8 +1,34 @@
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 
-from .models import ExchangeRates, CustomUser, Appeals, Goods
+from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports
 from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
+
+
+class RopReportForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control', 'type': 'text'})
+
+    class Meta:
+        model = ManagersReports
+        fields = ["net_profit_to_the_company", "raised_funds_to_the_company", "number_of_new_clients_attracted", "number_of_applications_to_buyers",
+                  "amount_of_issued_CP", "number_of_incoming_quality_applications", "number_of_completed_transactions_based_on_orders", "number_of_shipments_sent",
+                  "number_of_goods_issued", "weight_of_goods_sent", "volume_of_cargo_sent", "number_of_calls", "duration_of_calls"]
+
+
+class EditRopReportForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control', 'type': 'text'})
+
+    class Meta:
+        model = ManagersReports
+        fields = ["net_profit_to_the_company", "raised_funds_to_the_company", "number_of_new_clients_attracted", "number_of_applications_to_buyers",
+                  "amount_of_issued_CP", "number_of_incoming_quality_applications", "number_of_completed_transactions_based_on_orders", "number_of_shipments_sent",
+                  "number_of_goods_issued", "weight_of_goods_sent", "volume_of_cargo_sent", "number_of_calls", "duration_of_calls"]
 
 
 class LoginUserForm(AuthenticationForm):

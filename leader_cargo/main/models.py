@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.urls import reverse
@@ -10,6 +12,7 @@ class CustomUser(AbstractUser):
     ]
     roles = [
         ('Супер Администратор', 'Супер Администратор'),
+        ('РОП', 'РОП'),
         ('Администратор', 'Администратор'),
         ('Логист', 'Логист'),
         ('Менеджер', 'Менеджер'),
@@ -28,6 +31,8 @@ class CustomUser(AbstractUser):
     description = models.CharField('Описание', max_length=240, blank=True)
     manager = models.IntegerField('Менеджер', blank=True, null=True)
     pass_no_sha = models.CharField('Доп.пароль', max_length=200, blank=True)
+    manager_monthly_net_profit_plan = models.CharField('План по чистой прибыли в месяц', max_length=200, blank=True, null=True)
+
     time_create = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     time_update = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
     status = models.BooleanField(default=True, choices=statuses, verbose_name='Статус')
@@ -42,6 +47,10 @@ class CustomUser(AbstractUser):
 
     def get_absolute_url_employee(self):
         return reverse('card_employees', kwargs={'employee_id': self.pk})
+
+    def get_net_profit_to_the_company(self):
+        for reports in self.managersreports_set.all():
+            return reports
 
 # class Employees(models.Model):
 #     towns = [
@@ -199,3 +208,31 @@ class Goods(models.Model):
         if self.price_delivery_rf and self.price_delivery_rf_real:
             result = result + float(self.price_delivery_rf.replace(' ', '').replace(',', '.')) - float(self.price_delivery_rf_real.replace(' ', '').replace(',', '.'))
         return result
+
+
+class ManagersReports(models.Model):
+    net_profit_to_the_company = models.CharField('Чистая прибыль в компанию', max_length=128, blank=True, null=True)
+    raised_funds_to_the_company = models.CharField('Привлеченные средства в компанию', max_length=128, blank=True, null=True)
+    number_of_new_clients_attracted = models.CharField('Количество привлеченных новых клиентов', max_length=128, blank=True, null=True)
+    number_of_applications_to_buyers = models.CharField('Количество заявок закупщикам', max_length=128, blank=True, null=True)
+    amount_of_issued_CP = models.CharField('Сумма выставленных КП', max_length=128, blank=True, null=True)
+    number_of_incoming_quality_applications = models.CharField('Количество входящих качественных заявок', max_length=128, blank=True, null=True)
+    number_of_completed_transactions_based_on_orders = models.CharField('Количество совершенных сделок по заявкам', max_length=128, blank=True, null=True)
+    number_of_shipments_sent = models.CharField('Количество отправленных грузов', max_length=128, blank=True, null=True)
+    number_of_goods_issued = models.CharField('Количество выданных грузов', max_length=128, blank=True, null=True)
+    weight_of_goods_sent = models.CharField('Вес отправленных грузов', max_length=128, blank=True, null=True)
+    volume_of_cargo_sent = models.CharField('Объем отправленных грузов', max_length=128, blank=True, null=True)
+    number_of_calls = models.CharField('Количество звонков', max_length=128, blank=True, null=True)
+    duration_of_calls = models.CharField('Длительность разговоров', max_length=128, blank=True, null=True)
+
+    manager_id = models.ForeignKey('CustomUser', on_delete=models.PROTECT, blank=True, null=True)
+    report_upload_date = models.DateTimeField(verbose_name='Дата загрузки отчета', blank=True, null=True)
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Отчетность менеджера {self.manager_id} на дату {(self.report_upload_date+datetime.timedelta(hours=3))}"
+
+    class Meta:
+        verbose_name = 'Отчетность менеджеров'
+        verbose_name_plural = 'Отчетность менеджеров'

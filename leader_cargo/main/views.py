@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import re
 from django.contrib.auth import logout, authenticate, login
@@ -9,16 +10,15 @@ import string
 import random
 
 from django.urls import reverse_lazy
+from django.utils.timezone import make_aware
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
-    UpdateAppealsManagerForm
+    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm
 from .models import *
 from .utils import DataMixin
 
 menu = [
-    # {'title': 'Главная', 'url_name': 'home'},
-    # {'title': 'Авторизация', 'url_name': 'login'},
     {'title': 'Сотрудники', 'url_name': 'employees'},
     {'title': 'Курсы валют', 'url_name': 'exchangerates'},
     {'title': 'Клиенты', 'url_name': 'clients'},
@@ -71,6 +71,8 @@ class LoginUser(DataMixin, LoginView):
     def get_success_url(self):
         if self.request.user.role == 'Супер Администратор':
             return reverse_lazy('home')
+        elif self.request.user.role == 'РОП':
+            return reverse_lazy('monitoring')
         elif self.request.user.role == 'Администратор':
             return reverse_lazy('home')
         elif self.request.user.role == 'Логист':
@@ -86,6 +88,8 @@ class LoginUser(DataMixin, LoginView):
             login(self.request, login_user)
             if self.request.user.role == 'Супер Администратор':
                 return redirect('home')
+            elif self.request.user.role == 'РОП':
+                return redirect('monitoring')
             elif self.request.user.role == 'Администратор':
                 return redirect('home')
             elif self.request.user.role == 'Логист':
@@ -97,6 +101,255 @@ class LoginUser(DataMixin, LoginView):
         else:
             form.add_error(None, f'Ошибка авторизации')
             return super(LoginUser, self).form_invalid(form)
+
+
+class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
+    paginate_by = 3
+    model = CustomUser
+    template_name = 'main/monitoring_system.html'
+    context_object_name = 'managers'
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'РОП']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Система мониторинга")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(role='Менеджер').order_by('-time_create')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            elif request.user.role == 'Клиент':
+                return redirect('appeals')
+            elif request.user.role == 'Менеджер':
+                return redirect('clients')
+            elif request.user.role == 'Закупщик':
+                return redirect('appeals')
+            elif request.user.role == 'Логист':
+                return redirect('carrier')
+            elif request.user.role == 'РОП':
+                return redirect('monitoring')
+
+
+class MonitoringManagerReportView(LoginRequiredMixin, DataMixin, ListView):
+    model = CustomUser
+    template_name = 'main/monitoring_manager_report.html'
+    context_object_name = 'manager'
+    pk_url_kwarg = 'manager_id'
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'РОП']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id']).order_by('-time_create')
+        context['day_reports'] = dict()
+        for report in context['manager_reports']:
+            context['day_reports'].update({(report.report_upload_date+datetime.timedelta(hours=3)).strftime("%d.%m.%Y"): report})
+        months = ["", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+        context['all_days'] = []
+        context['form_day_report'] = []
+        for day in range(1, calendar.monthrange(datetime.datetime.now().year, datetime.datetime.now().month)[1]+1):
+            context['all_days'].append(datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y"))
+            if datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y") in context['day_reports']:
+                context['form_day_report'].append({
+                    'day': datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y"),
+                    'f': EditRopReportForm(instance=context['day_reports'][datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y")]),
+                    'report_id': context['day_reports'][datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y")].pk
+                })
+            else:
+                context['form_day_report'].append({
+                    'day': datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y"),
+                    'f': RopReportForm(),
+                    'report_id': '',
+                })
+
+        context['month'] = months[datetime.datetime.now().month]
+        c_def = self.get_user_context(title="Мониторинг менеджера")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_queryset(self):
+        return CustomUser.objects.get(pk=self.kwargs['manager_id'])
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            elif request.user.role == 'Клиент':
+                return redirect('appeals')
+            elif request.user.role == 'Менеджер':
+                return redirect('clients')
+            elif request.user.role == 'Закупщик':
+                return redirect('appeals')
+            elif request.user.role == 'Логист':
+                return redirect('carrier')
+            elif request.user.role == 'РОП':
+                return redirect('monitoring')
+
+
+class MonitoringManagerAddReportView(LoginRequiredMixin, DataMixin, CreateView):
+    form_class = RopReportForm
+    model = ManagersReports
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'РОП']
+
+    def form_valid(self, form):
+        manager_report = form.save(commit=False)
+        manager_report.report_upload_date = make_aware(datetime.datetime.strptime(self.kwargs['day'], "%d.%m.%Y"))
+        manager_report.manager_id = CustomUser.objects.get(pk=self.kwargs['manager_id'])
+        manager_report.save()
+        return redirect(self.request.META.get('HTTP_REFERER'))
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class MonitoringManagerEditReportView(LoginRequiredMixin, DataMixin, UpdateView):
+    form_class = EditRopReportForm
+    model = ManagersReports
+    pk_url_kwarg = 'report_id'
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'РОП']
+
+    def form_valid(self, form):
+        manager_report = form.save(commit=False)
+        manager_report.save()
+        return redirect(self.request.META.get('HTTP_REFERER'))
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
+    paginate_by = 3
+    model = CustomUser
+    template_name = 'main/monitoring_leaderboard.html'
+    context_object_name = 'managers_all'
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'РОП']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['managers'] = CustomUser.objects.filter(role='Менеджер').order_by('-time_create')
+        context['monitoring_reports'] = ManagersReports.objects.all().order_by('-time_create')
+        context['all_data'] = dict()
+        for manager in context['managers']:
+            if manager.pk != 18:
+                context['all_data'][f'{manager.pk}'] = dict()
+                context['all_data'][f'{manager.pk}']['fio'] = f"{manager.last_name} {manager.first_name} {manager.patronymic}"
+                context['all_data'][f'{manager.pk}']['manager_monthly_net_profit_plan'] = manager.manager_monthly_net_profit_plan
+                context['all_data'][f'{manager.pk}']['net_profit'] = 0
+                context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] = 0
+                context['all_data'][f'{manager.pk}']['buyer_files'] = 0
+                context['all_data'][f'{manager.pk}']['new_clients'] = 0
+                context['all_data'][f'{manager.pk}']['sum_CP'] = 0
+                context['all_data'][f'{manager.pk}']['warm_clients'] = 0
+                context['all_data'][f'{manager.pk}']['warm_clients_success'] = 0
+                context['all_data'][f'{manager.pk}']['sum_calls'] = 0
+                context['all_data'][f'{manager.pk}']['sum_duration_calls'] = 0
+
+                for report in context['monitoring_reports']:
+                    if report.manager_id.pk == manager.pk:
+                        if report.net_profit_to_the_company:
+                            context['all_data'][f'{manager.pk}']['net_profit'] = context['all_data'][f'{manager.pk}']['net_profit'] + float(report.net_profit_to_the_company.replace(" ", "").replace(",", "."))
+                        if report.raised_funds_to_the_company:
+                            context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] = context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] + float(report.raised_funds_to_the_company.replace(" ", "").replace(",", "."))
+                        if report.number_of_applications_to_buyers:
+                            context['all_data'][f'{manager.pk}']['buyer_files'] = context['all_data'][f'{manager.pk}']['buyer_files'] + float(report.number_of_applications_to_buyers.replace(" ", "").replace(",", "."))
+                        if report.number_of_new_clients_attracted:
+                            context['all_data'][f'{manager.pk}']['new_clients'] = context['all_data'][f'{manager.pk}']['new_clients'] + float(report.number_of_new_clients_attracted.replace(" ", "").replace(",", "."))
+                        if report.amount_of_issued_CP:
+                            context['all_data'][f'{manager.pk}']['sum_CP'] = context['all_data'][f'{manager.pk}']['sum_CP'] + float(report.amount_of_issued_CP.replace(" ", "").replace(",", "."))
+                        if report.number_of_incoming_quality_applications:
+                            context['all_data'][f'{manager.pk}']['warm_clients'] = context['all_data'][f'{manager.pk}']['warm_clients'] + float(report.number_of_incoming_quality_applications.replace(" ", "").replace(",", "."))
+                        if report.number_of_completed_transactions_based_on_orders:
+                            context['all_data'][f'{manager.pk}']['warm_clients_success'] = context['all_data'][f'{manager.pk}']['warm_clients_success'] + float(report.number_of_completed_transactions_based_on_orders.replace(" ", "").replace(",", "."))
+                        if report.number_of_calls:
+                            context['all_data'][f'{manager.pk}']['sum_calls'] = context['all_data'][f'{manager.pk}']['sum_calls'] + float(report.number_of_calls.replace(" ", "").replace(",", "."))
+                        if report.duration_of_calls:
+                            context['all_data'][f'{manager.pk}']['sum_duration_calls'] = context['all_data'][f'{manager.pk}']['sum_duration_calls'] + float(report.duration_of_calls.replace(" ", "").replace(",", "."))
+
+                if manager.manager_monthly_net_profit_plan:
+                    context['all_data'][f'{manager.pk}']['procent_plan'] = context['all_data'][f'{manager.pk}']['net_profit'] / float(manager.manager_monthly_net_profit_plan) * 100
+                try:
+                    context['all_data'][f'{manager.pk}']['marga'] = context['all_data'][f'{manager.pk}']['net_profit'] / context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] * 100
+                except ZeroDivisionError:
+                    context['all_data'][f'{manager.pk}']['marga'] = 0
+                try:
+                    context['all_data'][f'{manager.pk}']['paid_CP'] = context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] / context['all_data'][f'{manager.pk}']['sum_CP'] * 100
+                except ZeroDivisionError:
+                    context['all_data'][f'{manager.pk}']['paid_CP'] = 0
+                try:
+                    context['all_data'][f'{manager.pk}']['conversion'] = context['all_data'][f'{manager.pk}']['warm_clients_success'] / context['all_data'][f'{manager.pk}']['warm_clients']
+                except ZeroDivisionError:
+                    context['all_data'][f'{manager.pk}']['conversion'] = 0
+                try:
+                    context['all_data'][f'{manager.pk}']['average_duration_calls'] = context['all_data'][f'{manager.pk}']['sum_duration_calls'] / context['all_data'][f'{manager.pk}']['sum_calls']
+                except ZeroDivisionError:
+                    context['all_data'][f'{manager.pk}']['average_duration_calls'] = 0
+
+                context['all_data'][f'{manager.pk}']['sum_calls_need'] = 0
+                context['all_data'][f'{manager.pk}']['sum_duration_calls_need'] = 0
+
+                for report in context['monitoring_reports']:
+                    if report.manager_id.pk == manager.pk:
+                        if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
+                            context['all_data'][f'{manager.pk}']['calls_need'] = 240 - float(report.number_of_calls.replace(" ", "").replace(",", "."))
+                        if report.raised_funds_to_the_company and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
+                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = 80000 - float(report.raised_funds_to_the_company.replace(" ", "").replace(",", "."))
+                        else:
+                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = 80000
+                        if report.number_of_new_clients_attracted and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
+                            context['all_data'][f'{manager.pk}']['new_clients_need'] = context['all_data'][f'{manager.pk}']['new_clients_need'] + float(report.number_of_new_clients_attracted.replace(" ", "").replace(",", "."))
+                        if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
+                            context['all_data'][f'{manager.pk}']['sum_calls_need'] = context['all_data'][f'{manager.pk}']['sum_calls_need'] + float(report.number_of_calls.replace(" ", "").replace(",", "."))
+                        if report.duration_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
+                            context['all_data'][f'{manager.pk}']['sum_duration_calls_need'] = context['all_data'][f'{manager.pk}']['sum_duration_calls_need'] + float(report.duration_of_calls.replace(" ", "").replace(",", "."))
+
+                try:
+                    context['all_data'][f'{manager.pk}']['calls_duration_need'] = context['all_data'][f'{manager.pk}']['sum_duration_calls_need'] / context['all_data'][f'{manager.pk}']['sum_calls_need']
+                except ZeroDivisionError:
+                    context['all_data'][f'{manager.pk}']['calls_duration_need'] = 0
+
+        c_def = self.get_user_context(title="Таблица результатов")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(role='Менеджер').order_by('-time_create')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            elif request.user.role == 'Клиент':
+                return redirect('appeals')
+            elif request.user.role == 'Менеджер':
+                return redirect('clients')
+            elif request.user.role == 'Закупщик':
+                return redirect('appeals')
+            elif request.user.role == 'Логист':
+                return redirect('carrier')
+            elif request.user.role == 'РОП':
+                return redirect('monitoring')
 
 
 class AddExchangeRatesView(LoginRequiredMixin, DataMixin, CreateView):
@@ -153,6 +406,8 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
                 return redirect('appeals')
             elif request.user.role == 'Логист':
                 return redirect('carrier')
+            elif self.request.user.role == 'РОП':
+                return redirect('monitoring')
 
 
 class EmployeesView(LoginRequiredMixin, DataMixin, ListView):

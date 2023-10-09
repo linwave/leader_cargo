@@ -20,6 +20,15 @@
     position: relative;
 }
 
+.edit-icon-btn{
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+
+.edit-icon-btn:hover{
+    opacity: 1;
+}
+
 .edit-appeal-container{
     position: relative;
 }

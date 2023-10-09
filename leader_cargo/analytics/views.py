@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView, DeleteView, UpdateView
+from django.views.generic import CreateView, DeleteView, UpdateView, ListView
 
 from .forms import AddCarrierFilesForm, EditTableArticleForm, EditTableManagerArticleForm
 from .utils import DataMixinAll
@@ -21,7 +21,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
     template_name = 'analytics/carrier_files.html'
     context_object_name = 'all_articles'
     login_url = reverse_lazy('login')
-    role_have_perm = ['Супер Администратор', 'Логист', 'Менеджер']
+    role_have_perm = ['Супер Администратор', 'РОП', 'Логист', 'Менеджер']
     success_url = reverse_lazy('carrier')
     message = dict()
     message['update'] = False
@@ -318,28 +318,6 @@ def change_article_for_manager(request, article_id):
         article.save()
         return redirect(request.META.get('HTTP_REFERER') + f'#article-{article.pk}')
     return redirect(request.META.get('HTTP_REFERER'))
-
-
-class EditTableManagerArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
-    model = CargoArticle
-    form_class = EditTableManagerArticleForm
-    pk_url_kwarg = 'article_id'
-    role_have_perm = ['Супер Администратор', 'Менеджер']
-    success_url = reverse_lazy('carrier')
-    login_url = reverse_lazy('login')
-
-    def form_valid(self, form):
-        file_carrier = form.save(commit=False)
-        file_carrier.save()
-        return redirect(self.request.META.get('HTTP_REFERER')+f'#article-{self.object.pk}')
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return self.handle_no_permission()
 
 
 class DeleteArticleView(LoginRequiredMixin, DataMixinAll, DeleteView):
