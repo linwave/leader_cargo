@@ -307,6 +307,8 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
 
                 context['all_data'][f'{manager.pk}']['sum_calls_need'] = 0
                 context['all_data'][f'{manager.pk}']['sum_duration_calls_need'] = 0
+                context['all_data'][f'{manager.pk}']['calls_need'] = 240
+                context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = 80000
 
                 for report in context['monitoring_reports']:
                     if report.manager_id.pk == manager.pk:
@@ -314,8 +316,6 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                             context['all_data'][f'{manager.pk}']['calls_need'] = 240 - float(report.number_of_calls.replace(" ", "").replace(",", "."))
                         if report.raised_funds_to_the_company and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
                             context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = 80000 - float(report.raised_funds_to_the_company.replace(" ", "").replace(",", "."))
-                        else:
-                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = 80000
                         if report.number_of_new_clients_attracted and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
                             context['all_data'][f'{manager.pk}']['new_clients_need'] = context['all_data'][f'{manager.pk}']['new_clients_need'] + float(report.number_of_new_clients_attracted.replace(" ", "").replace(",", "."))
                         if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
