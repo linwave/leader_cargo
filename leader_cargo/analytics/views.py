@@ -1,13 +1,13 @@
 import datetime
 import os
-
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView, DeleteView, UpdateView, ListView
+from django.views.generic import CreateView, DeleteView, UpdateView
 
-from .forms import AddCarrierFilesForm, EditTableArticleForm, EditTableManagerArticleForm
+from .forms import AddCarrierFilesForm, EditTableArticleForm
 from .utils import DataMixinAll
 from .models import CargoFiles, CargoArticle
 
@@ -84,7 +84,10 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         self.message['error'] = []
         try:
             if file_carrier.name_carrier == 'Ян':
-                dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'media', str(file_carrier.file_path)), data_only=True)
+                if settings.DEBUG:
+                    dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'media', str(file_carrier.file_path)), data_only=True)
+                else:
+                    dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'leader_cargo/media', str(file_carrier.file_path)), data_only=True)
                 sheet = dataframe.active
                 for row in range(6, sheet.max_row):
                     if sheet[row][0].value:
@@ -125,7 +128,10 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     else:
                         break
             elif file_carrier.name_carrier == 'Валька':
-                dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
+                if settings.DEBUG:
+                    dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
+                else:
+                    dataframe = openpyxl.load_workbook(f"{os.getcwd()}/leader_cargo/media/{file_carrier.file_path}", data_only=True)
                 sheet = dataframe.active
                 for row in range(792, sheet.max_row):
                     if sheet[row][4].value and sheet[row][3].value and sheet[row][2].value:
@@ -170,7 +176,10 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     else:
                         break
             elif file_carrier.name_carrier == 'Мурад':
-                dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
+                if settings.DEBUG:
+                    dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
+                else:
+                    dataframe = openpyxl.load_workbook(f"{os.getcwd()}/leader_cargo/media/{file_carrier.file_path}", data_only=True)
                 sheet = dataframe.active
                 for row in range(2, sheet.max_row + 1):
                     if sheet[row][5].value:
@@ -222,7 +231,10 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 cargo_id=file_carrier,
                             )
             elif file_carrier.name_carrier == 'Гелик':
-                workbook = xlrd.open_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}")
+                if settings.DEBUG:
+                    workbook = xlrd.open_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}")
+                else:
+                    workbook = xlrd.open_workbook(f"{os.getcwd()}/leader_cargo/media/{file_carrier.file_path}")
                 sheet = workbook.sheet_by_index(0)
                 for row in range(7, sheet.nrows):
                     if sheet[row][1].value:

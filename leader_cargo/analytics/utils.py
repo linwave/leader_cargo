@@ -5,11 +5,10 @@ from django.utils.timezone import make_aware
 from .models import CargoArticle
 
 menu_super_admin = [
-    # {'title': 'Главная', 'url_name': 'home'},
-    # {'title': 'Авторизация', 'url_name': 'login'},
     {'title': 'Курсы валют', 'url_name': 'exchangerates'},
     {'title': 'Сотрудники', 'url_name': 'employees'},
     {'title': 'Система мониторинга', 'url_name': 'monitoring'},
+    {'title': 'Учет грузов', 'url_name': 'carrier'},
     {'title': 'Клиенты', 'url_name': 'clients'},
     {'title': 'Заявки', 'url_name': 'appeals'},
 ]
@@ -20,30 +19,21 @@ menu_rop = [
 ]
 
 menu_admin = [
-    # {'title': 'Главная', 'url_name': 'home'},
-    # {'title': 'Авторизация', 'url_name': 'login'},
     {'title': 'Курсы валют', 'url_name': 'exchangerates'},
     {'title': 'Сотрудники', 'url_name': 'employees'},
 ]
 
 menu_manager = [
-    # {'title': 'Главная', 'url_name': 'home'},
-    # {'title': 'Авторизация', 'url_name': 'login'},
     {'title': 'Клиенты', 'url_name': 'clients'},
     {'title': 'Заявки', 'url_name': 'appeals'},
     {'title': 'Учет грузов', 'url_name': 'carrier'},
 ]
 
 menu_buyer = [
-    # {'title': 'Главная', 'url_name': 'home'},
-    # {'title': 'Авторизация', 'url_name': 'login'},
-    # {'title': 'Клиенты', 'url_name': 'clients'},
     {'title': 'Заявки', 'url_name': 'appeals'},
 ]
 
 menu_client = [
-    # {'title': 'Главная', 'url_name': 'home'},
-    # {'title': 'Авторизация', 'url_name': 'login'},
     {'title': 'Заявки', 'url_name': 'appeals'},
 ]
 
