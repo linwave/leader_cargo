@@ -117,8 +117,10 @@ class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        return CustomUser.objects.filter(role='Менеджер').order_by('-time_create')
-
+        if self.request.user.role == 'Супер Администратор':
+            return CustomUser.objects.filter(role='Менеджер').order_by('-time_create')
+        else:
+            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}').order_by('-time_create')
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
@@ -257,10 +259,7 @@ class MonitoringManagerEditPlanView(LoginRequiredMixin, DataMixin, UpdateView):
             return self.handle_no_permission()
 
 
-
-
 class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 3
     model = CustomUser
     template_name = 'main/monitoring_leaderboard.html'
     context_object_name = 'managers_all'
@@ -269,7 +268,10 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['managers'] = CustomUser.objects.filter(role='Менеджер').order_by('-time_create')
+        if self.request.user.role == 'Супер Администратор':
+            context['managers'] = CustomUser.objects.filter(role='Менеджер')
+        else:
+            context['managers'] = CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
         context['monitoring_reports'] = ManagersReports.objects.all().order_by('-time_create')
         context['all_data'] = dict()
         for manager in context['managers']:
@@ -355,7 +357,10 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        return CustomUser.objects.filter(role='Менеджер').order_by('-time_create')
+        if self.request.user.role == 'Супер Администратор':
+            return CustomUser.objects.filter(role='Менеджер')
+        else:
+            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:

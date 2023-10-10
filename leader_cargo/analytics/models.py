@@ -70,6 +70,7 @@ class CargoArticle(models.Model):
     class Meta:
         verbose_name = 'Артикула'
         verbose_name_plural = 'Артикула'
+        ordering = ['-time_create']
 
     def get_number_of_days_on_the_way(self):
         if self.time_cargo_arrival_to_RF and self.time_from_china:
