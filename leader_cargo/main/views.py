@@ -104,7 +104,7 @@ class LoginUser(DataMixin, LoginView):
 
 
 class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 3
+    paginate_by = 9
     model = CustomUser
     template_name = 'main/monitoring_system.html'
     context_object_name = 'managers'

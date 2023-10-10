@@ -103,7 +103,11 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         packaging_cost = str(sheet[row][9].value) if sheet[row][9].value else ""
                         if sheet[row][11].value:
                             time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][11].value, 0) if sheet[row][11].value else ""
-
+                        else:
+                            try:
+                                time_from_china = xlrd.xldate.xldate_as_datetime(sheet[3][6].value, 0) if sheet[3][6].value else ""
+                            except TypeError:
+                                time_from_china = sheet[3][6].value
                         total_cost = str(sheet[row][13].value) if sheet[row][13].value else ""
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)
