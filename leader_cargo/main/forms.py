@@ -31,6 +31,17 @@ class EditRopReportForm(ModelForm):
                   "number_of_goods_issued", "weight_of_goods_sent", "volume_of_cargo_sent", "number_of_calls", "duration_of_calls"]
 
 
+class EditManagerPlanForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control', 'type': 'text'})
+
+    class Meta:
+        model = CustomUser
+        fields = ["manager_monthly_net_profit_plan"]
+
+
 class LoginUserForm(AuthenticationForm):
     phone = CharField(label='Телефон', max_length=50, widget=TextInput(attrs={'class': 'form-control',
                                                                               'id': 'phone-mask',

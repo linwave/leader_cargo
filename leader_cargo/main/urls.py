@@ -10,6 +10,7 @@ urlpatterns = [
     path('logout/', views.logout_user, name='logout'),
     path('monitoring/', views.MonitoringSystemView.as_view(), name='monitoring'),
     path('monitoring/manager/<int:manager_id>/', views.MonitoringManagerReportView.as_view(), name='monitoring_manager_report'),
+    path('monitoring/manager/<int:manager_id>/edit_plan/', views.MonitoringManagerEditPlanView.as_view(), name='monitoring_manager_edit_plan'),
     path('monitoring/manager/<int:manager_id>/add_report/<str:day>', views.MonitoringManagerAddReportView.as_view(), name='monitoring_manager_add_report'),
     path('monitoring/manager/<int:manager_id>/edit_report/<int:report_id>', views.MonitoringManagerEditReportView.as_view(), name='monitoring_manager_edit_report'),
     path('monitoring/leaderboard/', views.MonitoringLeaderboardView.as_view(), name='monitoring_leaderboard'),
