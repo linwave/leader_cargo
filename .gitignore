@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 leader_cargo/media
 leader_cargo/main/__pycache__
+leader_cargo/db.sqlite3
