@@ -11,7 +11,7 @@ import random
 
 from django.urls import reverse_lazy
 from django.utils.timezone import make_aware
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
     UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm
@@ -118,9 +118,10 @@ class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
 
     def get_queryset(self):
         if self.request.user.role == 'Супер Администратор':
-            return CustomUser.objects.filter(role='Менеджер').order_by('-time_create')
+            return CustomUser.objects.filter(role='Менеджер')
         else:
-            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}').order_by('-time_create')
+            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
+
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
@@ -338,9 +339,9 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                 for report in context['monitoring_reports']:
                     if report.manager_id.pk == manager.pk:
                         if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
-                            context['all_data'][f'{manager.pk}']['calls_need'] = 240 - float(report.number_of_calls.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['calls_need'] = context['all_data'][f'{manager.pk}']['calls_need'] - float(report.number_of_calls.replace(" ", "").replace(",", "."))
                         if report.raised_funds_to_the_company and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
-                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = 80000 - float(report.raised_funds_to_the_company.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] - float(report.raised_funds_to_the_company.replace(" ", "").replace(",", "."))
                         if report.number_of_new_clients_attracted and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
                             context['all_data'][f'{manager.pk}']['new_clients_need'] = context['all_data'][f'{manager.pk}']['new_clients_need'] + float(report.number_of_new_clients_attracted.replace(" ", "").replace(",", "."))
                         if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
