@@ -439,7 +439,7 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
 
 
 class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 3
+    paginate_by = 5
     model = CustomUser
     template_name = 'main/employees.html'
     context_object_name = 'employees'
@@ -451,7 +451,10 @@ class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
         return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
 
     def get_queryset(self):
-        return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик']).order_by('-time_create')
+        if self.request.user.role == 'Супер Администратор':
+            return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик', 'РОП', 'Администратор'])
+        else:
+            return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик'])
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
