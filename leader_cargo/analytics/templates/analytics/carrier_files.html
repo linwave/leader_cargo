@@ -93,6 +93,8 @@
             <th scope="col">#</th>
             <th scope="col" width="200px">Артикул</th>
             <th scope="col">Менеджер</th>
+            <th scope="col">Дорога</th>
+            <th scope="col">Перевозчик</th>
             <th scope="col" width="120px" style="text-align: center;">Статус</th>
             <th scope="col">Наименование товара</th>
             <th scope="col">Кол-мест</th>
@@ -134,16 +136,10 @@
                         {% if fm.art == article.pk %}
                         <form method="post" id="edit-{{ article.pk }}" action="{% url 'edit_table_article' article.pk %}?{{ request.META.QUERY_STRING }}">
                             {% csrf_token %}
-                            {{ fm.f.prr.label }}
-                            {{ fm.f.prr }}<br>
-                            {{ fm.f.tat_cost.label }}
-                            {{ fm.f.tat_cost }}<br>
-                            {{ fm.f.payment_to_the_carrier_status.label }}
-                            {{ fm.f.payment_to_the_carrier_status }}<br>
-                            {{ fm.f.time_cargo_arrival_to_RF.label }}
-                            {{ fm.f.time_cargo_arrival_to_RF }}<br>
-                            {{ fm.f.time_cargo_release.label }}
-                            {{ fm.f.time_cargo_release }}
+                            {% for line in fm.f %}
+                            {{ line.label }}
+                            {{ line }}<br>
+                            {% endfor %}
                         </form>
                         {% endif %}
                         {% endfor %}
@@ -161,9 +157,27 @@
             <td>
                 {{ article.article }}
             </td>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+                {{ article.responsible_manager|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+                {{ article.carrier|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+                {{ article.path_format|default:"" }}
+            </td>
+            {% else %}
             <td>
                 {{ article.responsible_manager|default:"" }}
             </td>
+            <td>
+                {{ article.carrier|default:"" }}
+            </td>
+            <td>
+                {{ article.path_format|default:"" }}
+            </td>
+            {% endif %}
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <td style="text-align: center;">
                 {% if article.status == 'В пути' %}
@@ -258,8 +272,9 @@
             {% endif %}
             <td style="text-align: center;">{{ article.get_number_of_days_on_the_way}}</td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-            <td><form id="delete_article_form{{ article.pk }}" action="{% url 'delete_article' article.pk %}?{{ request.META.QUERY_STRING }}" method="post">{% csrf_token %}</form>
-                <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal3{{ article.pk }}">Удалить</p>
+            <td>
+                <form id="delete_article_form{{ article.pk }}" action="{% url 'delete_article' article.pk %}?{{ request.META.QUERY_STRING }}" method="post">{% csrf_token %}</form>
+                <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal3{{ article.pk }}" style="text-align: center;">Удалить</p>
                 <div class="modal fade" id="exampleModal3{{ article.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
@@ -280,7 +295,7 @@
         {% endfor %}
         {% else %}
         <tr align="center">
-            <td colspan="22" >Нет данных</td>
+            <td colspan="24" >Нет данных</td>
         </tr>
         {% endif %}
         </tbody>

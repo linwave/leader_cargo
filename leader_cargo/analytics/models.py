@@ -1,5 +1,7 @@
 from django.db import models
 
+from main.models import CustomUser
+
 
 class CargoFiles(models.Model):
     carriers = [
@@ -36,8 +38,28 @@ class CargoArticle(models.Model):
         ('Оплачено', 'Оплачено'),
         ('Не оплачено', 'Не оплачено'),
     ]
+    carriers = [
+        ('Ян', 'Ян'),
+        ('Валька', 'Валька'),
+        ('Мурад', 'Мурад'),
+        ('Гелик', 'Гелик')
+    ]
+    path_formats = [
+        ('Быстрое авто', 'Быстрое авто'),
+        ('Обычное авто', 'Обычное авто'),
+        ('Уссурийск', 'Уссурийск'),
+        ('ЖД', 'ЖД'),
+        ('Авиа', 'Авиа')
+    ]
+    managers = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'])
+    managers_choices = []
+    for manager in managers:
+        managers_choices.append((f'{manager.last_name} {manager.first_name}', f'{manager.last_name} {manager.first_name}'))
+
     article = models.CharField(max_length=50, verbose_name='Артикул')
-    responsible_manager = models.CharField(max_length=100, verbose_name='Отвественный менеджер', blank=True, null=True)
+    responsible_manager = models.CharField(max_length=100, verbose_name='Ответственный менеджер', choices=managers_choices, blank=True, null=True)
+    carrier = models.CharField(max_length=100, verbose_name='Перевозчик', choices=carriers, blank=True, null=True)
+    path_format = models.CharField(max_length=100, verbose_name='Формат пути', choices=path_formats, blank=True, null=True)
     name_goods = models.CharField(max_length=50, verbose_name='Наименование товара', blank=True, null=True)
     number_of_seats = models.CharField(max_length=50, verbose_name='Количество мест')
     weight = models.CharField(max_length=50, verbose_name='Вес, кг')

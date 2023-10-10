@@ -47,7 +47,7 @@ class EditTableArticleForm(ModelForm):
 
     class Meta:
         model = CargoArticle
-        fields = ["prr", "tat_cost", "payment_to_the_carrier_status", "time_cargo_arrival_to_RF", "time_cargo_release"]
+        fields = ["responsible_manager", "carrier", "path_format", "prr", "tat_cost", "payment_to_the_carrier_status", "time_cargo_arrival_to_RF", "time_cargo_release"]
         widgets = {
             "prr": TextInput(attrs={
                 'class': 'form-control',

@@ -161,3 +161,4 @@ cython_debug/
 leader_cargo/media
 leader_cargo/main/__pycache__
 leader_cargo/db.sqlite3
+leader_cargo/analytics/migrations
