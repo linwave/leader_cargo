@@ -56,7 +56,9 @@
 <div class="alert alert-warning d-flex align-items-center" role="alert">
     <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
     <div>
-        {{ message.error|join:"<br>" }}
+        <strong>Техническая ошибка:</strong><br>
+        <strong>"{{ message.error|join:"<br>" }}"</strong><br>
+        <strong>Просьба, написать тех. поддержке со скриншотом ошибки и прикрепить файл, из-за которого это произошло</strong>
     </div>
 </div>
 {% endif %}
@@ -85,7 +87,7 @@
 <span class="text-danger">{{ form.name_carrier.errors }}</span>
 <span class="text-danger">{{ form.file_path.errors }}</span>
 <div class="table-responsive m-2" style="position: absolute;left:0px;height:700px;overflow-y: scroll">
-    <table class="table table-bordered table-striped table-hover" >
+    <table class="table table-sm table-bordered table-striped table-hover" >
         <thead class="table-dark align-middle">
         <tr>
             <th scope="col">#</th>

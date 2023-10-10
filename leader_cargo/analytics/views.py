@@ -82,6 +82,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         self.message['success_articles'] = []
         self.message['warning_articles'] = []
         self.message['error'] = []
+
         try:
             if file_carrier.name_carrier == 'Ян':
                 if settings.DEBUG:
@@ -100,7 +101,9 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         cost_goods = str(sheet[row][7].value) if sheet[row][7].value else ""
                         insurance_cost = str(sheet[row][8].value) if sheet[row][8].value else ""
                         packaging_cost = str(sheet[row][9].value) if sheet[row][9].value else ""
-                        time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][11].value, 0) if sheet[row][11].value else ""
+                        if sheet[row][11].value:
+                            time_from_china = xlrd.xldate.xldate_as_datetime(sheet[row][11].value, 0) if sheet[row][11].value else ""
+
                         total_cost = str(sheet[row][13].value) if sheet[row][13].value else ""
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)
@@ -110,7 +113,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
                                 break
                         if not check:
-                            self.message['success_articles'].append(article)
                             CargoArticle.objects.create(
                                 article=article,
                                 name_goods=name_goods,
@@ -125,6 +127,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 total_cost=total_cost,
                                 cargo_id=file_carrier,
                             )
+                            self.message['success_articles'].append(article)
                     else:
                         break
             elif file_carrier.name_carrier == 'Валька':
@@ -158,7 +161,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 check = True
                                 break
                         if not check:
-                            self.message['success_articles'].append(article)
                             CargoArticle.objects.create(
                                 article=article,
                                 name_goods=name_goods,
@@ -173,6 +175,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 total_cost=total_cost,
                                 cargo_id=file_carrier,
                             )
+                            self.message['success_articles'].append(article)
                     else:
                         break
             elif file_carrier.name_carrier == 'Мурад':
@@ -215,7 +218,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
                                 break
                         if not check:
-                            self.message['success_articles'].append(article)
                             CargoArticle.objects.create(
                                 article=article,
                                 name_goods=name_goods,
@@ -230,6 +232,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 total_cost=total_cost,
                                 cargo_id=file_carrier,
                             )
+                            self.message['success_articles'].append(article)
             elif file_carrier.name_carrier == 'Гелик':
                 if settings.DEBUG:
                     workbook = xlrd.open_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}")
@@ -269,7 +272,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
                                 break
                         if not check:
-                            self.message['success_articles'].append(article)
                             CargoArticle.objects.create(
                                 article=article,
                                 name_goods=name_goods,
@@ -284,6 +286,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 total_cost=total_cost,
                                 cargo_id=file_carrier,
                             )
+                            self.message['success_articles'].append(article)
                     else:
                         break
         except Exception as e:
