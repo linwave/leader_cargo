@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block content %}
+<meta http-equiv="Refresh" content="60" />
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
     <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
         <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
@@ -17,10 +18,10 @@
     </symbol>
 </svg>
 <h2>Таблица результатов за {% now "F" %}</h2>
-<div class="table-responsive m-3" style="position: absolute;left:0px;height:750px;">
-    <table class="table table-bordered table-striped table-hover" >
+<div class="table-responsive m-3" style="position: absolute;left:0px;height:800px;font-size: 1.62rem;">
+    <table class="table table-sm table-bordered table-striped table-hover" >
         <thead class="table-warning align-middle">
-        <tr>
+        <tr align="center">
             <th scope="col">#</th>
             <th scope="col">ФИО</th>
             <th scope="col">% от плана</th>
@@ -46,7 +47,7 @@
             <th scope="row">{{ forloop.counter }}</th>
             <td>{{ value.fio }}</td>
             <td>{{ value.procent_plan|default:""|floatformat:"0g" }}%</td>
-            <td>{{ value.manager_monthly_net_profit_plan|default:"" }}</td>
+            <td>{{ value.manager_monthly_net_profit_plan|default:""|floatformat:"0g" }}</td>
             <td>{{ value.net_profit|default:""|floatformat:"2g" }}</td>
             <td>{{ value.amount_of_accepted_funds|default:""|floatformat:"0g" }}</td>
             <td>{{ value.marga|default:""|floatformat:"1g" }} %</td>
@@ -72,34 +73,33 @@
             <table class="table table-bordered table-striped table-hover" >
                 <thead class="table-secondary align-middle">
                 <tr align="center">
-                    <th scope="col" >Условия</th>
+                    <td scope="col" >Условия</td>
                     {% for manager, value in all_data.items %}
                     <td>{{ value.fio }}</td>
                     {% endfor %}
                 </tr>
                 </thead>
                 <tbody>
-
                 <tr align="center">
-                    <th scope="row">Звонки <span class="text-danger">(сколько еще нужно)</span></th>
+                    <td scope="row">Звонки (сколько еще нужно)</td>
                     {% for manager, value in all_data.items %}
                     <td scope="row">{{ value.calls_need|floatformat:"0g" }}</td>
                     {% endfor %}
                 </tr>
                 <tr align="center">
-                    <th scope="row">Длительность звонка <span class="text-danger">(план 1,5 мин)</span></th>
+                    <td scope="row">Длительность звонка (план 1,5 мин)</td>
                     {% for manager, value in all_data.items %}
                     <td scope="row">{{ value.calls_duration_need|floatformat:"2g" }}</td>
                     {% endfor %}
                 </tr>
                 <tr align="center">
-                    <th scope="row">Новых клиентов <span class="text-danger">(план 3, маржа от 15к)</span></th>
+                    <td scope="row">Новых клиентов (план 3, маржа от 15к)</td>
                     {% for manager, value in all_data.items %}
                     <td scope="row">{{ value.new_clients_need|default:"0"|floatformat:"0g" }}</td>
                     {% endfor %}
                 </tr>
                 <tr align="center">
-                    <th scope="row">Прибыль от существующих клиентов <span class="text-danger">(сколько еще нужно)</span></th>
+                    <td scope="row">Прибыль от существующих клиентов (сколько еще нужно)</td>
                     {% for manager, value in all_data.items %}
                     <td scope="row">{{ value.new_clients_net_profit_need|floatformat:"0g" }}</td>
                     {% endfor %}
@@ -110,5 +110,4 @@
     </div>
     </div>
 </div>
-
 {% endblock %}

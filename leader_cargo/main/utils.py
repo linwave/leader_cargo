@@ -7,6 +7,7 @@ menu_super_admin = [
     # {'title': 'Авторизация', 'url_name': 'login'},
     {'title': 'Курсы валют', 'url_name': 'exchangerates'},
     {'title': 'Сотрудники', 'url_name': 'employees'},
+    {'title': 'Система мониторинга', 'url_name': 'monitoring'},
     {'title': 'Клиенты', 'url_name': 'clients'},
     {'title': 'Заявки', 'url_name': 'appeals'},
 ]

@@ -307,6 +307,7 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
 
                 context['all_data'][f'{manager.pk}']['sum_calls_need'] = 0
                 context['all_data'][f'{manager.pk}']['sum_duration_calls_need'] = 0
+                context['all_data'][f'{manager.pk}']['new_clients_need'] = 0
                 context['all_data'][f'{manager.pk}']['calls_need'] = 240
                 context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = 80000
 
