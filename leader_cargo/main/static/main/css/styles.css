@@ -113,3 +113,11 @@
     opacity: 1;
 }
 
+.scrollable {
+  overflow: auto;
+}
+
+.scrollable thead tr th {
+    position: sticky;
+    top: 0;
+  }

@@ -70,6 +70,7 @@ class CargoArticle(models.Model):
     packaging_cost = models.CharField(max_length=50, verbose_name='Стоимость упаковки', blank=True, null=True)
     time_from_china = models.DateTimeField(verbose_name='Дата отправки с Китайского склада', blank=True, null=True)
     total_cost = models.CharField(max_length=50, verbose_name='Итоговая стоимость перевозки', blank=True, null=True)
+    address_transportation_cost = models.CharField(max_length=50, verbose_name='Адресная доставка', blank=True, null=True)
 
     prr = models.CharField(max_length=50, verbose_name='ПРР', blank=True, null=True)
     tat_cost = models.CharField(max_length=50, verbose_name='Оплата ТАТ', blank=True, null=True)

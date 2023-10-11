@@ -90,8 +90,12 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                 else:
                     dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'leader_cargo/media', str(file_carrier.file_path)), data_only=True)
                 sheet = dataframe.active
+                address_transportation_cost = ""
                 for row in range(6, sheet.max_row):
-                    if sheet[row][0].value:
+                    if sheet[row][0].value == '送货费':
+                        address_transportation_cost = float(sheet[row][13].value)/(row-6)
+                for row in range(6, sheet.max_row):
+                    if sheet[row][0].value and sheet[row][0].value != '送货费':
                         article = str(sheet[row][0].value)
                         name_goods = str(sheet[row][1].value) if sheet[row][1].value else ""
                         number_of_seats = str(sheet[row][2].value)
@@ -130,6 +134,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                                 time_from_china=make_aware(time_from_china),
                                 total_cost=total_cost,
                                 cargo_id=file_carrier,
+                                address_transportation_cost=address_transportation_cost,
                             )
                             self.message['success_articles'].append(article)
                     else:

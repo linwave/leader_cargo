@@ -86,8 +86,8 @@
 <span class="text-danger">{{ form.non_field_errors }}</span>
 <span class="text-danger">{{ form.name_carrier.errors }}</span>
 <span class="text-danger">{{ form.file_path.errors }}</span>
-<div class="table-responsive m-2" style="position: absolute;left:0px;height:700px;overflow-y: scroll">
-    <table class="table table-sm table-bordered table-striped table-hover" >
+<div class="table-responsive m-0 scrollable" style="position:absolute;left:0px;height:700px;">
+    <table class="table table-sm table-bordered table-striped table-hover">
         <thead class="table-dark align-middle">
         <tr>
             <th scope="col">#</th>
@@ -96,21 +96,22 @@
             <th scope="col">Дорога</th>
             <th scope="col">Перевозчик</th>
             <th scope="col" width="120px" style="text-align: center;">Статус</th>
-            <th scope="col">Наименование товара</th>
+            <th scope="col">Наимено-вание товара</th>
             <th scope="col">Кол-мест</th>
             <th scope="col">Вес, кг</th>
             <th scope="col">Объем, м3</th>
             <th scope="col">Тариф перевозки</th>
-            <th scope="col">Стоимость товара</th>
-            <th scope="col">Стоимость страховки</th>
-            <th scope="col">Стоимость упаковки</th>
-            <th scope="col">Дата отправки с Китайского склада</th>
+            <th scope="col">Цена товара</th>
+            <th scope="col">Цена страховки</th>
+            <th scope="col">Цена упаковки</th>
+            <th scope="col">Дата отправки с Китая</th>
             <th scope="col">Итоговая стоимость перевозки</th>
+            <th scope="col">Адресная доставка</th>
             <th scope="col" width="4%">ПРР</th>
             <th scope="col" width="4%">Оплата ТАТ</th>
             <th scope="col" width="170px">Оплачено клиентом</th>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-            <th scope="col" width="170px">Оплачено перевозчику</th>
+            <th scope="col" width="170px">Оплачено перевоз-чику</th>
             {% endif %}
             <th scope="col">Дата прибытия груза в РФ</th>
             <th scope="col">Дата выдачи груза</th>
@@ -203,6 +204,7 @@
             <td>{{ article.packaging_cost }}</td>
             <td>{{ article.time_from_china|date:"d F Y" }}</td>
             <td>{{ article.total_cost|floatformat:"0g"}} $</td>
+            <td>{{ article.address_transportation_cost|default:""|floatformat:"1g"}}{% if article.address_transportation_cost %} ${%endif%}</td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
                 {{ article.prr|default:"" }}{% if article.prr %} ₽{%endif%}

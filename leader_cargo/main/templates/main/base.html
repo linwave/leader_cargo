@@ -39,6 +39,17 @@
     <a href="{% url 'exchangerates' %}" class="d-inline-flex mt-2 ms-md-auto link-body-emphasis text-decoration-none" ><span class="font-weight-bold">¥ Курс ожидается $ Курс ожидается</span></a>
     {% endif %}
     {% else %}
+    {% if 'leaderboard' in request.path %}
+    {% if last_currency %}
+    <h3 class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >¥ {{ last_currency.yuan }}  $ {{ last_currency.dollar }}</h3>
+    {% elif last_currency.yuan %}
+    <h3 class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >¥ {{ last_currency.yuan }}  $ Курс ожидается</h3>
+    {% elif last_currency.dollar %}
+    <h3 class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >¥ Курс ожидается  $ {{ last_currency.dollar }}</h3>
+    {% else %}
+    <h3 class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" ><span class="font-weight-bold">¥ Курс ожидается $ Курс ожидается</span></h3>
+    {% endif %}
+    {% else %}
     {% if last_currency %}
     <span class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >¥ {{ last_currency.yuan }}  $ {{ last_currency.dollar }}</span>
     {% elif last_currency.yuan %}
@@ -47,6 +58,7 @@
     <span class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >¥ Курс ожидается  $ {{ last_currency.dollar }}</span>
     {% else %}
     <span class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" ><span class="font-weight-bold">¥ Курс ожидается $ Курс ожидается</span></span>
+    {% endif %}
     {% endif %}
     {% endif %}
     {% if user.role == 'Клиент'%}
