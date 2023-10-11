@@ -340,8 +340,8 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                     if report.manager_id.pk == manager.pk:
                         if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
                             context['all_data'][f'{manager.pk}']['calls_need'] = context['all_data'][f'{manager.pk}']['calls_need'] - float(report.number_of_calls.replace(" ", "").replace(",", "."))
-                        if report.raised_funds_to_the_company and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
-                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] - float(report.raised_funds_to_the_company.replace(" ", "").replace(",", "."))
+                        if report.net_profit_to_the_company and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
+                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] - float(report.net_profit_to_the_company.replace(" ", "").replace(",", "."))
                         if report.number_of_new_clients_attracted and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
                             context['all_data'][f'{manager.pk}']['new_clients_need'] = context['all_data'][f'{manager.pk}']['new_clients_need'] + float(report.number_of_new_clients_attracted.replace(" ", "").replace(",", "."))
                         if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
