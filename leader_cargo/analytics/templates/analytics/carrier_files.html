@@ -23,12 +23,13 @@
                 <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="submit"/></li>
             </ul>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"/>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-5">
             <h6 class="d-inline-flex ms-md-auto p-2">Общий вес: {{ all_weight|floatformat:"2g" }}</h6>
             <h6 class="d-inline-flex ms-md-auto p-2">Общий объем: {{ all_volume|floatformat:"2g" }}</h6>
+            <h6 class="d-inline-flex ms-md-auto p-2">Общий ПРР: {{ all_prr|floatformat:"2g" }}</h6>
         </div>
     </div>
 </form>

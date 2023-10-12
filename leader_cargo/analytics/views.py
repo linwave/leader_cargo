@@ -62,6 +62,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
             })
         context['all_weight'] = 0
         context['all_volume'] = 0
+        context['all_prr'] = 0
         if self.message['update']:
             context['message'] = self.message
         else:
@@ -71,6 +72,8 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
             if art.status:
                 context['all_weight'] = context['all_weight'] + float(art.weight)
                 context['all_volume'] = context['all_volume'] + float(art.volume)
+                if art.prr:
+                    context['all_prr'] = context['all_prr'] + float(art.prr)
         context['vputi'] = 'В пути'
         context['pribil'] = 'Прибыл в РФ'
         c_def = self.get_user_context(title="Учет грузов")
