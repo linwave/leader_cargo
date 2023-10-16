@@ -6,6 +6,7 @@ from main.models import CustomUser
 class CargoFiles(models.Model):
     carriers = [
         ('Ян', 'Ян'),
+        ('Ян (полная машина)', 'Ян (полная машина)'),
         ('Валька', 'Валька'),
         ('Мурад', 'Мурад'),
         ('Гелик', 'Гелик')

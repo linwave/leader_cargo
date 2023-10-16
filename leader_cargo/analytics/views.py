@@ -63,6 +63,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         context['all_weight'] = 0
         context['all_volume'] = 0
         context['all_prr'] = 0
+        context['all_tat'] = 0
         if self.message['update']:
             context['message'] = self.message
         else:
@@ -74,6 +75,8 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                 context['all_volume'] = context['all_volume'] + float(art.volume)
                 if art.prr:
                     context['all_prr'] = context['all_prr'] + float(art.prr)
+                if art.tat_cost:
+                    context['all_tat'] = context['all_tat'] + float(art.tat_cost)
         context['vputi'] = 'В пути'
         context['pribil'] = 'Прибыл в РФ'
         c_def = self.get_user_context(title="Учет грузов")
@@ -142,6 +145,45 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                             self.message['success_articles'].append(article)
                     else:
                         break
+            elif file_carrier.name_carrier == 'Ян (полная машина)':
+                if settings.DEBUG:
+                    dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'media', str(file_carrier.file_path)), data_only=True)
+                else:
+                    dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'leader_cargo/media', str(file_carrier.file_path)), data_only=True)
+                sheet = dataframe.active
+                article = str(sheet[3][3].value)
+                number_of_seats = str(sheet[3][4].value)
+                weight = str(sheet[3][5].value) if sheet[3][5].value else ""
+                volume = str(sheet[3][6].value) if sheet[3][6].value else ""
+                address_transportation_cost = float(sheet[3][9].value)
+                try:
+                    time_from_china = xlrd.xldate.xldate_as_datetime(sheet[3][0].value, 0) if sheet[3][0].value else ""
+                except TypeError:
+                    time_from_china = sheet[3][0].value
+                try:
+                    make_aware(time_from_china)
+                except:
+                    time_from_china = datetime.datetime.strptime(time_from_china, '%Y.%m.%d')
+                total_cost = str(sheet[3][10].value) if sheet[3][10].value else ""
+                check = False
+                old_articles = CargoArticle.objects.filter(article=article)
+                for old in old_articles:
+                    if old.article == article and old.status == 'В пути':
+                        check = True
+                        self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
+                        break
+                if not check:
+                    CargoArticle.objects.create(
+                        article=article,
+                        number_of_seats=number_of_seats,
+                        weight=weight,
+                        volume=volume,
+                        time_from_china=make_aware(time_from_china),
+                        total_cost=total_cost,
+                        cargo_id=file_carrier,
+                        address_transportation_cost=address_transportation_cost,
+                    )
+                    self.message['success_articles'].append(article)
             elif file_carrier.name_carrier == 'Валька':
                 if settings.DEBUG:
                     dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)

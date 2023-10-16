@@ -9,27 +9,30 @@
 <form id="date_picker" action="{% url 'carrier' %}" method="get">
     <div class="row">
         {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-        <div class="col-md-3">
+        <div class="col-3">
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
                 Загрузить файл перевозчика
             </button>
         </div>
         {% endif %}
-        <div class="col-md-2">
+        <div class="col-1 position-relative">
             <input id="butt" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" value="{{ status_now|join:'' }}" name="status" type="button" />
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ all_articles|length }}</span>
             <ul class="dropdown-menu dropdown-menu-dark">
                 <li><input class="dropdown-item" value="Все статусы" name="status" type="submit"/></li>
                 <li><input class="dropdown-item" value="В пути" name="status" type="submit"/></li>
                 <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="submit"/></li>
             </ul>
+
         </div>
-        <div class="col-md-2">
+        <div class="col-auto">
             <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"/>
         </div>
-        <div class="col-md-5">
+        <div class="col-auto">
             <h6 class="d-inline-flex ms-md-auto p-2">Общий вес: {{ all_weight|floatformat:"2g" }}</h6>
             <h6 class="d-inline-flex ms-md-auto p-2">Общий объем: {{ all_volume|floatformat:"2g" }}</h6>
             <h6 class="d-inline-flex ms-md-auto p-2">Общий ПРР: {{ all_prr|floatformat:"2g" }}</h6>
+            <h6 class="d-inline-flex ms-md-auto p-2">Общий ТАТ: {{ all_tat|floatformat:"2g" }}</h6>
         </div>
     </div>
 </form>
@@ -191,18 +194,14 @@
             {% else %}
             <td><p>{{ article.status }}</p></td>
             {% endif %}
-            <td>{{ article.name_goods }}</td>
+            <td>{{ article.name_goods|default:"" }}</td>
             <td style="text-align: center;">{{ article.number_of_seats|floatformat:"0g" }}</td>
             <td>{{ article.weight }}</td>
             <td>{{ article.volume|floatformat:"2g" }}</td>
             <td>{{ article.transportation_tariff }}</td>
-            {% if article.cost_goods %}
-            <td>{{ article.cost_goods }}</td>
-            {% else %}
-            <td></td>
-            {% endif %}
-            <td>{{ article.insurance_cost }}</td>
-            <td>{{ article.packaging_cost }}</td>
+            <td>{{ article.cost_goods|default:"" }}</td>
+            <td>{{ article.insurance_cost|default:"" }}</td>
+            <td>{{ article.packaging_cost|default:"" }}</td>
             <td>{{ article.time_from_china|date:"d F Y" }}</td>
             <td>{{ article.total_cost|floatformat:"0g"}} $</td>
             <td>{{ article.address_transportation_cost|default:""|floatformat:"1g"}}{% if article.address_transportation_cost %} ${%endif%}</td>
@@ -298,7 +297,7 @@
         {% endfor %}
         {% else %}
         <tr align="center">
-            <td colspan="24" >Нет данных</td>
+            <td colspan="25" >Нет данных</td>
         </tr>
         {% endif %}
         </tbody>
