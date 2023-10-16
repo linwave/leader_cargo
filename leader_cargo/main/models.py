@@ -236,3 +236,4 @@ class ManagersReports(models.Model):
     class Meta:
         verbose_name = 'Отчетность менеджеров'
         verbose_name_plural = 'Отчетность менеджеров'
+        ordering = ['-report_upload_date']

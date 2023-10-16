@@ -1,6 +1,6 @@
 import calendar
-import datetime
 import re
+
 from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
@@ -150,34 +150,63 @@ class MonitoringManagerReportView(LoginRequiredMixin, DataMixin, ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id']).order_by('-time_create')
+        months = ["", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+        years = ["", 2023, 2024, 2025, 2026, 2027, 2028]
+        context['get_queryset'] = ''
+        if self.request.GET.get('month') or self.request.GET.get('year'):
+            now = datetime.datetime.now()
+            context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id'])
+            if 'month' in self.request.GET:
+                month = self.request.GET.get('month')
+                for index, m in enumerate(months):
+                    if m == month:
+                        month = index
+                        break
+                context['manager_reports'].filter(report_upload_date__month=month)
+                now = now.replace(month=month)
+            if 'year' in self.request.GET:
+                year = int(self.request.GET.get('year'))
+                context['manager_reports'].filter(report_upload_date__year=year)
+                now = now.replace(year=year)
+        else:
+            now = datetime.datetime.now()
+            month = now.month
+            year = now.year
+            context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id'], report_upload_date__month=month, report_upload_date__year=year)
+
         context['day_reports'] = dict()
         for report in context['manager_reports']:
             context['day_reports'].update({(report.report_upload_date+datetime.timedelta(hours=3)).strftime("%d.%m.%Y"): report})
-        months = ["", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+
         context['all_days'] = []
         context['form_day_report'] = []
-        for day in range(1, calendar.monthrange(datetime.datetime.now().year, datetime.datetime.now().month)[1]+1):
-            context['all_days'].append(datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y"))
-            if datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y") in context['day_reports']:
+        for day in range(1, calendar.monthrange(now.year, now.month)[1]+1):
+            context['all_days'].append(now.replace(day=day).strftime("%d.%m.%Y"))
+            if now.replace(day=day).strftime("%d.%m.%Y") in context['day_reports']:
                 context['form_day_report'].append({
-                    'day': datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y"),
-                    'f': EditRopReportForm(instance=context['day_reports'][datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y")]),
-                    'report_id': context['day_reports'][datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y")].pk
+                    'day': now.replace(day=day).strftime("%d.%m.%Y"),
+                    'f': EditRopReportForm(instance=context['day_reports'][now.replace(day=day).strftime("%d.%m.%Y")]),
+                    'report_id': context['day_reports'][now.replace(day=day).strftime("%d.%m.%Y")].pk
                 })
             else:
                 context['form_day_report'].append({
-                    'day': datetime.datetime.now().replace(day=day).strftime("%d.%m.%Y"),
+                    'day': now.replace(day=day).strftime("%d.%m.%Y"),
                     'f': RopReportForm(),
                     'report_id': '',
                 })
         context['manage_plan_form'] = EditManagerPlanForm(instance=context['manager'])
-        context['month'] = months[datetime.datetime.now().month]
+        context['month'] = months[now.month]
+        context['months'] = months
+        context['year'] = now.year
+        context['years'] = years
         c_def = self.get_user_context(title="Мониторинг менеджера")
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
         return CustomUser.objects.get(pk=self.kwargs['manager_id'])
+
+    def get(self, request, *args, **kwargs):
+        return super(MonitoringManagerReportView, self).get(request, *args, **kwargs)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -269,11 +298,13 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
+        now = datetime.datetime.now()
         if self.request.user.role == 'Супер Администратор':
             context['managers'] = CustomUser.objects.filter(role='Менеджер')
         else:
             context['managers'] = CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
-        context['monitoring_reports'] = ManagersReports.objects.all().order_by('-time_create')
+        context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=now.month, report_upload_date__year=now.year).order_by('-time_create')
+
         context['all_data'] = dict()
         for manager in context['managers']:
             if manager.pk != 18:
@@ -786,7 +817,6 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
         current_client = None
         if self.object.client:
             current_client = self.object.client
-        print(current_client)
         if self.request.user.role == 'Клиент':
             if self.request.POST.get('tag'):
                 new_data = self.form_client(self.request.POST, instance=self.object)

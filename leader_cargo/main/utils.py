@@ -43,7 +43,6 @@ menu_logist = [
 def last_currency():
     try:
         curs = ExchangeRates.objects.filter(time_create__date=datetime.date.today()).order_by('-time_create')[:1][0]
-        # print(ExchangeRates.objects.filter(time_create__date=datetime.datetime.today().date()))
         curs.yuan = str(format(float(curs.yuan), '.2f'))
         curs.dollar = str(format(float(curs.dollar), '.2f'))
         return curs
