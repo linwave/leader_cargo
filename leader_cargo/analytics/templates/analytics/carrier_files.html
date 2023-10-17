@@ -234,8 +234,8 @@
             <td>{{ article.weight }}</td>
             <td>{{ article.volume|floatformat:"2g" }}</td>
             <td>{{ article.transportation_tariff }}</td>
-            <td>{{ article.cost_goods|default:"" }}</td>
-            <td>{{ article.insurance_cost|default:"" }}</td>
+            <td>{{ article.cost_goods|floatformat:"2g"|default:"" }}</td>
+            <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>
             <td>{{ article.packaging_cost|default:"" }}</td>
             <td>{{ article.time_from_china|date:"d F Y" }}</td>
             <td>{{ article.total_cost|floatformat:"0g"}} $</td>

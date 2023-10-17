@@ -99,6 +99,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
 
         try:
             if file_carrier.name_carrier == 'Ян':
+                carrier = 'Ян'
                 if settings.DEBUG:
                     dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'media', str(file_carrier.file_path)), data_only=True)
                 else:
@@ -137,6 +138,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         if not check:
                             CargoArticle.objects.create(
                                 article=article,
+                                carrier=carrier,
                                 name_goods=name_goods,
                                 number_of_seats=number_of_seats,
                                 weight=weight,
@@ -154,6 +156,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     else:
                         break
             elif file_carrier.name_carrier == 'Ян (полная машина)':
+                carrier = 'Ян'
                 if settings.DEBUG:
                     dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'media', str(file_carrier.file_path)), data_only=True)
                 else:
@@ -183,6 +186,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                 if not check:
                     CargoArticle.objects.create(
                         article=article,
+                        carrier=carrier,
                         number_of_seats=number_of_seats,
                         weight=weight,
                         volume=volume,
@@ -193,6 +197,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     )
                     self.message['success_articles'].append(article)
             elif file_carrier.name_carrier == 'Валька':
+                carrier = 'Валька'
                 if settings.DEBUG:
                     dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
                 else:
@@ -225,6 +230,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         if not check:
                             CargoArticle.objects.create(
                                 article=article,
+                                carrier=carrier,
                                 name_goods=name_goods,
                                 number_of_seats=number_of_seats,
                                 weight=weight,
@@ -241,6 +247,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     else:
                         break
             elif file_carrier.name_carrier == 'Мурад':
+                carrier = 'Мурад'
                 if settings.DEBUG:
                     dataframe = openpyxl.load_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}", data_only=True)
                 else:
@@ -282,6 +289,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         if not check:
                             CargoArticle.objects.create(
                                 article=article,
+                                carrier=carrier,
                                 name_goods=name_goods,
                                 number_of_seats=number_of_seats,
                                 weight=weight,
@@ -296,6 +304,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                             )
                             self.message['success_articles'].append(article)
             elif file_carrier.name_carrier == 'Гелик':
+                carrier = 'Гелик'
                 if settings.DEBUG:
                     workbook = xlrd.open_workbook(f"{os.getcwd()}/media/{file_carrier.file_path}")
                 else:
@@ -336,6 +345,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         if not check:
                             CargoArticle.objects.create(
                                 article=article,
+                                carrier=carrier,
                                 name_goods=name_goods,
                                 number_of_seats=number_of_seats,
                                 weight=weight,
