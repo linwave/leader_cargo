@@ -120,7 +120,7 @@ class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
         if self.request.user.role == 'Супер Администратор':
             return CustomUser.objects.filter(role='Менеджер')
         else:
-            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
+            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}', status=True)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -302,7 +302,7 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
         if self.request.user.role == 'Супер Администратор':
             context['managers'] = CustomUser.objects.filter(role='Менеджер')
         else:
-            context['managers'] = CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
+            context['managers'] = CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}', status=True)
         context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=now.month, report_upload_date__year=now.year).order_by('-time_create')
 
         context['all_data'] = dict()
