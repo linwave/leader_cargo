@@ -65,49 +65,49 @@
         {% endfor %}
         </tbody>
     </table>
-    <div class="alert alert-primary d-flex align-items-center" role="alert">
-        <div class="container">
-        <h2 align="center"><i class="fa-solid fa-trophy fa-xl"></i>Конкурс</h2>
-        <h3 align="center">Клиент который приносит в месяц от 200 000 до 400 000 (заявки каждую неделю)</h3>
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped table-hover" >
-                <thead class="table-secondary align-middle">
-                <tr align="center">
-                    <td scope="col" >Условия</td>
-                    {% for manager, value in all_data.items %}
-                    <td>{{ value.fio }}</td>
-                    {% endfor %}
-                </tr>
-                </thead>
-                <tbody>
-                <tr align="center">
-                    <td scope="row">Звонки (сколько еще нужно)</td>
-                    {% for manager, value in all_data.items %}
-                    <td scope="row">{{ value.calls_need|floatformat:"0g" }}</td>
-                    {% endfor %}
-                </tr>
-                <tr align="center">
-                    <td scope="row">Длительность звонка (план 1,5 мин)</td>
-                    {% for manager, value in all_data.items %}
-                    <td scope="row">{{ value.calls_duration_need|floatformat:"2g" }}</td>
-                    {% endfor %}
-                </tr>
-                <tr align="center">
-                    <td scope="row">Новых клиентов (план 3, маржа от 15к)</td>
-                    {% for manager, value in all_data.items %}
-                    <td scope="row">{{ value.new_clients_need|default:"0"|floatformat:"0g" }}</td>
-                    {% endfor %}
-                </tr>
-                <tr align="center">
-                    <td scope="row">Прибыль от существующих клиентов (сколько еще нужно)</td>
-                    {% for manager, value in all_data.items %}
-                    <td scope="row">{{ value.new_clients_net_profit_need|floatformat:"0g" }}</td>
-                    {% endfor %}
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    </div>
+<!--    <div class="alert alert-primary d-flex align-items-center" role="alert">-->
+<!--        <div class="container">-->
+<!--            <h2 align="center"><i class="fa-solid fa-trophy fa-xl"></i>Конкурс</h2>-->
+<!--            <h3 align="center">Клиент который приносит в месяц от 200 000 до 400 000 (заявки каждую неделю)</h3>-->
+<!--            <div class="table-responsive">-->
+<!--                <table class="table table-bordered table-striped table-hover" >-->
+<!--                    <thead class="table-secondary align-middle">-->
+<!--                    <tr align="center">-->
+<!--                        <td scope="col" >Условия</td>-->
+<!--                        {% for manager, value in all_data.items %}-->
+<!--                        <td>{{ value.fio }}</td>-->
+<!--                        {% endfor %}-->
+<!--                    </tr>-->
+<!--                    </thead>-->
+<!--                    <tbody>-->
+<!--                    <tr align="center">-->
+<!--                        <td scope="row">Звонки (сколько еще нужно)</td>-->
+<!--                        {% for manager, value in all_data.items %}-->
+<!--                        <td scope="row">{{ value.calls_need|floatformat:"0g" }}</td>-->
+<!--                        {% endfor %}-->
+<!--                    </tr>-->
+<!--                    <tr align="center">-->
+<!--                        <td scope="row">Длительность звонка (план 1,5 мин)</td>-->
+<!--                        {% for manager, value in all_data.items %}-->
+<!--                        <td scope="row">{{ value.calls_duration_need|floatformat:"2g" }}</td>-->
+<!--                        {% endfor %}-->
+<!--                    </tr>-->
+<!--                    <tr align="center">-->
+<!--                        <td scope="row">Новых клиентов (план 3, маржа от 15к)</td>-->
+<!--                        {% for manager, value in all_data.items %}-->
+<!--                        <td scope="row">{{ value.new_clients_need|default:"0"|floatformat:"0g" }}</td>-->
+<!--                        {% endfor %}-->
+<!--                    </tr>-->
+<!--                    <tr align="center">-->
+<!--                        <td scope="row">Прибыль от существующих клиентов (сколько еще нужно)</td>-->
+<!--                        {% for manager, value in all_data.items %}-->
+<!--                        <td scope="row">{{ value.new_clients_net_profit_need|floatformat:"0g" }}</td>-->
+<!--                        {% endfor %}-->
+<!--                    </tr>-->
+<!--                    </tbody>-->
+<!--                </table>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
 </div>
 {% endblock %}
