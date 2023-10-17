@@ -309,7 +309,7 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
         for manager in context['managers']:
             if manager.pk != 18:
                 context['all_data'][f'{manager.pk}'] = dict()
-                context['all_data'][f'{manager.pk}']['fio'] = f"{manager.last_name} {manager.first_name} {manager.patronymic}"
+                context['all_data'][f'{manager.pk}']['fio'] = f"{manager.last_name} {manager.first_name}"
                 context['all_data'][f'{manager.pk}']['manager_monthly_net_profit_plan'] = float(manager.manager_monthly_net_profit_plan.replace(" ", "").replace(",", "."))
                 context['all_data'][f'{manager.pk}']['net_profit'] = 0
                 context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] = 0

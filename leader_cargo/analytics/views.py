@@ -74,7 +74,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
             context['all_articles'] = context['all_articles'].filter(carrier=self.request.GET.get('carrier'))
         else:
             context['carrier_now'] = 'Все перевозчики'
-        
+
         context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
                                                                  time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
         context['form_article'] = []

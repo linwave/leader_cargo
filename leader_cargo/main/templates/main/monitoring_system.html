@@ -19,7 +19,11 @@
                 </div>
                 <div class="col-12">
                     <div class="card-body">
-                        <h5 class="card-title"><a href="{% url 'monitoring_manager_report' manager.pk %}" class="stretched-link text-decoration-none" id="list-employees">{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</a></h5>
+                        <h5 class="card-title">
+                            <a href="{% url 'monitoring_manager_report' manager.pk %}" class="stretched-link text-decoration-none" id="list-employees">
+                                {{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}
+                            </a>
+                        </h5>
                         {{ manager.phone }}<br>
                         {{ manager.town }}<br>
                         {{ manager.role }}<br>
