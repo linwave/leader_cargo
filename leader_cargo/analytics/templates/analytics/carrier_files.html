@@ -6,29 +6,41 @@
 
 {% block content %}
 {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                Загрузить файл перевозчика
-            </button>
-            <br>
+<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
+    Загрузить файл перевозчика
+</button>
+<button type="button" class="btn btn-dark ">
+    Выгрузка отчета по грузам
+</button>
+<br>
 {% endif %}
 <br>
 <form id="date_picker" method="get" action="{% url 'carrier' %}">
+    {% if article_current %}
+    <input type="hidden" name="article" value="{{ article_current }}">
+    {% endif %}
     <input type="hidden" name="status" value="{{ status_now }}">
     <input type="hidden" name="carrier" value="{{ carrier_now }}">
-    <div class="row justify-content-around">
-        <div class="col-3">
+    <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
+    <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
+    <div class="row g-0 justify-content-around">
+        <div class="col-auto">
             <input id="article_search" class="form-control" type="text" name="article" placeholder="Поиск по артикулу" value="{{ article_current|default:'' }}"/>
         </div>
-        <div class="col-2">
-            <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >{{ status_now }}</button>
+        <div class="col-auto">
+            <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
+                {{ status_now }}
+            </button>
             <ul class="dropdown-menu dropdown-menu-dark">
                 <li><input class="dropdown-item" value="Все статусы" name="status" type="submit"/></li>
                 <li><input class="dropdown-item" value="В пути" name="status" type="submit"/></li>
                 <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="submit"/></li>
             </ul>
         </div>
-        <div class="col-2">
-            <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >{{ carrier_now }}</button>
+        <div class="col-auto">
+            <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >
+                {{ carrier_now }}
+            </button>
             <ul class="dropdown-menu dropdown-menu-dark">
                 <li><input class="dropdown-item" value="Все перевозчики" name="carrier" type="submit"/></li>
                 <li><input class="dropdown-item" value="Ян" name="carrier" type="submit"/></li>
@@ -38,18 +50,46 @@
             </ul>
         </div>
         <div class="col-auto">
-            <span class="d-inline-flex ms-md-auto p-2">От</span>
+            <button id="paid_by_the_client" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_by_the_client" type="button" >
+                {{ paid_by_the_client_current }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><input class="dropdown-item" value="Оплата клиентом" name="paid_by_the_client" type="submit"/></li>
+                <li><input class="dropdown-item" value="Оплачено полностью" name="paid_by_the_client" type="submit"/></li>
+                <li><input class="dropdown-item" value="Оплачено частично" name="paid_by_the_client" type="submit"/></li>
+                <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client" type="submit"/></li>
+            </ul>
         </div>
         <div class="col-auto">
-            <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"/>
+            <button id="paid_to_the_carrier" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_to_the_carrier" type="button" >
+                {{ paid_to_the_carrier_current }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><input class="dropdown-item" value="Оплата перевозчику" name="paid_to_the_carrier" type="submit"/></li>
+                <li><input class="dropdown-item" value="Оплачено" name="paid_to_the_carrier" type="submit"/></li>
+                <li><input class="dropdown-item" value="Не оплачено" name="paid_to_the_carrier" type="submit"/></li>
+            </ul>
         </div>
         <div class="col-auto">
-            <span class="d-inline-flex ms-md-auto p-2">До</span>
+            <div class="row">
+                <div class="col-auto">
+                    <label for="startDate" class="col-form-label">От</label>
+                </div>
+                <div class="col-auto">
+                    <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"/>
+                </div>
+            </div>
         </div>
         <div class="col-auto">
-            <input id="endDate" class="form-control" type="date" name="end_date" value="{{ end_date_current }}"/>
+            <div class="row">
+                <div class="col-auto">
+                    <label for="endDate" class="col-form-label">До</label>
+                </div>
+                <div class="col-auto">
+                    <input id="endDate" class="form-control" type="date" name="end_date" value="{{ end_date_current }}"/>
+                </div>
+            </div>
         </div>
-
     </div>
 </form>
 
@@ -250,7 +290,7 @@
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
                 {{ article.tat_cost|default:"" }}{% if article.tat_cost %} ₽{%endif%}
             </td>
-            <td style="text-align: center;">
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
                 {{ article.paid_by_the_client_status }}
             </td>
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">

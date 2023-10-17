@@ -41,13 +41,19 @@ class EditTableArticleForm(ModelForm):
             ('Оплачено', 'Оплачено'),
             ('Не оплачено', 'Не оплачено'),
         ]
+        paid_by_the_client_statuses = [
+            ('Оплачено полностью', 'Оплачено полностью'),
+            ('Оплачено частично', 'Оплачено частично'),
+            ('Не оплачено', 'Не оплачено'),
+        ]
         for field in self.fields:
             self.fields[field].widget.attrs.update({'class': 'form-control'})
+        self.fields["paid_by_the_client_status"].choices = paid_by_the_client_statuses
         self.fields["payment_to_the_carrier_status"].choices = payment_to_the_carrier_statuses
 
     class Meta:
         model = CargoArticle
-        fields = ["responsible_manager", "carrier", "path_format", "prr", "tat_cost", "payment_to_the_carrier_status", "time_cargo_arrival_to_RF", "time_cargo_release"]
+        fields = ["responsible_manager", "carrier", "path_format", "prr", "tat_cost",  "paid_by_the_client_status", "payment_to_the_carrier_status", "time_cargo_arrival_to_RF", "time_cargo_release"]
         widgets = {
             "prr": TextInput(attrs={
                 'class': 'form-control',

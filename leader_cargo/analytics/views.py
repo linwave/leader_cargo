@@ -45,20 +45,36 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
             context['all_articles'] = context['all_articles'].filter(article__iregex=context['article_current'])
         else:
             context['article_current'] = None
+
+        if self.request.GET.get('paid_by_the_client') and self.request.GET.get('paid_by_the_client') != 'Оплата клиентом':
+            context['paid_by_the_client_current'] = self.request.GET.get('paid_by_the_client')
+            context['all_articles'] = context['all_articles'].filter(paid_by_the_client_status=context['paid_by_the_client_current'])
+        else:
+            context['paid_by_the_client_current'] = 'Оплата клиентом'
+
+        if self.request.GET.get('paid_to_the_carrier') and self.request.GET.get('paid_to_the_carrier') != 'Оплата перевозчику':
+            context['paid_to_the_carrier_current'] = self.request.GET.get('paid_to_the_carrier')
+            context['all_articles'] = context['all_articles'].filter(payment_to_the_carrier_status=context['paid_to_the_carrier_current'])
+        else:
+            context['paid_to_the_carrier_current'] = 'Оплата перевозчику'
+
         if self.request.GET.get('date'):
             context['date_current'] = self.request.GET.get('date')
         if self.request.GET.get('end_date'):
             context['end_date_current'] = self.request.GET.get('end_date')
+
         if self.request.GET.get('status') and self.request.GET.get('status') != 'Все статусы':
             context['status_now'] = self.request.GET.get('status')
             context['all_articles'] = context['all_articles'].filter(status=self.request.GET.get('status'))
         else:
             context['status_now'] = 'Все статусы'
+
         if self.request.GET.get('carrier') and self.request.GET.get('carrier') != 'Все перевозчики':
             context['carrier_now'] = self.request.GET.get('carrier')
             context['all_articles'] = context['all_articles'].filter(carrier=self.request.GET.get('carrier'))
         else:
             context['carrier_now'] = 'Все перевозчики'
+        
         context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
                                                                  time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
         context['form_article'] = []
