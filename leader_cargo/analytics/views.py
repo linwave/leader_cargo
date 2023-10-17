@@ -40,6 +40,11 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         now = datetime.datetime.now()
         context['date_current'] = now.replace(day=1).strftime("%Y-%m-%d")
         context['end_date_current'] = now.strftime("%Y-%m-%d")
+        if self.request.GET.get('article'):
+            context['article_current'] = self.request.GET.get('article')
+            context['all_articles'] = context['all_articles'].filter(article__iregex=context['article_current'])
+        else:
+            context['article_current'] = None
         if self.request.GET.get('date'):
             context['date_current'] = self.request.GET.get('date')
         if self.request.GET.get('end_date'):

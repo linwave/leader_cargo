@@ -5,19 +5,21 @@
 {% endblock %}
 
 {% block content %}
+{% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                Загрузить файл перевозчика
+            </button>
+            <br>
+{% endif %}
 <br>
 <form id="date_picker" method="get" action="{% url 'carrier' %}">
     <input type="hidden" name="status" value="{{ status_now }}">
     <input type="hidden" name="carrier" value="{{ carrier_now }}">
     <div class="row justify-content-around">
-        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
         <div class="col-3">
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                Загрузить файл перевозчика
-            </button>
+            <input id="article_search" class="form-control" type="text" name="article" placeholder="Поиск по артикулу" value="{{ article_current|default:'' }}"/>
         </div>
-        {% endif %}
-        <div class="col-auto">
+        <div class="col-2">
             <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >{{ status_now }}</button>
             <ul class="dropdown-menu dropdown-menu-dark">
                 <li><input class="dropdown-item" value="Все статусы" name="status" type="submit"/></li>
@@ -25,7 +27,7 @@
                 <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="submit"/></li>
             </ul>
         </div>
-        <div class="col-auto">
+        <div class="col-2">
             <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >{{ carrier_now }}</button>
             <ul class="dropdown-menu dropdown-menu-dark">
                 <li><input class="dropdown-item" value="Все перевозчики" name="carrier" type="submit"/></li>
@@ -47,6 +49,7 @@
         <div class="col-auto">
             <input id="endDate" class="form-control" type="date" name="end_date" value="{{ end_date_current }}"/>
         </div>
+
     </div>
 </form>
 
