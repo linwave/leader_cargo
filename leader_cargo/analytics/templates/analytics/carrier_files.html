@@ -16,16 +16,13 @@
 {% endif %}
 <br>
 <form id="date_picker" method="get" action="{% url 'carrier' %}">
-    {% if article_current %}
-    <input type="hidden" name="article" value="{{ article_current }}">
-    {% endif %}
     <input type="hidden" name="status" value="{{ status_now }}">
     <input type="hidden" name="carrier" value="{{ carrier_now }}">
     <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
     <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
     <div class="row g-0 justify-content-around">
         <div class="col-auto">
-            <input id="article_search" class="form-control" type="text" name="article" placeholder="Поиск по артикулу" value="{{ article_current|default:'' }}"/>
+            <input id="article_search" onkeyup="FilterFunc()"  class="form-control" type="text" name="article" placeholder="Поиск по артикулу"/>
         </div>
         <div class="col-auto">
             <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
@@ -169,7 +166,7 @@
 <span class="text-danger">{{ form.name_carrier.errors }}</span>
 <span class="text-danger">{{ form.file_path.errors }}</span>
 <div class="table-responsive m-0 scrollable" style="position:absolute;left:0px;height:700px;">
-    <table class="table table-sm table-bordered table-striped table-hover">
+    <table id="myTable" class="table table-sm table-bordered table-striped table-hover">
         <thead class="table-dark align-middle">
         <tr>
             <th scope="col">#</th>
@@ -422,5 +419,22 @@
     for (let i = 0; i < element2.length; i++){
         let mask = IMask(element2[i], maskOptions);
     }
+    function FilterFunc() {
+  var input, filter, table, tr, td, i;
+  input = document.getElementById("article_search");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("myTable");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];
+    if (td) {
+      if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
 </script>
 {% endblock %}
