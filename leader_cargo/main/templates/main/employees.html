@@ -11,21 +11,37 @@
         <i class="fa-solid fa-square-plus fa-beat fa-2xl" style="color: #080808;"></i>
     </a>
 </div>
-{% if employees %}
-{% for employee in employees %}
-<div class="p-3 mb-2 bg-body-secondary" style="transform: rotate(0);">
-    <h4><a href="{{ employee.get_absolute_url_employee }}" class="stretched-link text-decoration-none" id="list-employees">{{ employee.last_name }} {{ employee.first_name }} {{ employee.patronymic }}</a></h4>
-    {{ employee.phone }}<br>
-    {{ employee.town }}<br>
-    {{ employee.role }}<br>
-    {% if employee.status %}
-    Активен<br>
+<div class="row g-1">
+    {% if employees %}
+    {% for employee in employees %}
+    <div class="col-sm-4">
+        <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 420px;">
+            <div class="row g-0">
+                <div class="col-3">
+                </div>
+                <div class="col-12">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ employee.get_absolute_url_employee }}" class="stretched-link text-decoration-none" id="list-employees">
+                                {{ employee.last_name }} {{ employee.first_name }} {{ employee.patronymic }}
+                            </a>
+                        </h5>
+                        {{ employee.phone }}<br>
+                        {{ employee.town }}<br>
+                        {{ employee.role }}<br>
+                        {% if employee.status %}
+                        Активен<br>
+                        {% else %}
+                        Заблокирован<br>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
     {% else %}
-    Заблокирован<br>
+    <p>Нет сотрудников</p>
     {% endif %}
 </div>
-{% endfor %}
-{% else %}
-<p>Нет сотрудников</p>
-{% endif %}
 {% endblock %}

@@ -438,7 +438,7 @@ class AddExchangeRatesView(LoginRequiredMixin, DataMixin, CreateView):
 
 
 class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 3
+    paginate_by = 8
     model = ExchangeRates
     template_name = 'main/exchangerates.html'
     context_object_name = 'currencies'
@@ -471,7 +471,7 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
 
 
 class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 5
+    paginate_by = 6
     model = CustomUser
     template_name = 'main/employees.html'
     context_object_name = 'employees'
