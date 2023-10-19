@@ -166,15 +166,15 @@
 <span class="text-danger">{{ form.name_carrier.errors }}</span>
 <span class="text-danger">{{ form.file_path.errors }}</span>
 <div class="table-responsive m-0 scrollable" style="position:absolute;left:0px;height:680px;">
-    <table id="myTable" class="table table-sm table-bordered table-striped table-hover">
+    <table id="myTable" class="table align-middle  table-sm table-bordered table-striped table-hover" style="text-align: center;">
         <thead class="table-dark align-middle">
         <tr>
             <th scope="col">#</th>
             <th scope="col" width="200px">Артикул</th>
-            <th scope="col" style="text-align: center;">Менеджер</th>
-            <th scope="col" style="text-align: center;">Перевозчик</th>
-            <th scope="col" style="text-align: center;">Дорога</th>
-            <th scope="col" width="120px" style="text-align: center;">Статус</th>
+            <th scope="col" >Менеджер</th>
+            <th scope="col" >Перевозчик</th>
+            <th scope="col" >Дорога</th>
+            <th scope="col" width="120px">Статус</th>
             <th scope="col">Наимено-вание товара</th>
             <th scope="col">Кол-мест</th>
             <th scope="col">Вес, кг</th>
@@ -238,28 +238,28 @@
                 {{ article.article }}
             </td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
                 {{ article.get_FI_responsible_manager|default:"" }}
             </td>
-            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
                 {{ article.carrier|default:"" }}
             </td>
-            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
                 {{ article.path_format|default:"" }}
             </td>
             {% else %}
             <td>
                 {{ article.get_FI_responsible_manager|default:"" }}
             </td>
-            <td style="text-align: center;">
+            <td>
                 {{ article.carrier|default:"" }}
             </td>
-            <td style="text-align: center;">
+            <td>
                 {{ article.path_format|default:"" }}
             </td>
             {% endif %}
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-            <td style="text-align: center;">
+            <td>
                 {% if article.status == 'В пути' %}
                 <p class="btn btn-primary btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</p>
                 {% else %}
@@ -270,7 +270,7 @@
             <td><p>{{ article.status }}</p></td>
             {% endif %}
             <td>{{ article.name_goods|default:"" }}</td>
-            <td style="text-align: center;">{{ article.number_of_seats|floatformat:"0g" }}</td>
+            <td>{{ article.number_of_seats|floatformat:"0g" }}</td>
             <td>{{ article.weight }}</td>
             <td>{{ article.volume|floatformat:"2g" }}</td>
             <td>{{ article.get_short_name_transportation_tariff }}</td>
@@ -278,19 +278,19 @@
             <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>
             <td>{{ article.packaging_cost|default:"" }}</td>
             <td>{{ article.time_from_china|date:"d F Y" }}</td>
-            <td style="text-align: center;">{{ article.total_cost|floatformat:"0g"}} $</td>
+            <td>{{ article.total_cost|floatformat:"0g"}} $</td>
             <td>{{ article.address_transportation_cost|default:""|floatformat:"1g"}}{% if article.address_transportation_cost %} ${%endif%}</td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
                 {{ article.prr|default:"" }}{% if article.prr %} ₽{%endif%}
             </td>
-            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
                 {{ article.tat_cost|default:"" }}{% if article.tat_cost %} ₽{%endif%}
             </td>
-            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
                 {{ article.paid_by_the_client_status }}
             </td>
-            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
                 {{ article.payment_to_the_carrier_status }}
             </td>
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
@@ -304,13 +304,13 @@
                 {% endif %}
             </td>
             {% else %}
-            <td style="text-align: center;">
+            <td>
                 {{ article.prr|default:"" }}{% if article.prr %} ₽{%endif%}
             </td>
-            <td style="text-align: center;">
+            <td>
                 {{ article.tat_cost|default:"" }}{% if article.tat_cost %} ₽{%endif%}
             </td>
-            <td style="text-align: center;">
+            <td>
                 {% if user.role == 'Менеджер' %}
                 <form action="{% url 'edit_table_manager_article' article.pk %}" method="get">
                     {% if article.paid_by_the_client_status == 'Не оплачено'  %}
@@ -347,7 +347,7 @@
                 {% endif %}
             </td>
             {% endif %}
-            <td style="text-align: center;">{{ article.get_number_of_days_on_the_way}}</td>
+            <td>{{ article.get_number_of_days_on_the_way}}</td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <td>
                 <form id="delete_article_form{{ article.pk }}" action="{% url 'delete_article' article.pk %}?{{ request.META.QUERY_STRING }}" method="post">{% csrf_token %}</form>

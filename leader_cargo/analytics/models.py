@@ -52,7 +52,7 @@ class CargoArticle(models.Model):
         ('ЖД', 'ЖД'),
         ('Авиа', 'Авиа')
     ]
-    managers = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], status=True)
+    managers = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], status=True).order_by('last_name')
     managers_choices = []
     for manager in managers:
         managers_choices.append((f'{manager.pk}', f'{manager.last_name} {manager.first_name}'))
