@@ -40,7 +40,7 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = 'Пользователи'
         verbose_name_plural = 'Пользователи'
-        ordering = ['role', '-time_create']
+        ordering = ['town', 'role', '-time_create']
 
     def get_absolute_url_client(self):
         return reverse('card_client', kwargs={'client_id': self.pk})
