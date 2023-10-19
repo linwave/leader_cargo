@@ -203,7 +203,7 @@
         <tbody>
         {% if all_articles %}
         {% for article in all_articles %}
-        {% if user.role != 'Менеджер' %}
+        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
         <div class="modal fade" id="edit-table-article-{{ article.pk }}" tabindex="-1" aria-labelledby="edit-table-article-Label-{{ article.pk }}" aria-hidden="true">
             <div class="modal-dialog ">
                 <div class="modal-content">
@@ -239,7 +239,7 @@
             </td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
-                {{ article.responsible_manager|default:"" }}
+                {{ article.get_FI_responsible_manager|default:"" }}
             </td>
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}" style="text-align: center;">
                 {{ article.carrier|default:"" }}
@@ -249,8 +249,7 @@
             </td>
             {% else %}
             <td>
-
-                {{ article.responsible_manager|default:"" }}
+                {{ article.get_FI_responsible_manager|default:"" }}
             </td>
             <td>
                 {{ article.carrier|default:"" }}

@@ -41,6 +41,9 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         context['date_current'] = now.replace(day=1).strftime("%Y-%m-%d")
         context['end_date_current'] = now.strftime("%Y-%m-%d")
 
+        if self.request.user.role == 'Менеджер':
+            context['all_articles'] = context['all_articles'].filter(responsible_manager=f'{self.request.user.pk}')
+
         if self.request.GET.get('paid_by_the_client') and self.request.GET.get('paid_by_the_client') != 'Оплата клиентом':
             context['paid_by_the_client_current'] = self.request.GET.get('paid_by_the_client')
             context['all_articles'] = context['all_articles'].filter(paid_by_the_client_status=context['paid_by_the_client_current'])

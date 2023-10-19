@@ -55,7 +55,7 @@ class CargoArticle(models.Model):
     managers = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], status=True)
     managers_choices = []
     for manager in managers:
-        managers_choices.append((f'{manager.last_name} {manager.first_name}', f'{manager.last_name} {manager.first_name}'))
+        managers_choices.append((f'{manager.pk}', f'{manager.last_name} {manager.first_name}'))
 
     article = models.CharField(max_length=50, verbose_name='Артикул')
     responsible_manager = models.CharField(max_length=100, verbose_name='Ответственный менеджер', choices=managers_choices, blank=True, null=True)
@@ -95,6 +95,15 @@ class CargoArticle(models.Model):
         verbose_name = 'Артикула'
         verbose_name_plural = 'Артикула'
         ordering = ['-time_create']
+
+    def get_FI_responsible_manager(self):
+        try:
+            manager = CustomUser.objects.get(pk=int(self.responsible_manager), status=True)
+            return f'{manager.last_name} {manager.first_name}'
+        except TypeError:
+            return None
+        except ValueError:
+            return None
 
     def get_number_of_days_on_the_way(self):
         if self.time_cargo_arrival_to_RF and self.time_from_china:
