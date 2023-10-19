@@ -19,7 +19,7 @@
 </svg>
 <h2>Таблица результатов за {% now "F Y" %}</h2>
 <div class="table-responsive m-3" style="position: absolute;left:0px;height:800px;font-size: 1.62rem;">
-    <table class="table table-sm table-bordered table-striped table-hover" >
+    <table id="MyTable" class="table table-sm table-bordered table-striped table-hover" >
         <thead class="table-warning align-middle">
         <tr align="center">
             <th scope="col">#</th>
@@ -65,6 +65,12 @@
         {% endfor %}
         </tbody>
     </table>
+    <script>
+    let sortedRows = Array.from(MyTable.rows)
+      .slice(1)
+      .sort((rowA, rowB) => {return parseFloat(rowB.cells[4].innerHTML) - parseFloat(rowA.cells[4].innerHTML)})
+    MyTable.tBodies[0].append(...sortedRows);
+  </script>
 <!--    <div class="alert alert-primary d-flex align-items-center" role="alert">-->
 <!--        <div class="container">-->
 <!--            <h2 align="center"><i class="fa-solid fa-trophy fa-xl"></i>Конкурс</h2>-->

@@ -44,9 +44,14 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
         context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
         context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
-
-        context['pb_count_empty_responsible_manager'] = int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100)
-        context['pb_count_empty_path_format'] = int(context['count_empty_path_format'] / context['all_articles'].count() * 100)
+        if 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100) == 100 and context['count_empty_responsible_manager'] != 0:
+            context['pb_count_empty_responsible_manager'] = 99
+        else:
+            context['pb_count_empty_responsible_manager'] = 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100)
+        if 100 - int(context['count_empty_path_format'] / context['all_articles'].count() * 100) == 100 and context['count_empty_path_format'] != 0:
+            context['pb_count_empty_path_format'] = 99
+        else:
+            context['pb_count_empty_path_format'] = 100 - int(context['count_empty_path_format'] / context['all_articles'].count() * 100)
 
         if self.request.user.role == 'Менеджер':
             context['all_articles'] = context['all_articles'].filter(responsible_manager=f'{self.request.user.pk}')

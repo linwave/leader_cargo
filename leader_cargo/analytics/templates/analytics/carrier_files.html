@@ -29,7 +29,6 @@
         </button>
     </div>
 </div>
-<br>
 <div class="row">
     <div class="col">
         <div class="collapse multi-collapse" id="multiCollapseExample1">
@@ -71,7 +70,7 @@
 {% endif %}
 <br>
 <form id="date_picker" method="get" action="{% url 'carrier' %}">
-    <input type="hidden" name="status" value="{{ status_now }}">
+    <input id="status" type="hidden" name="status" value="{{ status_now }}">
     <input type="hidden" name="carrier" value="{{ carrier_now }}">
     <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
     <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
@@ -84,9 +83,9 @@
                 {{ status_now }}
             </button>
             <ul class="dropdown-menu dropdown-menu-dark">
-                <li><input class="dropdown-item" value="Все статусы" name="status" type="submit"/></li>
-                <li><input class="dropdown-item" value="В пути" name="status" type="submit"/></li>
-                <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="submit"/></li>
+                <li><input class="dropdown-item" value="Все статусы" name="status" type="button" onclick="edit_func_input('Все статусы', 'status', 'date_picker')"/></li>
+                <li><input class="dropdown-item" value="В пути" name="status" type="button" onclick="edit_func_input('В пути', 'status', 'date_picker')"/></li>
+                <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="button" onclick="edit_func_input('Прибыл в РФ', 'status', 'date_picker')"/></li>
             </ul>
         </div>
         <div class="col-auto">
@@ -144,8 +143,11 @@
         </div>
     </div>
 </form>
-
 <script>
+            function edit_func_input(value, name, form){
+                document.getElementById(name).value = value;
+                document.getElementById(form).submit();
+            }
             form_filter = document.getElementById('date_picker')
             let startDate = document.getElementById('startDate')
             startDate.addEventListener('change',(e)=>{
