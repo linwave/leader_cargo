@@ -19,7 +19,7 @@
 </svg>
 <h2>Таблица результатов за {% now "F Y" %}</h2>
 <div class="table-responsive m-3" style="position: absolute;left:0px;height:800px;font-size: 1.62rem;">
-    <table id="MyTable" class="table table-sm table-bordered table-striped table-hover" >
+    <table id="MyTable" class="table align-middle table-sm table-bordered table-striped table-hover" >
         <thead class="table-warning align-middle">
         <tr align="center">
             <th scope="col">ФИО</th>
@@ -44,12 +44,12 @@
         {% for manager, value in all_data.items %}
         <tr align="center">
             <td><a href="{% url 'monitoring_manager_report' manager %}" class="text-decoration-none" id="list-employees">{{ value.fio }}</a></td>
-            <td>{{ value.procent_plan|default:""|floatformat:"0g" }}%</td>
+            <td>{{ value.procent_plan|default:"0"|floatformat:"0g" }}%</td>
             <td>{{ value.manager_monthly_net_profit_plan|default:""|floatformat:"0g" }}</td>
-            <td>{{ value.net_profit|default:""|floatformat:"2g" }}</td>
-            <td>{{ value.amount_of_accepted_funds|default:""|floatformat:"0g" }}</td>
-            <td>{{ value.marga|default:""|floatformat:"1g" }} %</td>
-            <td>{{ value.buyer_files|default:""|floatformat:"0g" }}</td>
+            <td>{{ value.net_profit|default:"0"|floatformat:"2g" }}</td>
+            <td>{{ value.amount_of_accepted_funds|default:"0"|floatformat:"0g" }}</td>
+            <td>{{ value.marga|default:"0"|floatformat:"1g" }} %</td>
+            <td>{{ value.buyer_files|default:"0"|floatformat:"0g" }}</td>
             <td>{{ value.new_clients|default:"0"|floatformat:"0g" }}</td>
             <td>{{ value.sum_CP|default:"0"|floatformat:"0g" }}</td>
             <td>{{ value.paid_CP|default:"0"|floatformat:"0g" }}</td>
