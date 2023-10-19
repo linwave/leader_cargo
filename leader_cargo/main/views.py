@@ -489,7 +489,7 @@ class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
         if self.request.user.role == 'Супер Администратор':
             return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик', 'РОП', 'Администратор'])
         else:
-            return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик'])
+            return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик']).filter(status=True)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
