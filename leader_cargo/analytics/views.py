@@ -42,6 +42,8 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         context['end_date_current'] = now.strftime("%Y-%m-%d")
         context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
+        context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
+        context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
 
         if self.request.user.role == 'Менеджер':
             context['all_articles'] = context['all_articles'].filter(responsible_manager=f'{self.request.user.pk}')

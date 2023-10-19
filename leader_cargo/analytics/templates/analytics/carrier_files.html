@@ -6,19 +6,60 @@
 
 {% block content %}
 {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
-    Загрузить файл перевозчика
-</button>
-<button type="button" class="btn btn-dark ">
-    Выгрузка отчета по грузам
-</button>
-<button type="button" class="btn btn-outline-secondary ">
-    С пустым менеджером: {{ count_empty_responsible_manager }}
-</button>
-<button type="button" class="btn btn-outline-secondary ">
-    С пустой дорогой: {{ count_empty_path_format }}
-</button>
+
+<div class="row g-2">
+    <div class="col-auto">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            Загрузить файл перевозчика
+        </button>
+    </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-dark ">
+            Выгрузка отчета по грузам
+        </button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseExample1" aria-expanded="false" aria-controls="multiCollapseExample1">
+            С пустым менеджером: {{ count_empty_responsible_manager }}
+        </button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseExample2" aria-expanded="false" aria-controls="multiCollapseExample2">
+            С пустой дорогой: {{ count_empty_path_format }}
+        </button>
+    </div>
+</div>
 <br>
+<div class="row">
+    <div class="col">
+        <div class="collapse multi-collapse" id="multiCollapseExample1">
+            <div class="card card-body">
+                Груза с пустыми менеджерами:<br>
+                <div class="row">
+                    {% for art in all_article_with_empty_responsible_manager %}
+                    <div class="col-6">
+                        {{ forloop.counter }} - {{ art.article }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="collapse multi-collapse" id="multiCollapseExample2">
+            <div class="card card-body">
+                Груза с пустой дорогой:<br>
+                <div class="row">
+                    {% for art in all_article_with_empty_path_format %}
+                    <div class="col-6">
+                        {{ forloop.counter }} - {{ art.article }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
 <br>
 <form id="date_picker" method="get" action="{% url 'carrier' %}">
