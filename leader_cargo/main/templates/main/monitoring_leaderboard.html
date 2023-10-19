@@ -22,7 +22,6 @@
     <table id="MyTable" class="table table-sm table-bordered table-striped table-hover" >
         <thead class="table-warning align-middle">
         <tr align="center">
-            <th scope="col">#</th>
             <th scope="col">ФИО</th>
             <th scope="col">% от плана</th>
             <th scope="col">План</th>
@@ -44,7 +43,6 @@
         <tbody>
         {% for manager, value in all_data.items %}
         <tr align="center">
-            <th scope="row">{{ forloop.counter }}</th>
             <td><a href="{% url 'monitoring_manager_report' manager %}" class="text-decoration-none" id="list-employees">{{ value.fio }}</a></td>
             <td>{{ value.procent_plan|default:""|floatformat:"0g" }}%</td>
             <td>{{ value.manager_monthly_net_profit_plan|default:""|floatformat:"0g" }}</td>
