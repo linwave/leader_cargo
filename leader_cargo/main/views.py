@@ -296,7 +296,7 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
     template_name = 'main/monitoring_leaderboard.html'
     context_object_name = 'managers_all'
     login_url = reverse_lazy('login')
-    role_have_perm = ['Супер Администратор', 'РОП']
+    role_have_perm = ['Супер Администратор', 'РОП', 'Менеджер']
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -305,7 +305,7 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
             context['managers'] = CustomUser.objects.filter(role='Менеджер')
         else:
             context['managers'] = CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}', status=True)
-        context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=now.month, report_upload_date__year=now.year).order_by('-time_create')
+        context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=now.month, report_upload_date__year=now.year)
 
         context['all_data'] = dict()
         for manager in context['managers']:
