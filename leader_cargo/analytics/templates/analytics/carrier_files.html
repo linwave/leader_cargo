@@ -249,6 +249,7 @@
             </td>
             {% else %}
             <td>
+
                 {{ article.responsible_manager|default:"" }}
             </td>
             <td>
@@ -310,7 +311,7 @@
             <td style="text-align: center;">
                 {{ article.tat_cost|default:"" }}{% if article.tat_cost %} ₽{%endif%}
             </td>
-            <td>
+            <td style="text-align: center;">
                 {% if user.role == 'Менеджер' %}
                 <form action="{% url 'edit_table_manager_article' article.pk %}" method="get">
                     {% if article.paid_by_the_client_status == 'Не оплачено'  %}

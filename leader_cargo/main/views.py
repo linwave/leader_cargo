@@ -78,7 +78,8 @@ class LoginUser(DataMixin, LoginView):
         elif self.request.user.role == 'Логист':
             return reverse_lazy('carrier')
         elif self.request.user.role == 'Менеджер':
-            return reverse_lazy('clients')
+            # return reverse_lazy('clients')
+            return reverse_lazy('carrier')
         else:
             return reverse_lazy('appeals')
 
@@ -95,7 +96,8 @@ class LoginUser(DataMixin, LoginView):
             elif self.request.user.role == 'Логист':
                 return redirect('carrier')
             elif self.request.user.role == 'Менеджер':
-                return redirect('clients')
+                # return redirect('clients')
+                return redirect('carrier')
             else:
                 return redirect('appeals')
         else:
@@ -461,7 +463,8 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
             elif request.user.role == 'Клиент':
                 return redirect('appeals')
             elif request.user.role == 'Менеджер':
-                return redirect('clients')
+                # return redirect('clients')
+                return redirect('carrier')
             elif request.user.role == 'Закупщик':
                 return redirect('appeals')
             elif request.user.role == 'Логист':
