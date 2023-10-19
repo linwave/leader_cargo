@@ -105,6 +105,9 @@ class CargoArticle(models.Model):
         except ValueError:
             return None
 
+    def get_short_name_transportation_tariff(self):
+        return self.transportation_tariff.replace('+', ' +')
+
     def get_number_of_days_on_the_way(self):
         if self.time_cargo_arrival_to_RF and self.time_from_china:
             return (self.time_cargo_arrival_to_RF - self.time_from_china).days
