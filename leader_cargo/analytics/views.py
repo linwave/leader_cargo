@@ -234,7 +234,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                 else:
                     dataframe = openpyxl.load_workbook(f"{os.getcwd()}/leader_cargo/media/{file_carrier.file_path}", data_only=True)
                 sheet = dataframe.active
-                for row in range(792, sheet.max_row):
+                for row in range(782, sheet.max_row):
                     if sheet[row][4].value and sheet[row][3].value and sheet[row][2].value:
                         article = str(sheet[row][4].value)
                         name_goods = str(sheet[row][6].value) if sheet[row][6].value else ""
