@@ -133,7 +133,7 @@ class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
             elif request.user.role == 'Клиент':
                 return redirect('appeals')
             elif request.user.role == 'Менеджер':
-                return redirect('clients')
+                return redirect('monitoring_leaderboard')
             elif request.user.role == 'Закупщик':
                 return redirect('appeals')
             elif request.user.role == 'Логист':

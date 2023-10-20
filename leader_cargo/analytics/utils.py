@@ -27,6 +27,7 @@ menu_admin = [
 menu_manager = [
     # {'title': 'Клиенты', 'url_name': 'clients'},
     # {'title': 'Заявки', 'url_name': 'appeals'},
+    {'title': 'Система мониторинга', 'url_name': 'monitoring'},
     {'title': 'Учет грузов', 'url_name': 'carrier'},
 ]
 

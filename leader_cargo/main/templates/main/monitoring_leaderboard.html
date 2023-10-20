@@ -43,7 +43,11 @@
         <tbody>
         {% for manager, value in all_data.items %}
         <tr align="center">
+            {% if user.role == 'РОП' or user.role == 'Супер Администратор' %}
             <td><a href="{% url 'monitoring_manager_report' manager %}" class="text-decoration-none" id="list-employees">{{ value.fio }}</a></td>
+            {% else %}
+            <td>{{ value.fio }}</td>
+            {% endif %}
             <td>{{ value.procent_plan|default:"0"|floatformat:"0g" }}%</td>
             <td>{{ value.manager_monthly_net_profit_plan|default:""|floatformat:"0g" }}</td>
             <td>{{ value.net_profit|default:"0"|floatformat:"2g" }}</td>
