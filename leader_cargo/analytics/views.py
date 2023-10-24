@@ -429,7 +429,7 @@ class EditTableArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
 
 
 def change_article_for_manager(request, article_id):
-    role_have_perm = ['Супер Администратор', 'Менеджер']
+    role_have_perm = ['Супер Администратор', 'Менеджер', 'РОП']
     if request.user.role in role_have_perm:
         article = CargoArticle.objects.get(pk=article_id)
         article.paid_by_the_client_status = request.GET.get('paid_by_the_client_status')

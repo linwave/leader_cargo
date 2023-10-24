@@ -245,7 +245,7 @@
             <th scope="col">Адресная доставка</th>
             <th scope="col" width="4%">ПРР</th>
             <th scope="col" width="4%">Оплата ТАТ</th>
-            <th scope="col" width="170px">Оплачено клиентом</th>
+            <th scope="col">Оплачено клиентом</th>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <th scope="col" width="170px">Оплачено перевоз-чику</th>
             {% endif %}
@@ -345,10 +345,20 @@
                 {{ article.tat_cost|default:"" }}{% if article.tat_cost %} ₽{%endif%}
             </td>
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-                {{ article.paid_by_the_client_status }}
+                {% if article.paid_by_the_client_status == 'Не оплачено'  %}
+                <span class="btn btn-secondary btn-sm p-2">{{ article.paid_by_the_client_status }}</span>
+                {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
+                <span class="btn btn-primary btn-sm p-2">{{ article.paid_by_the_client_status }}</span>
+                {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
+                <span class="btn btn-success btn-sm p-2">{{ article.paid_by_the_client_status }}</span>
+                {% endif %}
             </td>
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-                {{ article.payment_to_the_carrier_status }}
+                {% if article.payment_to_the_carrier_status == 'Не оплачено'  %}
+                <span class="btn btn-secondary btn-sm p-2">{{ article.payment_to_the_carrier_status }}</span>
+                {% elif article.payment_to_the_carrier_status == 'Оплачено'  %}
+                <span class="btn btn-success btn-sm p-2">{{ article.payment_to_the_carrier_status }}</span>
+                {% endif %}
             </td>
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
                 {% if article.time_cargo_arrival_to_RF %}
@@ -368,7 +378,7 @@
                 {{ article.tat_cost|default:"" }}{% if article.tat_cost %} ₽{%endif%}
             </td>
             <td>
-                {% if user.role == 'Менеджер' %}
+                {% if user.role == 'Менеджер' or user.role == 'РОП' or user.role == 'Супер Администратор'%}
                 <form action="{% url 'edit_table_manager_article' article.pk %}" method="get">
                     {% if article.paid_by_the_client_status == 'Не оплачено'  %}
                     <input class="btn btn-secondary btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false" value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
@@ -383,14 +393,6 @@
                         <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client_status" type="submit"/></li>
                     </ul>
                 </form>
-                {% elif user.role == 'РОП' or user.role == 'Супер Администратор' %}
-                {% if article.paid_by_the_client_status == 'Не оплачено'  %}
-                <span class="btn btn-secondary btn-sm p-2">{{ article.paid_by_the_client_status }}</span>
-                {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
-                <span class="btn btn-primary btn-sm p-2">{{ article.paid_by_the_client_status }}</span>
-                {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
-                <span class="btn btn-success btn-sm p-2">{{ article.paid_by_the_client_status }}</span>
-                {% endif %}
                 {% endif %}
             </td>
             <td>
