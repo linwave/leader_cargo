@@ -74,11 +74,11 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         if self.request.GET.get('end_date'):
             context['end_date_current'] = self.request.GET.get('end_date')
 
-        if self.request.GET.get('status') and self.request.GET.get('status') != 'Все статусы':
+        if self.request.GET.get('status') and self.request.GET.get('status') != 'Статус прибытия':
             context['status_now'] = self.request.GET.get('status')
             context['all_articles'] = context['all_articles'].filter(status=self.request.GET.get('status'))
         else:
-            context['status_now'] = 'Все статусы'
+            context['status_now'] = 'Статус прибытия'
 
         if self.request.GET.get('carrier') and self.request.GET.get('carrier') != 'Все перевозчики':
             context['carrier_now'] = self.request.GET.get('carrier')
@@ -421,6 +421,8 @@ class EditTableArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
 
     def form_valid(self, form):
         file_carrier = form.save(commit=False)
+        if form.cleaned_data['time_cargo_release']:
+            file_carrier.status = 'Выдан'
         file_carrier.save()
         return redirect(self.request.META.get('HTTP_REFERER') + f'#article-{self.object.pk}')
 

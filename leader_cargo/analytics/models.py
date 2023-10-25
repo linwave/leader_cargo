@@ -117,6 +117,6 @@ class CargoArticle(models.Model):
     def update_status_article(self):
         if self.status == 'Прибыл в РФ':
             self.status = 'В пути'
-        else:
+        elif self.status == 'В пути':
             self.status = 'Прибыл в РФ'
         self.save()

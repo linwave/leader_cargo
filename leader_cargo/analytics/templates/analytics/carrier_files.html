@@ -45,7 +45,7 @@
         </div>
         <div>
             Уважаемые менеджеры напоминаю, что у нас есть требование, что бы все груза отправлялись со страховкой, поэтому прошу вас связаться со складом Китай и донести информацию до кладовщиков о стоимости товара по следующим грузам, для подключения страховки:
-            <table class="table">
+            <table class="table table-hover">
                 <thead>
                 <tr>
                     <th scope="col">#</th>
@@ -132,9 +132,10 @@
                 {{ status_now }}
             </button>
             <ul class="dropdown-menu dropdown-menu-dark">
-                <li><input class="dropdown-item" value="Все статусы" name="status" type="button" onclick="edit_func_input('Все статусы', 'status', 'date_picker')"/></li>
+                <li><input class="dropdown-item" value="Статус прибытия" name="status" type="button" onclick="edit_func_input('Статус прибытия', 'status', 'date_picker')"/></li>
                 <li><input class="dropdown-item" value="В пути" name="status" type="button" onclick="edit_func_input('В пути', 'status', 'date_picker')"/></li>
                 <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="button" onclick="edit_func_input('Прибыл в РФ', 'status', 'date_picker')"/></li>
+                <li><input class="dropdown-item" value="Выдан" name="status" type="button" onclick="edit_func_input('Выдан', 'status', 'date_picker')"/></li>
             </ul>
         </div>
         <div class="col-auto">
@@ -271,7 +272,7 @@
 <span class="text-danger">{{ form.name_carrier.errors }}</span>
 <span class="text-danger">{{ form.file_path.errors }}</span>
 <div class="table-responsive m-0 scrollable" style="position:absolute;left:0px;height:680px;">
-    <table id="myTable" class="table align-middle  table-sm table-bordered table-striped table-hover" style="text-align: center;">
+    <table id="myTable" class="table align-middle table-sm table-bordered table-hover" style="text-align: center;">
         <thead class="table-dark align-middle">
         <tr>
             <th scope="col">#</th>
@@ -337,7 +338,11 @@
             </div>
         </div>
         {% endif %}
+        {% if article.status == 'Прибыл в РФ' and article.paid_by_the_client_status != 'Оплачено полностью' %}
+        <tr class="table-warning">
+        {% else %}
         <tr>
+        {% endif %}
             <th id="article-{{ article.pk }}" scope="row">{{ forloop.counter }}</th>
             <td>
                 {{ article.article }}
@@ -366,9 +371,11 @@
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <td>
                 {% if article.status == 'В пути' %}
-                <p class="btn btn-primary btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</p>
-                {% else %}
-                <p class="btn btn-secondary btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</p>
+                <span class="btn btn-primary btn-sm p-2" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
+                {% elif article.status == 'Прибыл в РФ' %}
+                <span class="btn btn-secondary btn-sm p-2" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
+                {% elif article.status == 'Выдан' %}
+                <span class="btn btn-success btn-sm p-2">{{ article.status }}</span>
                 {% endif %}
             </td>
             {% else %}
