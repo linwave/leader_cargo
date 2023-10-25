@@ -6,7 +6,6 @@ from django.utils.timezone import make_aware
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView
-
 from .forms import AddCarrierFilesForm, EditTableArticleForm
 from .utils import DataMixinAll
 from .models import CargoFiles, CargoArticle
@@ -44,6 +43,8 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
         context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
         context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
+        context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).values('article', 'time_from_china')
+
         if 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100) == 100 and context['count_empty_responsible_manager'] != 0:
             context['pb_count_empty_responsible_manager'] = 99
         else:
@@ -87,15 +88,18 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
 
         context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
                                                                  time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+
+        context['all_articles_without_insurance'] = context['all_articles_without_insurance'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
+                                                                                                     time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
         context['form_article'] = []
         for article in context['all_articles']:
             context['form_article'].append({
                 'art': article.pk,
                 'f': EditTableArticleForm(instance=article,
                                           initial={
-                                              'time_cargo_arrival_to_RF': (article.time_cargo_arrival_to_RF+datetime.timedelta(hours=3)).strftime("%Y-%m-%d")
+                                              'time_cargo_arrival_to_RF': (article.time_cargo_arrival_to_RF + datetime.timedelta(hours=3)).strftime("%Y-%m-%d")
                                               if article.time_cargo_arrival_to_RF else article.time_cargo_arrival_to_RF,
-                                              'time_cargo_release': (article.time_cargo_release+datetime.timedelta(hours=3)).strftime("%Y-%m-%d")
+                                              'time_cargo_release': (article.time_cargo_release + datetime.timedelta(hours=3)).strftime("%Y-%m-%d")
                                               if article.time_cargo_release else article.time_cargo_release,
                                           })
             })
@@ -139,7 +143,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                 address_transportation_cost = ""
                 for row in range(6, sheet.max_row):
                     if sheet[row][0].value == '送货费':
-                        address_transportation_cost = float(sheet[row][13].value)/(row-6)
+                        address_transportation_cost = float(sheet[row][13].value) / (row - 6)
                 for row in range(6, sheet.max_row):
                     if sheet[row][0].value and sheet[row][0].value != '送货费':
                         article = str(sheet[row][0].value)
@@ -413,11 +417,11 @@ class EditTableArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
     role_have_perm = ['Супер Администратор', 'Логист']
     success_url = reverse_lazy('carrier')
     login_url = reverse_lazy('login')
-    
+
     def form_valid(self, form):
         file_carrier = form.save(commit=False)
         file_carrier.save()
-        return redirect(self.request.META.get('HTTP_REFERER')+f'#article-{self.object.pk}')
+        return redirect(self.request.META.get('HTTP_REFERER') + f'#article-{self.object.pk}')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:

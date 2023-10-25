@@ -6,7 +6,6 @@
 
 {% block content %}
 {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-
 <div class="row g-2">
     <div class="col-auto">
         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
@@ -16,6 +15,11 @@
     <div class="col-auto">
         <button type="button" class="btn btn-dark ">
             Выгрузка отчета по грузам
+        </button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample" >
+            Груза без страховки
         </button>
     </div>
     <div class="col-auto">
@@ -29,6 +33,30 @@
         </button>
     </div>
 </div>
+<div class="collapse" id="collapseExample">
+    <div class="card card-body">
+        <div id="text_for_all_articles_without_insurance">
+            Уважаемые менеджеры напоминаю, что у нас есть требование, что бы все груза отправлялись со страховкой, поэтому прошу вас связаться со складом Китай и донести информацию до кладовщиков о стоимости товара по следующим грузам, для подключения страховки:
+            <br><br>
+            {% for art in all_articles_without_insurance %}
+                <span style="font-weight: 700;">#{{ forloop.counter }} {{ art.article }}</span><br>
+                Дата отправки со склада Китай: {{ art.time_from_china|date:"d F Y" }}<br><br>
+            {% endfor %}
+        </div>
+        <button type="button" class="btn btn-danger" id="copyButton" data-bs-toggle="button" autocomplete="off">
+            Скопировать
+        </button>
+    </div>
+</div>
+<script>
+            document.querySelector("#copyButton").addEventListener("click", function() {
+    navigator.clipboard.writeText(document.querySelector("#text_for_all_articles_without_insurance").innerText).then(function() {
+        console.log('Text copied to clipboard');
+    }).catch(function(error) {
+        console.error('Error:', error);
+    });
+});
+</script>
 <div class="row">
     <div class="col-auto">
         <div class="collapse multi-collapse" id="multiCollapseExample1">
@@ -43,9 +71,7 @@
                         {{ forloop.counter }} - {{ art.article }}
                     </div>
                     {% endfor %}
-
                 </div>
-
             </div>
         </div>
     </div>
@@ -176,7 +202,6 @@
         <h6 class="d-inline-flex ms-md-auto p-2">Общий ТАТ: {{ all_tat|floatformat:"2g" }}</h6>
     </div>
 </div>
-
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
     <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
         <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
@@ -335,7 +360,7 @@
             <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>
             <td>{{ article.packaging_cost|default:"" }}</td>
             <td>{{ article.time_from_china|date:"d F Y" }}</td>
-            <td>{{ article.total_cost|floatformat:"0g"}} $</td>
+            <td>$ {{ article.total_cost|floatformat:"0g"}}</td>
             <td>{{ article.address_transportation_cost|default:""|floatformat:"1g"}}{% if article.address_transportation_cost %} ${%endif%}</td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
