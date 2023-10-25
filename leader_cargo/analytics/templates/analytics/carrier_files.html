@@ -128,8 +128,13 @@
             <input id="article_search" onkeyup="FilterFunc()"  class="form-control" type="text" name="article" placeholder="Поиск по артикулу"/>
         </div>
         <div class="col-auto">
-            <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
+            <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2 position-relative" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
                 {{ status_now }}
+                {% if user.role != 'Логист'  %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ count_notifications }}
+                </span>
+                {% endif %}
             </button>
             <ul class="dropdown-menu dropdown-menu-dark">
                 <li><input class="dropdown-item" value="Статус прибытия" name="status" type="button" onclick="edit_func_input('Статус прибытия', 'status', 'date_picker')"/></li>
@@ -340,9 +345,9 @@
         {% endif %}
         {% if article.status == 'Прибыл в РФ' and article.paid_by_the_client_status != 'Оплачено полностью' %}
         <tr class="table-warning">
-        {% else %}
+            {% else %}
         <tr>
-        {% endif %}
+            {% endif %}
             <th id="article-{{ article.pk }}" scope="row">{{ forloop.counter }}</th>
             <td>
                 {{ article.article }}

@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DeleteView, UpdateView
 from .forms import AddCarrierFilesForm, EditTableArticleForm
 from .utils import DataMixinAll
 from .models import CargoFiles, CargoArticle
+from main.models import CustomUser
 
 import openpyxl
 import xlrd
@@ -39,12 +40,12 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         now = datetime.datetime.now()
         context['date_current'] = now.replace(day=1).strftime("%Y-%m-%d")
         context['end_date_current'] = now.strftime("%Y-%m-%d")
+
         context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
         context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
         context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
         context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).values('article', 'time_from_china')
-
         if 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100) == 100 and context['count_empty_responsible_manager'] != 0:
             context['pb_count_empty_responsible_manager'] = 99
         else:
@@ -56,6 +57,14 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
 
         if self.request.user.role == 'Менеджер':
             context['all_articles'] = context['all_articles'].filter(responsible_manager=f'{self.request.user.pk}')
+
+        if self.request.user.role == 'РОП':
+            managers_pk = [self.request.user.pk]
+            for user in CustomUser.objects.filter(role='Менеджер').filter(town=self.request.user.town).values('pk'):
+                managers_pk.append(user['pk'])
+            context['all_articles'] = context['all_articles'].filter(responsible_manager__in=managers_pk)
+
+        context['count_notifications'] = context['all_articles'].filter(responsible_manager=f'{self.request.user.pk}').filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
 
         if self.request.GET.get('paid_by_the_client') and self.request.GET.get('paid_by_the_client') != 'Оплата клиентом':
             context['paid_by_the_client_current'] = self.request.GET.get('paid_by_the_client')
