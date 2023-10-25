@@ -91,6 +91,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
 
         context['all_articles_without_insurance'] = context['all_articles_without_insurance'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
                                                                                                      time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+        context['count_articles_without_insurance'] = context['all_articles_without_insurance'].count()
         context['form_article'] = []
         for article in context['all_articles']:
             context['form_article'].append({
