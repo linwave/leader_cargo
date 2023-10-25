@@ -379,7 +379,15 @@
                 {% endif %}
             </td>
             {% else %}
-            <td><p>{{ article.status }}</p></td>
+            <td>
+                {% if article.status == 'В пути' %}
+                <span class="btn btn-primary btn-sm p-2">{{ article.status }}</span>
+                {% elif article.status == 'Прибыл в РФ' %}
+                <span class="btn btn-secondary btn-sm p-2">{{ article.status }}</span>
+                {% elif article.status == 'Выдан' %}
+                <span class="btn btn-success btn-sm p-2">{{ article.status }}</span>
+                {% endif %}
+            </td>
             {% endif %}
             <td>{{ article.name_goods|default:"" }}</td>
             <td>{{ article.number_of_seats|floatformat:"0g" }}</td>
