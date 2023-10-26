@@ -5,20 +5,22 @@
 {% endblock %}
 
 {% block content %}
-<h1>Авторизация</h1>
-<form method="post" id="login-form">
-    <span class="text-danger">{{ form.non_field_errors }}</span>
-    {% csrf_token %}
-    {{ form.phone }}<br>
-    <div class="text-danger">{{ form.phone.errors }}</div>
-    <div class="password-container">
-        {{ form.password }}
-        <i class="fa-solid fa-eye" id="show-password-login"></i>
-    </div><br>
-    <div class="text-danger">{{ form.password.errors }}</div>
-    <button type="submit" class="btn btn-primary">Войти</button>
-    <span>{{ error }}</span>
-</form>
+<div class="container">
+    <h1>Авторизация</h1>
+    <form method="post" id="login-form">
+        <span class="text-danger">{{ form.non_field_errors }}</span>
+        {% csrf_token %}
+        {{ form.phone }}<br>
+        <div class="text-danger">{{ form.phone.errors }}</div>
+        <div class="password-container">
+            {{ form.password }}
+            <i class="fa-solid fa-eye" id="show-password-login"></i>
+        </div><br>
+        <div class="text-danger">{{ form.password.errors }}</div>
+        <button type="submit" class="btn btn-primary">Войти</button>
+        <span>{{ error }}</span>
+    </form>
+</div>
 <script>
 password_toggle("#show-password-login");
 phone_mask();

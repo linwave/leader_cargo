@@ -6,90 +6,92 @@
 
 {% block content %}
 <div class="container">
-    <div class="row">
-        {% if user.role == 'Менеджер' or user.role == 'Клиент' or user.role == 'Супер Администратор' %}
-        <div class="col-auto m-1">
-            <a class="btn btn-success btn-sm shadow" href="{% url 'create_appeal' %}" role="button">Новая заявка</a>
-        </div>
-        {% endif %}
-        {% if user.role != 'Клиент' %}
-        <div class="w-100 d-block d-sm-none"></div>
-        <div class="col-auto m-1">
-            <div class="btn-group">
-                {% if client_now %}
-                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ client_now }}
-                </button>
-                {% else %}
-                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    Все клиенты
-                </button>
-                {% endif %}
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}">Все клиенты</a></li>
-                </ul>
+    <div class="container">
+        <div class="row">
+            {% if user.role == 'Менеджер' or user.role == 'Клиент' or user.role == 'Супер Администратор' %}
+            <div class="col-auto m-1">
+                <a class="btn btn-success btn-sm shadow" href="{% url 'create_appeal' %}" role="button">Новая заявка</a>
             </div>
-        </div>
-        <div class="col-auto m-1">
-            <div class="btn-group">
-                {% if status_now %}
-                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ status_now|join:"" }}
-                </button>
-                {% else %}
-                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    Все статусы
-                </button>
-                {% endif %}
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}">Все статусы</a></li>
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Черновик">Черновик</a></li>
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Новая">Новая</a></li>
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=В работе">В работе</a></li>
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Просчёт">Просчёт</a></li>
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Просчёт готов">Просчёт готов</a></li>
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Выкуп и проверка">Выкуп и проверка</a></li>
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Доставка">Доставка</a></li>
-                    <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Завершено">Завершено</a></li>
-                </ul>
+            {% endif %}
+            {% if user.role != 'Клиент' %}
+            <div class="w-100 d-block d-sm-none"></div>
+            <div class="col-auto m-1">
+                <div class="btn-group">
+                    {% if client_now %}
+                    <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ client_now }}
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Все клиенты
+                    </button>
+                    {% endif %}
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}">Все клиенты</a></li>
+                    </ul>
+                </div>
             </div>
+            <div class="col-auto m-1">
+                <div class="btn-group">
+                    {% if status_now %}
+                    <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ status_now|join:"" }}
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Все статусы
+                    </button>
+                    {% endif %}
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}">Все статусы</a></li>
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Черновик">Черновик</a></li>
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Новая">Новая</a></li>
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=В работе">В работе</a></li>
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Просчёт">Просчёт</a></li>
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Просчёт готов">Просчёт готов</a></li>
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Выкуп и проверка">Выкуп и проверка</a></li>
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Доставка">Доставка</a></li>
+                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Завершено">Завершено</a></li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
-</div>
-<br>
-<div class="container">
-    <div class="row g-0">
-        {% if all_appeals %}
-        {% for appeal in all_appeals %}
-        <div class="col-sm-4">
-            <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 400px;">
-                <div class="row g-0">
-                    <div class="col-3">
-                        {% if appeal.get_appeal_photo %}
-                        <img src="{{ appeal.get_appeal_photo.url }}" class="img-fluid rounded-start">
-                        {% else %}
-                        <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="fff">
-                        {% endif %}
-                    </div>
-                    <div class="col-9">
-                        <div class="card-body">
-                            <h5 class="card-title"><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a></h5>
-                            {% if user.role != 'Клиент' %}
-                            <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.first_name }}</span><br>
-                            <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.phone }}</span><br>
+    <br>
+    <div class="container">
+        <div class="row g-0">
+            {% if all_appeals %}
+            {% for appeal in all_appeals %}
+            <div class="col-sm-4">
+                <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 400px;">
+                    <div class="row g-0">
+                        <div class="col-3">
+                            {% if appeal.get_appeal_photo %}
+                            <img src="{{ appeal.get_appeal_photo.url }}" class="img-fluid rounded-start">
+                            {% else %}
+                            <img src="{% static 'main/images/No_image_available.svg' %}" class="img-fluid rounded-start" alt="fff">
                             {% endif %}
-                            <span class="card-text" style="font-size: .9rem;">{{ appeal.status }}</span>
-                            <p class="card-text"><small class="text-muted">{{ appeal.time_create }}</small></p>
+                        </div>
+                        <div class="col-9">
+                            <div class="card-body">
+                                <h5 class="card-title"><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a></h5>
+                                {% if user.role != 'Клиент' %}
+                                <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.first_name }}</span><br>
+                                <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.phone }}</span><br>
+                                {% endif %}
+                                <span class="card-text" style="font-size: .9rem;">{{ appeal.status }}</span>
+                                <p class="card-text"><small class="text-muted">{{ appeal.time_create }}</small></p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
+    {% else %}
+    <p>Нет заявок</p>
+    {% endif %}
 </div>
-{% else %}
-<p>Нет заявок</p>
-{% endif %}
 {% endblock %}

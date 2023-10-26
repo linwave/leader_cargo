@@ -789,6 +789,12 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
         elif self.request.user.role == 'Менеджер':
             template_name = 'main/card_appeal_manager.html'
             return template_name
+        elif self.request.user.role == 'Супер Администратор':
+            template_name = 'main/card_appeal_manager.html'
+            return template_name
+        elif self.request.user.role == 'Закупщик':
+            template_name = 'main/card_appeal_manager.html'
+            return template_name
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)

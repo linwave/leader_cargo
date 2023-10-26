@@ -180,6 +180,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)
                         for old in old_articles:
+                            # ОБГОВОРЕНО
                             if old.article == article and old.name_goods == name_goods and old.status == 'В пути':
                                 check = True
                                 self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
@@ -434,6 +435,8 @@ class EditTableArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
 
     def form_valid(self, form):
         file_carrier = form.save(commit=False)
+        if form.cleaned_data['time_cargo_arrival_to_RF']:
+            file_carrier.status = 'Прибыл в РФ'
         if form.cleaned_data['time_cargo_release']:
             file_carrier.status = 'Выдан'
         file_carrier.save()

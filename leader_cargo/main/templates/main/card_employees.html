@@ -5,38 +5,40 @@
 {% endblock %}
 
 {% block content %}
-<h2>Карточка сотрудника</h2>
-<form method="post" id="card-employees-form">
-    <span class="text-danger">{{ form.non_field_errors }}</span>
-    {% csrf_token %}
-    {{ form.phone }}<br>
-    <div class="text-danger">{{ form.phone.errors }}</div>
-    <div class="password-container">
-        {{ form.password }}
-        <i class="fa-solid fa-eye" id="show-password-card"></i>
-        <div class="tooltip_my_copy">
-            <i class="fa-solid fa-copy" id="copy-password-client" onclick="CopyPassClient()" onmouseout="outFunc()"><span class="tooltiptext_my" id="myTooltip">Скопировать</span></i>
-        </div>
-        <div class="tooltip_my_copy">
-            <i class="fa-solid fa-arrows-rotate" id="refresh-password-client" onclick="RefreshPassClient()"></i>
-        </div>
-    </div><br>
-    <div class="text-danger">{{ form.password.errors }}</div>
-    {{ form.last_name }}<br>
-    <div class="text-danger">{{ form.last_name.errors }}</div>
-    {{ form.first_name }}<br>
-    <div class="text-danger">{{ form.first_name.errors }}</div>
-    {{ form.patronymic }}<br>
-    <div class="text-danger">{{ form.patronymic.errors }}</div>
-    {{ form.role }}<br>
-    <div class="text-danger">{{ form.role.errors }}</div>
-    {{ form.town }}<br>
-    <div class="text-danger">{{ form.town.errors }}</div>
-    {{ form.status }}<br>
-    <div class="text-danger">{{ form.status.errors }}</div>
-    <button type="submit" class="btn btn-success">Изменить</button>
-    <a class="btn btn-success" href="{% url 'employees' %}" role="button">Отменить</a>
-</form>
+<div class="container">
+    <h2>Карточка сотрудника</h2>
+    <form method="post" id="card-employees-form">
+        <span class="text-danger">{{ form.non_field_errors }}</span>
+        {% csrf_token %}
+        {{ form.phone }}<br>
+        <div class="text-danger">{{ form.phone.errors }}</div>
+        <div class="password-container">
+            {{ form.password }}
+            <i class="fa-solid fa-eye" id="show-password-card"></i>
+            <div class="tooltip_my_copy">
+                <i class="fa-solid fa-copy" id="copy-password-client" onclick="CopyPassClient()" onmouseout="outFunc()"><span class="tooltiptext_my" id="myTooltip">Скопировать</span></i>
+            </div>
+            <div class="tooltip_my_copy">
+                <i class="fa-solid fa-arrows-rotate" id="refresh-password-client" onclick="RefreshPassClient()"></i>
+            </div>
+        </div><br>
+        <div class="text-danger">{{ form.password.errors }}</div>
+        {{ form.last_name }}<br>
+        <div class="text-danger">{{ form.last_name.errors }}</div>
+        {{ form.first_name }}<br>
+        <div class="text-danger">{{ form.first_name.errors }}</div>
+        {{ form.patronymic }}<br>
+        <div class="text-danger">{{ form.patronymic.errors }}</div>
+        {{ form.role }}<br>
+        <div class="text-danger">{{ form.role.errors }}</div>
+        {{ form.town }}<br>
+        <div class="text-danger">{{ form.town.errors }}</div>
+        {{ form.status }}<br>
+        <div class="text-danger">{{ form.status.errors }}</div>
+        <button type="submit" class="btn btn-success">Изменить</button>
+        <a class="btn btn-success" href="{% url 'employees' %}" role="button">Отменить</a>
+    </form>
+</div>
 <script>
     password_toggle("#show-password-card");
     phone_mask();

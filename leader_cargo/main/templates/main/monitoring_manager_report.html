@@ -5,71 +5,73 @@
 {% endblock %}
 
 {% block content %}
-<div class="modal fade" id="edit-manager-plan" tabindex="-1" aria-labelledby="edit-manager-plan-label" aria-hidden="true">
-    <div class="modal-dialog ">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="edit-manager-plan-label">Изменение плана сотрудника<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="post" id="edit-manager-plan-form" action="{% url 'monitoring_manager_edit_plan' manager.pk %}?{{ request.META.QUERY_STRING }}">
-                    {% csrf_token %}
-                    {{ manage_plan_form.manager_monthly_net_profit_plan.label }}
-                    {{ manage_plan_form.manager_monthly_net_profit_plan }}
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button form="edit-manager-plan-form" type="submit" class="btn btn-success">Изменить</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+<div class="container">
+    <div class="modal fade" id="edit-manager-plan" tabindex="-1" aria-labelledby="edit-manager-plan-label" aria-hidden="true">
+        <div class="modal-dialog ">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="edit-manager-plan-label">Изменение плана сотрудника<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" id="edit-manager-plan-form" action="{% url 'monitoring_manager_edit_plan' manager.pk %}?{{ request.META.QUERY_STRING }}">
+                        {% csrf_token %}
+                        {{ manage_plan_form.manager_monthly_net_profit_plan.label }}
+                        {{ manage_plan_form.manager_monthly_net_profit_plan }}
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button form="edit-manager-plan-form" type="submit" class="btn btn-success">Изменить</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<form id="date_picker_in_monitoring" action="{% url 'monitoring_manager_report' manager.pk %}" method="get">
-    <input id="month" type="hidden" name="month" value="{{ month }}">
-    <input id="year" type="hidden" name="year" value="{{ year }}">
-    <div class="row">
-        <div class="col-auto m-2">
-            <h2>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h2>
+    <form id="date_picker_in_monitoring" action="{% url 'monitoring_manager_report' manager.pk %}" method="get">
+        <input id="month" type="hidden" name="month" value="{{ month }}">
+        <input id="year" type="hidden" name="year" value="{{ year }}">
+        <div class="row">
+            <div class="col-auto m-2">
+                <h2>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h2>
+            </div>
+            <div class="col-auto m-1">
+                <input id="month_get" class="btn btn-secondary btn shadow dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" value="{{ month }}" type="button" style="font-size: 1.5rem;"/>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    {% for m in months %}
+                    {% if m %}
+                    <li><input class="dropdown-item" value="{{ m }}" name="month" type="button" onclick="edit_func_input('{{ m }}', 'month', 'date_picker_in_monitoring')"/></li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-auto m-1">
+                <input id="year_get" class="btn btn-secondary btn shadow dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" value="{{ year }}" type="button" style="font-size: 1.5rem;"/>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    {% for y in years %}
+                    {% if y %}
+                    <li><input class="dropdown-item" value="{{ y }}" name="year" type="button" onclick="edit_func_input('{{ y }}', 'year', 'date_picker_in_monitoring')"/></li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-        <div class="col-auto m-1">
-            <input id="month_get" class="btn btn-secondary btn shadow dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" value="{{ month }}" type="button" style="font-size: 1.5rem;"/>
-            <ul class="dropdown-menu dropdown-menu-dark">
-                {% for m in months %}
-                {% if m %}
-                <li><input class="dropdown-item" value="{{ m }}" name="month" type="button" onclick="edit_func_input('{{ m }}', 'month', 'date_picker_in_monitoring')"/></li>
-                {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
-        <div class="col-auto m-1">
-            <input id="year_get" class="btn btn-secondary btn shadow dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" value="{{ year }}" type="button" style="font-size: 1.5rem;"/>
-            <ul class="dropdown-menu dropdown-menu-dark">
-                {% for y in years %}
-                {% if y %}
-                <li><input class="dropdown-item" value="{{ y }}" name="year" type="button" onclick="edit_func_input('{{ y }}', 'year', 'date_picker_in_monitoring')"/></li>
-                {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-</form>
-<script>
+    </form>
+    <script>
     function edit_func_input(value, name, form){
     document.getElementById(name).value = value;
     document.getElementById(form).submit();
     }
-</script>
-<div class="row">
-    <div class="col-auto m-2">
-        <h2>Текущий план сотрудника:</h2>
-    </div>
-    <div class="col-auto m-1">
-        <span class="btn btn-secondary btn shadow" role="button" data-bs-toggle="modal" data-bs-target="#edit-manager-plan" style="font-size: 1.5rem;">{{ manager.manager_monthly_net_profit_plan }}</span>
+    </script>
+    <div class="row">
+        <div class="col-auto m-2">
+            <h2>Текущий план сотрудника:</h2>
+        </div>
+        <div class="col-auto m-1">
+            <span class="btn btn-secondary btn shadow" role="button" data-bs-toggle="modal" data-bs-target="#edit-manager-plan" style="font-size: 1.5rem;">{{ manager.manager_monthly_net_profit_plan }}</span>
+        </div>
     </div>
 </div>
-<div class="table-responsive m-3 scrollable" style="position: absolute;left:0px;height:750px;overflow-y: scroll">
+<div class="table-responsive m-3 scrollable" style="height:660px;">
     <table class="table table-bordered table-striped table-hover" >
         <thead class="table-warning align-middle">
         <tr>
@@ -178,6 +180,7 @@
         </tbody>
     </table>
 </div>
+
 <script>
     let element = document.querySelectorAll('input[class="form-control"]');
     let maskOptions = {

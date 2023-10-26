@@ -5,30 +5,32 @@
 {% endblock %}
 
 {% block content %}
-<h2>Карточка клиента</h2>
-<form method="post" id="card-clients-form">
-    <span class="text-danger">{{ form.non_field_errors }}</span>
-    {% csrf_token %}
-    {{ form.phone }}<br>
-    <div class="text-danger">{{ form.phone.errors }}</div>
-    {{ form.first_name }}<br>
-    <div class="text-danger">{{ form.name.errors }}</div>
-    {{ form.description }}<br>
-    <div class="text-danger">{{ form.description.errors }}</div>
-    <div class="password-container">
-        {{ form.password }}
-        <i class="fa-solid fa-eye" id="show-password-card"></i>
-        <div class="tooltip_my_copy">
-            <i class="fa-solid fa-copy" id="copy-password-client" onclick="CopyPassClient()" onmouseout="outFunc()"><span class="tooltiptext_my" id="myTooltip">Скопировать</span></i>
-        </div>
-        <div class="tooltip_my_copy">
-            <i class="fa-solid fa-arrows-rotate" id="refresh-password-client" onclick="RefreshPassClient()"></i>
-        </div>
-    </div><br>
-    <div class="text-danger">{{ form.password.errors }}</div>
-    <button type="submit" class="btn btn-success">Изменить</button>
-    <a class="btn btn-success" href="{% url 'clients' %}" role="button">Отменить</a>
-</form>
+<div class="container">
+    <h2>Карточка клиента</h2>
+    <form method="post" id="card-clients-form">
+        <span class="text-danger">{{ form.non_field_errors }}</span>
+        {% csrf_token %}
+        {{ form.phone }}<br>
+        <div class="text-danger">{{ form.phone.errors }}</div>
+        {{ form.first_name }}<br>
+        <div class="text-danger">{{ form.name.errors }}</div>
+        {{ form.description }}<br>
+        <div class="text-danger">{{ form.description.errors }}</div>
+        <div class="password-container">
+            {{ form.password }}
+            <i class="fa-solid fa-eye" id="show-password-card"></i>
+            <div class="tooltip_my_copy">
+                <i class="fa-solid fa-copy" id="copy-password-client" onclick="CopyPassClient()" onmouseout="outFunc()"><span class="tooltiptext_my" id="myTooltip">Скопировать</span></i>
+            </div>
+            <div class="tooltip_my_copy">
+                <i class="fa-solid fa-arrows-rotate" id="refresh-password-client" onclick="RefreshPassClient()"></i>
+            </div>
+        </div><br>
+        <div class="text-danger">{{ form.password.errors }}</div>
+        <button type="submit" class="btn btn-success">Изменить</button>
+        <a class="btn btn-success" href="{% url 'clients' %}" role="button">Отменить</a>
+    </form>
+</div>
 <script>
     password_toggle("#show-password-card");
     phone_mask();

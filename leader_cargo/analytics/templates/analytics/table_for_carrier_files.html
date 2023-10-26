@@ -1,0 +1,225 @@
+<div class="table-responsive m-0 scrollable" style="height:680px;">
+    <table id="myTable" class="table align-middle table-sm table-bordered table-hover" style="text-align: center;">
+        <thead class="table-dark align-middle">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col" width="200px">Артикул</th>
+            <th scope="col" >Менеджер</th>
+            <th scope="col" >Пере-возчик</th>
+            <th scope="col" >Дорога</th>
+            <th scope="col" >Статус</th>
+            <th scope="col">Наимено-вание товара</th>
+            <th scope="col">Кол-мест</th>
+            <th scope="col">Вес, кг</th>
+            <th scope="col">Объем, м3</th>
+            <th scope="col">Тариф пере-возки</th>
+            <th scope="col">Цена товара</th>
+            <th scope="col">Цена стра-ховки</th>
+            <th scope="col">Цена упа-ковки</th>
+            <th scope="col">Дата отправки с Китая</th>
+            <th scope="col">Итоговая стоимость перевозки</th>
+            <th scope="col">Адресная доставка</th>
+            <th scope="col">ПРР</th>
+            <th scope="col">Оплата ТАТ</th>
+            <th scope="col">Оплачено клиентом</th>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <th scope="col">Оплачено перевоз-чику</th>
+            {% endif %}
+            <th scope="col">Дата прибытия груза в РФ</th>
+            <th scope="col">Дата выдачи груза</th>
+            <th scope="col">Кол-во дней в пути</th>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <th scope="col">Удаление</th>
+            {% endif %}
+        </tr>
+        </thead>
+        <tbody>
+        {% if all_articles %}
+        {% for article in all_articles %}
+        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+        <div class="modal fade" id="edit-table-article-{{ article.pk }}" tabindex="-1" aria-labelledby="edit-table-article-Label-{{ article.pk }}" aria-hidden="true">
+            <div class="modal-dialog ">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="edit-table-article-Label-{{ article.pk }}">Редактирование груза<br>{{ article.article }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% for fm in form_article %}
+                        {% if fm.art == article.pk %}
+                        <form method="post" id="edit-{{ article.pk }}" action="{% url 'edit_table_article' article.pk %}?{{ request.META.QUERY_STRING }}">
+                            {% csrf_token %}
+                            {% for line in fm.f %}
+                            {{ line.label }}
+                            {{ line }}<br>
+                            {% endfor %}
+                        </form>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="modal-footer">
+                        <button form="edit-{{ article.pk }}" type="submit" class="btn btn-primary">Изменить</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <tr>
+            <th id="article-{{ article.pk }}" scope="row">{{ forloop.counter }}</th>
+            <td class="fixed-side" >
+                {{ article.article }}
+            </td>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {{ article.get_FI_responsible_manager|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {{ article.carrier|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {{ article.path_format|default:"" }}
+            </td>
+            {% else %}
+            <td>
+                {{ article.get_FI_responsible_manager|default:"" }}
+            </td>
+            <td>
+                {{ article.carrier|default:"" }}
+            </td>
+            <td>
+                {{ article.path_format|default:"" }}
+            </td>
+            {% endif %}
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td>
+                {% if article.status == 'В пути' %}
+                <span class="btn btn-primary btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
+                {% elif article.status == 'Прибыл в РФ' %}
+                <span class="btn btn-secondary btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
+                {% elif article.status == 'Выдан' %}
+                <span class="btn btn-success btn-sm">{{ article.status }}</span>
+                {% endif %}
+            </td>
+            {% else %}
+            <td>
+                {% if article.status == 'В пути' %}
+                <span class="btn btn-primary btn-sm">{{ article.status }}</span>
+                {% elif article.status == 'Прибыл в РФ' %}
+                <span class="btn btn-secondary btn-sm">{{ article.status }}</span>
+                {% elif article.status == 'Выдан' %}
+                <span class="btn btn-success btn-sm">{{ article.status }}</span>
+                {% endif %}
+            </td>
+            {% endif %}
+            <td>{{ article.name_goods|default:"" }}</td>
+            <td>{{ article.number_of_seats|floatformat:"0g" }}</td>
+            <td>{{ article.weight }}</td>
+            <td>{{ article.volume|floatformat:"2g" }}</td>
+            <td>{{ article.get_short_name_transportation_tariff }}</td>
+            <td>{{ article.cost_goods|floatformat:"2g"|default:"" }}</td>
+            <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>
+            <td>{{ article.packaging_cost|default:"" }}</td>
+            <td>{{ article.time_from_china|date:"d F Y" }}</td>
+            <td>${{ article.total_cost|floatformat:"0g"}}</td>
+            <td>{% if article.address_transportation_cost %}${%endif%}{{ article.address_transportation_cost|default:""|floatformat:"1g"}}</td>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {% if article.prr %}₽{%endif%}{{ article.prr|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {% if article.tat_cost %}₽{%endif%}{{ article.tat_cost|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {% if article.paid_by_the_client_status == 'Не оплачено'  %}
+                <span class="btn btn-secondary btn-sm">{{ article.paid_by_the_client_status }}</span>
+                {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
+                <span class="btn btn-primary btn-sm">{{ article.paid_by_the_client_status }}</span>
+                {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
+                <span class="btn btn-success btn-sm">{{ article.paid_by_the_client_status }}</span>
+                {% endif %}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {% if article.payment_to_the_carrier_status == 'Не оплачено'  %}
+                <span class="btn btn-secondary btn-sm">{{ article.payment_to_the_carrier_status }}</span>
+                {% elif article.payment_to_the_carrier_status == 'Оплачено'  %}
+                <span class="btn btn-success btn-sm">{{ article.payment_to_the_carrier_status }}</span>
+                {% endif %}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {% if article.time_cargo_arrival_to_RF %}
+                {{ article.time_cargo_arrival_to_RF|date:"d F Y" }}
+                {% endif %}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
+                {% if article.time_cargo_release %}
+                {{ article.time_cargo_release|date:"d F Y" }}
+                {% endif %}
+            </td>
+            {% else %}
+            <td>
+                {% if article.prr %}₽{%endif%}{{ article.prr|default:"" }}
+            </td>
+            <td>
+                {% if article.tat_cost %}₽{%endif%}{{ article.tat_cost|default:"" }}
+            </td>
+            <td>
+                {% if user.role == 'Менеджер' or user.role == 'РОП' or user.role == 'Супер Администратор'%}
+                <form action="{% url 'edit_table_manager_article' article.pk %}" method="get">
+                    {% if article.paid_by_the_client_status == 'Не оплачено'  %}
+                    <input class="btn btn-secondary btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false" value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
+                    {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
+                    <input class="btn btn-primary btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false" value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
+                    {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
+                    <input class="btn btn-success btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false" value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
+                    {% endif %}
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><input class="dropdown-item" value="Оплачено полностью" name="paid_by_the_client_status" type="submit"/></li>
+                        <li><input class="dropdown-item" value="Оплачено частично" name="paid_by_the_client_status" type="submit"/></li>
+                        <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client_status" type="submit"/></li>
+                    </ul>
+                </form>
+                {% endif %}
+            </td>
+            <td>
+                {% if article.time_cargo_arrival_to_RF %}
+                {{ article.time_cargo_arrival_to_RF|date:"d F Y" }}
+                {% endif %}
+            </td>
+            <td>
+                {% if article.time_cargo_release %}
+                {{ article.time_cargo_release|date:"d F Y" }}
+                {% endif %}
+            </td>
+            {% endif %}
+            <td>{{ article.get_number_of_days_on_the_way}}</td>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td>
+                <form id="delete_article_form{{ article.pk }}" action="{% url 'delete_article' article.pk %}?{{ request.META.QUERY_STRING }}" method="post">{% csrf_token %}</form>
+                <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal3{{ article.pk }}" style="text-align: center;">Удалить</p>
+                <div class="modal fade" id="exampleModal3{{ article.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel3{{ article.pk }}">Вы уверены, что хотите удалить артикул?</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-footer">
+                                <button form="delete_article_form{{ article.pk }}" type="submit" class="btn btn-danger">Удалить</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr align="center">
+            <td colspan="25" >Нет данных</td>
+        </tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>

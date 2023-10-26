@@ -114,10 +114,18 @@
 }
 
 .scrollable {
-  overflow: auto;
+    overflow-x:auto;
+    overflow-y: auto;
 }
 
-.scrollable thead tr th {
+
+.scrollable table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.scrollable thead {
     position: sticky;
     top: 0;
-  }
+}
+

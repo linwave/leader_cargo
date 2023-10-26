@@ -5,23 +5,25 @@
 {% endblock %}
 
 {% block content %}
-<a class="btn btn-success shadow" href="{% url 'create_client' %}" role="button">Добавить клиента</a><br><br>
-<div class="row g-2">
-    {% if all_clients %}
-    {% for client in all_clients %}
-    <div class="col-sm-4">
-        <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 440px;">
-            <div class="card-body">
-                <h5 class="card-title"><a href="{{ client.get_absolute_url_client }}" class="stretched-link text-decoration-none" id="list-employees">{{ client.first_name }}</a></h5>
-                <span class="card-text" style="font-size: .9rem;">{{ client.phone }}</span><br>
-                <span class="card-text" style="font-size: .9rem;">{{ client.description }}</span><br>
-                <p class="card-text"><small class="text-muted">{{ client.time_create }}</small></p>
+<div class="container">
+    <a class="btn btn-success shadow" href="{% url 'create_client' %}" role="button">Добавить клиента</a><br><br>
+    <div class="row g-2">
+        {% if all_clients %}
+        {% for client in all_clients %}
+        <div class="col-sm-4">
+            <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 440px;">
+                <div class="card-body">
+                    <h5 class="card-title"><a href="{{ client.get_absolute_url_client }}" class="stretched-link text-decoration-none" id="list-employees">{{ client.first_name }}</a></h5>
+                    <span class="card-text" style="font-size: .9rem;">{{ client.phone }}</span><br>
+                    <span class="card-text" style="font-size: .9rem;">{{ client.description }}</span><br>
+                    <p class="card-text"><small class="text-muted">{{ client.time_create }}</small></p>
+                </div>
             </div>
         </div>
+        {% endfor %}
+        {% else %}
+        <p>Нет клиентов</p>
+        {% endif %}
     </div>
-    {% endfor %}
-    {% else %}
-    <p>Нет клиентов</p>
-    {% endif %}
 </div>
 {% endblock %}
