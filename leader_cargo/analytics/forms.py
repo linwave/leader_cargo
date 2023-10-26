@@ -52,7 +52,7 @@ class EditTableArticleForm(ModelForm):
         ]
         for field in self.fields:
             self.fields[field].widget.attrs.update({'class': 'form-control'})
-        self.fields["paid_by_the_client_status"].choices = paid_by_the_client_statuses
+        # self.fields["paid_by_the_client_status"].choices = paid_by_the_client_statuses
         self.fields["payment_to_the_carrier_status"].choices = payment_to_the_carrier_statuses
         self.fields["status"].choices = statuses
 

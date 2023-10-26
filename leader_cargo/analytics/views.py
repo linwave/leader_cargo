@@ -64,7 +64,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                 managers_pk.append(user['pk'])
             context['all_articles'] = context['all_articles'].filter(responsible_manager__in=managers_pk)
 
-        context['count_notifications'] = context['all_articles'].filter(responsible_manager=f'{self.request.user.pk}').filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
+        context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
 
         if self.request.GET.get('paid_by_the_client') and self.request.GET.get('paid_by_the_client') != 'Оплата клиентом':
             context['paid_by_the_client_current'] = self.request.GET.get('paid_by_the_client')
