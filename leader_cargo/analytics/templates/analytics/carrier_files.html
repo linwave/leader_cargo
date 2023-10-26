@@ -6,100 +6,89 @@
 
 {% block content %}
 <div class="container">
-{% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-<div class="row g-2">
-    <div class="col-auto">
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
-            Загрузить файл перевозчика
-        </button>
+    {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+    <div class="row g-2">
+        <div class="col-auto">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                Загрузить файл перевозчика
+            </button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-dark ">
+                Выгрузка отчета по грузам
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample" >
+                Груза без страховки: {{ count_articles_without_insurance }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample5" aria-expanded="false" aria-controls="collapseExample5" >
+                Не выданные: {{ count_all_articles_not_issued }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseExample1" aria-expanded="false" aria-controls="multiCollapseExample1">
+                С пустым менеджером: {{ count_empty_responsible_manager }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseExample2" aria-expanded="false" aria-controls="multiCollapseExample2">
+                С пустой дорогой: {{ count_empty_path_format }}
+            </button>
+        </div>
     </div>
-    <div class="col-auto">
-        <button type="button" class="btn btn-dark ">
-            Выгрузка отчета по грузам
-        </button>
-    </div>
-    <div class="col-auto">
-        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample" >
-            Груза без страховки: {{ count_articles_without_insurance }}
-        </button>
-    </div>
-    <div class="col-auto">
-        <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample5" aria-expanded="false" aria-controls="collapseExample5" >
-            Не выданные: {{ count_all_articles_not_issued }}
-        </button>
-    </div>
-    <div class="col-auto">
-        <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseExample1" aria-expanded="false" aria-controls="multiCollapseExample1">
-            С пустым менеджером: {{ count_empty_responsible_manager }}
-        </button>
-    </div>
-    <div class="col-auto">
-        <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseExample2" aria-expanded="false" aria-controls="multiCollapseExample2">
-            С пустой дорогой: {{ count_empty_path_format }}
-        </button>
-    </div>
-</div>
-<div class="collapse" id="collapseExample5">
-    <div class="card card-body">
-        <div>
-            <table class="table table-hover">
-                <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Артикул</th>
-                </tr>
-                </thead>
-                <tbody>
+    <div class="collapse" id="collapseExample5">
+        <div class="card card-body">
+            <div class="row">
                 {% for art in all_articles_not_issued %}
-                <tr>
-                    <th scope="row">{{ forloop.counter }}</th>
-                    <td>{{ art.article }}</td>
-                </tr>
+                <div class="col-4">
+                    {{ forloop.counter }}.  {{ art.article }}
+                </div>
                 {% endfor %}
-                </tbody>
-            </table>
+            </div>
         </div>
     </div>
-</div>
-<div class="collapse" id="collapseExample">
-    <div class="card card-body">
-        <div id="text_for_all_articles_without_insurance" style="display: none;">
-            Уважаемые менеджеры напоминаю, что у нас есть требование, что бы все груза отправлялись со страховкой, поэтому прошу вас связаться со складом Китай и донести информацию до кладовщиков о стоимости товара по следующим грузам, для подключения страховки:
-            <br><br>
-            {% for art in all_articles_without_insurance %}
-            <span style="font-weight: 700;">#{{ forloop.counter }} {{ art.article }}</span><br>
-            Дата отправки со склада Китай: {{ art.time_from_china|date:"d F Y" }}<br><br>
-            {% endfor %}
-        </div>
-        <div>
-            Уважаемые менеджеры напоминаю, что у нас есть требование, что бы все груза отправлялись со страховкой, поэтому прошу вас связаться со складом Китай и донести информацию до кладовщиков о стоимости товара по следующим грузам, для подключения страховки:
-            <table class="table table-hover">
-                <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Артикул</th>
-                    <th scope="col"></th>
-                    <th scope="col">Дата отправки со склада Китай</th>
-                </tr>
-                </thead>
-                <tbody>
+    <div class="collapse" id="collapseExample">
+        <div class="card card-body">
+            <div id="text_for_all_articles_without_insurance" style="display: none;">
+                Уважаемые менеджеры напоминаю, что у нас есть требование, что бы все груза отправлялись со страховкой, поэтому прошу вас связаться со складом Китай и донести информацию до кладовщиков о стоимости товара по следующим грузам, для подключения страховки:
+                <br><br>
                 {% for art in all_articles_without_insurance %}
-                <tr>
-                    <th scope="row">{{ forloop.counter }}</th>
-                    <td>{{ art.article }}</td>
-                    <td></td>
-                    <td>{{ art.time_from_china|date:"d F Y" }}</td>
-                </tr>
+                <span style="font-weight: 700;">#{{ forloop.counter }} {{ art.article }}</span><br>
+                Дата отправки со склада Китай: {{ art.time_from_china|date:"d F Y" }}<br><br>
                 {% endfor %}
-                </tbody>
-            </table>
+            </div>
+            <div>
+                Уважаемые менеджеры напоминаю, что у нас есть требование, что бы все груза отправлялись со страховкой, поэтому прошу вас связаться со складом Китай и донести информацию до кладовщиков о стоимости товара по следующим грузам, для подключения страховки:
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Артикул</th>
+                        <th scope="col"></th>
+                        <th scope="col">Дата отправки со склада Китай</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for art in all_articles_without_insurance %}
+                    <tr>
+                        <th scope="row">{{ forloop.counter }}</th>
+                        <td>{{ art.article }}</td>
+                        <td></td>
+                        <td>{{ art.time_from_china|date:"d F Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button type="button" class="btn btn-danger" id="copyButton" data-bs-toggle="button" autocomplete="off">
+                Скопировать
+            </button>
         </div>
-        <button type="button" class="btn btn-danger" id="copyButton" data-bs-toggle="button" autocomplete="off">
-            Скопировать
-        </button>
     </div>
-</div>
-<script>
+    <script>
             document.querySelector("#copyButton").addEventListener("click", function() {
     navigator.clipboard.writeText(document.querySelector("#text_for_all_articles_without_insurance").innerText).then(function() {
         console.log('Text copied to clipboard');
@@ -108,124 +97,124 @@
     });
 });
 </script>
-<div class="row p-1">
-    <div class="col-auto">
-        <div class="collapse multi-collapse" id="multiCollapseExample1">
-            <div class="card card-body">
-                Груза с пустыми менеджерами:<br>
-                <div class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ pb_count_empty_responsible_manager }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pb_count_empty_responsible_manager }}%">{{ pb_count_empty_responsible_manager }}%</div>
-                </div>
-                <div class="row">
-                    {% for art in all_article_with_empty_responsible_manager %}
-                    <div class="col-6">
-                        {{ forloop.counter }} - {{ art.article }}
+    <div class="row p-1">
+        <div class="col-auto">
+            <div class="collapse multi-collapse" id="multiCollapseExample1">
+                <div class="card card-body">
+                    Груза с пустыми менеджерами:<br>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ pb_count_empty_responsible_manager }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pb_count_empty_responsible_manager }}%">{{ pb_count_empty_responsible_manager }}%</div>
                     </div>
-                    {% endfor %}
+                    <div class="row">
+                        {% for art in all_article_with_empty_responsible_manager %}
+                        <div class="col-6">
+                            {{ forloop.counter }} - {{ art.article }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="collapse multi-collapse" id="multiCollapseExample2">
+                <div class="card card-body">
+                    Груза с пустой дорогой:<br>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ pb_count_empty_path_format }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pb_count_empty_path_format }}%">{{ pb_count_empty_path_format }}%</div>
+                    </div>
+                    <div class="row">
+                        {% for art in all_article_with_empty_path_format %}
+                        <div class="col-6">
+                            {{ forloop.counter }} - {{ art.article }}
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-auto">
-        <div class="collapse multi-collapse" id="multiCollapseExample2">
-            <div class="card card-body">
-                Груза с пустой дорогой:<br>
-                <div class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ pb_count_empty_path_format }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pb_count_empty_path_format }}%">{{ pb_count_empty_path_format }}%</div>
-                </div>
-                <div class="row">
-                    {% for art in all_article_with_empty_path_format %}
-                    <div class="col-6">
-                        {{ forloop.counter }} - {{ art.article }}
-                    </div>
-                    {% endfor %}
-                </div>
+    {% endif %}
+    <form id="date_picker" method="get" action="{% url 'carrier' %}">
+        <input id="status" type="hidden" name="status" value="{{ status_now }}">
+        <input type="hidden" name="carrier" value="{{ carrier_now }}">
+        <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
+        <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
+        <div class="row g-0 justify-content-around">
+            <div class="col-auto">
+                <input id="article_search" onkeyup="FilterFunc()"  class="form-control" type="text" name="article" placeholder="Поиск по артикулу"/>
             </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-<form id="date_picker" method="get" action="{% url 'carrier' %}">
-    <input id="status" type="hidden" name="status" value="{{ status_now }}">
-    <input type="hidden" name="carrier" value="{{ carrier_now }}">
-    <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
-    <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
-    <div class="row g-0 justify-content-around">
-        <div class="col-auto">
-            <input id="article_search" onkeyup="FilterFunc()"  class="form-control" type="text" name="article" placeholder="Поиск по артикулу"/>
-        </div>
-        <div class="col-auto">
-            <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2 position-relative" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
-                {{ status_now }}
-                {% if user.role != 'Логист'  %}
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            <div class="col-auto">
+                <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2 position-relative" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
+                    {{ status_now }}
+                    {% if user.role != 'Логист'  %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                 {{ count_notifications }}
                 </span>
-                {% endif %}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-dark">
-                <li><input class="dropdown-item" value="Статус прибытия" name="status" type="button" onclick="edit_func_input('Статус прибытия', 'status', 'date_picker')"/></li>
-                <li><input class="dropdown-item" value="В пути" name="status" type="button" onclick="edit_func_input('В пути', 'status', 'date_picker')"/></li>
-                <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="button" onclick="edit_func_input('Прибыл в РФ', 'status', 'date_picker')"/></li>
-                <li><input class="dropdown-item" value="Выдан" name="status" type="button" onclick="edit_func_input('Выдан', 'status', 'date_picker')"/></li>
-            </ul>
-        </div>
-        <div class="col-auto">
-            <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >
-                {{ carrier_now }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-dark">
-                <li><input class="dropdown-item" value="Все перевозчики" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Ян" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Валька" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Мурад" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Гелик" name="carrier" type="submit"/></li>
-            </ul>
-        </div>
-        <div class="col-auto">
-            <button id="paid_by_the_client" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_by_the_client" type="button" >
-                {{ paid_by_the_client_current }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-dark">
-                <li><input class="dropdown-item" value="Оплата клиентом" name="paid_by_the_client" type="submit"/></li>
-                <li><input class="dropdown-item" value="Оплачено полностью" name="paid_by_the_client" type="submit"/></li>
-                <li><input class="dropdown-item" value="Оплачено частично" name="paid_by_the_client" type="submit"/></li>
-                <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client" type="submit"/></li>
-            </ul>
-        </div>
-        <div class="col-auto">
-            <button id="paid_to_the_carrier" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_to_the_carrier" type="button" >
-                {{ paid_to_the_carrier_current }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-dark">
-                <li><input class="dropdown-item" value="Оплата перевозчику" name="paid_to_the_carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Оплачено" name="paid_to_the_carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Не оплачено" name="paid_to_the_carrier" type="submit"/></li>
-            </ul>
-        </div>
-        <div class="col-auto">
-            <div class="row">
-                <div class="col-auto">
-                    <label for="startDate" class="col-form-label">От</label>
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><input class="dropdown-item" value="Статус прибытия" name="status" type="button" onclick="edit_func_input('Статус прибытия', 'status', 'date_picker')"/></li>
+                    <li><input class="dropdown-item" value="В пути" name="status" type="button" onclick="edit_func_input('В пути', 'status', 'date_picker')"/></li>
+                    <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="button" onclick="edit_func_input('Прибыл в РФ', 'status', 'date_picker')"/></li>
+                    <li><input class="dropdown-item" value="Выдан" name="status" type="button" onclick="edit_func_input('Выдан', 'status', 'date_picker')"/></li>
+                </ul>
+            </div>
+            <div class="col-auto">
+                <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >
+                    {{ carrier_now }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><input class="dropdown-item" value="Все перевозчики" name="carrier" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Ян" name="carrier" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Валька" name="carrier" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Мурад" name="carrier" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Гелик" name="carrier" type="submit"/></li>
+                </ul>
+            </div>
+            <div class="col-auto">
+                <button id="paid_by_the_client" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_by_the_client" type="button" >
+                    {{ paid_by_the_client_current }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><input class="dropdown-item" value="Оплата клиентом" name="paid_by_the_client" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Оплачено полностью" name="paid_by_the_client" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Оплачено частично" name="paid_by_the_client" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client" type="submit"/></li>
+                </ul>
+            </div>
+            <div class="col-auto">
+                <button id="paid_to_the_carrier" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_to_the_carrier" type="button" >
+                    {{ paid_to_the_carrier_current }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><input class="dropdown-item" value="Оплата перевозчику" name="paid_to_the_carrier" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Оплачено" name="paid_to_the_carrier" type="submit"/></li>
+                    <li><input class="dropdown-item" value="Не оплачено" name="paid_to_the_carrier" type="submit"/></li>
+                </ul>
+            </div>
+            <div class="col-auto">
+                <div class="row">
+                    <div class="col-auto">
+                        <label for="startDate" class="col-form-label">От</label>
+                    </div>
+                    <div class="col-auto">
+                        <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"/>
+                    </div>
                 </div>
-                <div class="col-auto">
-                    <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"/>
+            </div>
+            <div class="col-auto">
+                <div class="row">
+                    <div class="col-auto">
+                        <label for="endDate" class="col-form-label">До</label>
+                    </div>
+                    <div class="col-auto">
+                        <input id="endDate" class="form-control" type="date" name="end_date" value="{{ end_date_current }}"/>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-auto">
-            <div class="row">
-                <div class="col-auto">
-                    <label for="endDate" class="col-form-label">До</label>
-                </div>
-                <div class="col-auto">
-                    <input id="endDate" class="form-control" type="date" name="end_date" value="{{ end_date_current }}"/>
-                </div>
-            </div>
-        </div>
-    </div>
-</form>
-<script>
+    </form>
+    <script>
             function edit_func_input(value, name, form){
                 document.getElementById(name).value = value;
                 document.getElementById(form).submit();
@@ -241,66 +230,66 @@
                 })
 </script>
 
-<div class="row justify-content-around">
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Всего грузов: {{ all_articles|length }}</h6>
+    <div class="row justify-content-around">
+        <div class="col-auto">
+            <h6 class="d-inline-flex ms-md-auto p-2">Всего грузов: {{ all_articles|length }}</h6>
+        </div>
+        <div class="col-auto">
+            <h6 class="d-inline-flex ms-md-auto p-2">Общий вес: {{ all_weight|floatformat:"2g" }}</h6>
+            <!--        <div class="d-inline-flex ms-md-auto p-2" id="Ves">0</div>-->
+        </div>
+        <div class="col-auto">
+            <h6 class="d-inline-flex ms-md-auto p-2">Общий объем: {{ all_volume|floatformat:"2g" }}</h6>
+        </div>
+        <div class="col-auto">
+            <h6 class="d-inline-flex ms-md-auto p-2">Общий ПРР: {{ all_prr|floatformat:"2g" }}</h6>
+        </div>
+        <div class="col-auto">
+            <h6 class="d-inline-flex ms-md-auto p-2">Общий ТАТ: {{ all_tat|floatformat:"2g" }}</h6>
+        </div>
     </div>
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Общий вес: {{ all_weight|floatformat:"2g" }}</h6>
-        <!--        <div class="d-inline-flex ms-md-auto p-2" id="Ves">0</div>-->
-    </div>
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Общий объем: {{ all_volume|floatformat:"2g" }}</h6>
-    </div>
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Общий ПРР: {{ all_prr|floatformat:"2g" }}</h6>
-    </div>
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Общий ТАТ: {{ all_tat|floatformat:"2g" }}</h6>
-    </div>
-</div>
 
-<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-    <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-    </symbol>
-    <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-    </symbol>
-    <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-    </symbol>
-</svg>
-{% if message.error %}
-<div class="alert alert-warning d-flex align-items-center" role="alert">
-    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-    <div>
-        <strong>Техническая ошибка:</strong><br>
-        <strong>"{{ message.error|join:"<br>" }}"</strong><br>
-        <strong>Просьба, написать тех. поддержке со скриншотом ошибки и прикрепить файл, из-за которого это произошло</strong>
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+        </symbol>
+        <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+        </symbol>
+        <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+        </symbol>
+    </svg>
+    {% if message.error %}
+    <div class="alert alert-warning d-flex align-items-center" role="alert">
+        <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+        <div>
+            <strong>Техническая ошибка:</strong><br>
+            <strong>"{{ message.error|join:"<br>" }}"</strong><br>
+            <strong>Просьба, написать тех. поддержке со скриншотом ошибки и прикрепить файл, из-за которого это произошло</strong>
+        </div>
     </div>
-</div>
-{% endif %}
-{% if message.success_articles %}
-<div class="alert alert-success d-flex align-items-center alert-dismissible fade show" role="alert">
-    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
-    <div>
-        <strong>Успешно добавлены <span class="badge bg-secondary">{{ message.success_articles|length }}</span></strong><br>
-        {{ message.success_articles|join:", "}}
+    {% endif %}
+    {% if message.success_articles %}
+    <div class="alert alert-success d-flex align-items-center alert-dismissible fade show" role="alert">
+        <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
+        <div>
+            <strong>Успешно добавлены <span class="badge bg-secondary">{{ message.success_articles|length }}</span></strong><br>
+            {{ message.success_articles|join:", "}}
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-{% endif %}
-{% if message.warning_articles %}
-<div class="alert alert-danger d-flex align-items-center alert-dismissible fade show" role="alert">
-    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-    <div>
-        <strong>Ошибка добавления <span class="badge bg-secondary">{{ message.warning_articles|length }}</span></strong><br>
-        {{ message.warning_articles|join:"<br>"}}
+    {% endif %}
+    {% if message.warning_articles %}
+    <div class="alert alert-danger d-flex align-items-center alert-dismissible fade show" role="alert">
+        <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+        <div>
+            <strong>Ошибка добавления <span class="badge bg-secondary">{{ message.warning_articles|length }}</span></strong><br>
+            {{ message.warning_articles|join:"<br>"}}
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-{% endif %}
+    {% endif %}
 </div>
 <span class="text-danger">{{ form.non_field_errors }}</span>
 <span class="text-danger">{{ form.name_carrier.errors }}</span>

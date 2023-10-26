@@ -1,5 +1,5 @@
 <div class="table-responsive m-0 scrollable" style="height:680px;">
-    <table id="myTable" class="table align-middle table-sm table-bordered table-hover" style="text-align: center;">
+    <table id="myTable" class="table align-middle table-sm table-hover" style="text-align: center;" >
         <thead class="table-dark align-middle">
         <tr>
             <th scope="col">#</th>
@@ -67,7 +67,7 @@
         {% endif %}
         <tr>
             <th id="article-{{ article.pk }}" scope="row">{{ forloop.counter }}</th>
-            <td class="fixed-side" >
+            <td>
                 {{ article.article }}
             </td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}

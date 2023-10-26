@@ -113,19 +113,34 @@
     opacity: 1;
 }
 
+
+
+:root {
+    --border-width: 1px;
+    --border-color: #CED4DA;
+    --border: var(--border-width) solid var(--border-color);
+}
 .scrollable {
     overflow-x:auto;
     overflow-y: auto;
 }
-
-
 .scrollable table {
     border-collapse: separate;
     border-spacing: 0;
 }
-
 .scrollable thead {
     position: sticky;
     top: 0;
+}
+.scrollable th {
+    border-right: var(--border);
+    border-bottom: var(--border);
+}
+.scrollable td {
+    border-right: var(--border);
+    border-bottom: var(--border);
+}
+.scrollable td:nth-child(2) {
+  border-left: var(--border);
 }
 
