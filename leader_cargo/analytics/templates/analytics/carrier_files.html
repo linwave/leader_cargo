@@ -23,6 +23,11 @@
         </button>
     </div>
     <div class="col-auto">
+        <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample5" aria-expanded="false" aria-controls="collapseExample5" >
+            Не выданные: {{ count_all_articles_not_issued }}
+        </button>
+    </div>
+    <div class="col-auto">
         <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseExample1" aria-expanded="false" aria-controls="multiCollapseExample1">
             С пустым менеджером: {{ count_empty_responsible_manager }}
         </button>
@@ -31,6 +36,28 @@
         <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseExample2" aria-expanded="false" aria-controls="multiCollapseExample2">
             С пустой дорогой: {{ count_empty_path_format }}
         </button>
+    </div>
+</div>
+<div class="collapse" id="collapseExample5">
+    <div class="card card-body">
+        <div>
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Артикул</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for art in all_articles_not_issued %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{ art.article }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 <div class="collapse" id="collapseExample">
@@ -220,6 +247,7 @@
     </div>
     <div class="col-auto">
         <h6 class="d-inline-flex ms-md-auto p-2">Общий вес: {{ all_weight|floatformat:"2g" }}</h6>
+<!--        <div class="d-inline-flex ms-md-auto p-2" id="Ves">0</div>-->
     </div>
     <div class="col-auto">
         <h6 class="d-inline-flex ms-md-auto p-2">Общий объем: {{ all_volume|floatformat:"2g" }}</h6>
@@ -231,6 +259,7 @@
         <h6 class="d-inline-flex ms-md-auto p-2">Общий ТАТ: {{ all_tat|floatformat:"2g" }}</h6>
     </div>
 </div>
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
     <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
         <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
@@ -343,11 +372,7 @@
             </div>
         </div>
         {% endif %}
-        {% if article.status == 'Прибыл в РФ' and article.paid_by_the_client_status != 'Оплачено полностью' %}
-        <tr class="table-warning">
-            {% else %}
         <tr>
-            {% endif %}
             <th id="article-{{ article.pk }}" scope="row">{{ forloop.counter }}</th>
             <td>
                 {{ article.article }}
@@ -546,7 +571,7 @@
     for (let i = 0; i < element2.length; i++){
         let mask = IMask(element2[i], maskOptions);
     }
-    function FilterFunc() {
+function FilterFunc() {
   var input, filter, table, tr, td, i;
   input = document.getElementById("article_search");
   filter = input.value.toUpperCase();
@@ -563,5 +588,11 @@
     }
   }
 }
+        let table = document.getElementById("myTable");
+        var sumVal = 0;
+        for (let i = 0; i < table.rows.length; i++) {
+            sumVal += parseFloat(table.rows[i].cells[8].innerHTML);
+            document.getElementById("Ves").innerText = sumVal;
+        }
 </script>
 {% endblock %}

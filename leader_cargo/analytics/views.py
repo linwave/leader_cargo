@@ -46,6 +46,10 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
         context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
         context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).values('article', 'time_from_china')
+        context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
+        context['all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None)
+        context['count_all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None).count()
+
         if 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100) == 100 and context['count_empty_responsible_manager'] != 0:
             context['pb_count_empty_responsible_manager'] = 99
         else:
