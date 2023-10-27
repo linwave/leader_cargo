@@ -136,6 +136,7 @@
     {% endif %}
     <form id="date_picker" method="get" action="{% url 'carrier' %}">
         <input id="status" type="hidden" name="status" value="{{ status_now }}">
+        <input id="responsible_manager" type="hidden" name="responsible_manager" value="{{ responsible_manager_current }}">
         <input type="hidden" name="carrier" value="{{ carrier_now }}">
         <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
         <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
@@ -159,6 +160,27 @@
                     <li><input class="dropdown-item" value="Выдан" name="status" type="button" onclick="edit_func_input('Выдан', 'status', 'date_picker')"/></li>
                 </ul>
             </div>
+            {% if user.role == 'РОП' or user.role == 'Супер Администратор' %}
+            <div class="col-auto">
+                <button id="responsible_manager_get" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="responsible_manager" type="button" >
+                    {% if responsible_manager_current == 'Все менеджеры' %}
+                    {{ responsible_manager_current }}
+                    {% else %}
+                    {% for man in managers %}
+                    {% if man.pk == responsible_manager_current %}
+                    {{ man.fi }}
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li><input class="dropdown-item" value="Все менеджеры" name="responsible_manager" type="button" onclick="edit_func_input('Все менеджеры', 'responsible_manager', 'date_picker')"/></li>
+                    {% for man in managers %}
+                    <li><input class="dropdown-item" value="{{ man.fi }}" name="responsible_manager" type="button" onclick="edit_func_input('{{ man.pk }}', 'responsible_manager', 'date_picker')"/></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
             <div class="col-auto">
                 <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >
                     {{ carrier_now }}

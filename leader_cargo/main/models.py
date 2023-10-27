@@ -52,6 +52,9 @@ class CustomUser(AbstractUser):
         for reports in self.managersreports_set.all():
             return reports
 
+    def get_FI(self):
+        return f'{self.last_name} {self.first_name}'
+
 # class Employees(models.Model):
 #     towns = [
 #         ('Москва', 'Москва'),

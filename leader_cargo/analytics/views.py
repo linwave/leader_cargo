@@ -64,11 +64,25 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
 
         if self.request.user.role == 'РОП':
             managers_pk = [self.request.user.pk]
-            for user in CustomUser.objects.filter(role='Менеджер').filter(town=self.request.user.town).values('pk'):
+            context['managers'] = [{
+                "pk": f"{self.request.user.pk}",
+                "fi": f"{self.request.user.last_name} {self.request.user.first_name}"
+            }]
+            for user in CustomUser.objects.filter(role='Менеджер').filter(town=self.request.user.town).values('pk', 'last_name', 'first_name'):
+                context['managers'].append({
+                    "pk": f"{user['pk']}",
+                    "fi": f"{user['last_name']} {user['first_name']}"
+                })
                 managers_pk.append(user['pk'])
             context['all_articles'] = context['all_articles'].filter(responsible_manager__in=managers_pk)
 
         context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
+
+        if self.request.GET.get('responsible_manager') and self.request.GET.get('responsible_manager') != 'Все менеджеры':
+            context['responsible_manager_current'] = self.request.GET.get('responsible_manager')
+            context['all_articles'] = context['all_articles'].filter(responsible_manager=context['responsible_manager_current'])
+        else:
+            context['responsible_manager_current'] = 'Все менеджеры'
 
         if self.request.GET.get('paid_by_the_client') and self.request.GET.get('paid_by_the_client') != 'Оплата клиентом':
             context['paid_by_the_client_current'] = self.request.GET.get('paid_by_the_client')
