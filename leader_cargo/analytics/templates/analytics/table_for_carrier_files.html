@@ -96,7 +96,7 @@
                 {% if article.status == 'В пути' %}
                 <span class="btn btn-primary btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
                 {% elif article.status == 'Прибыл в РФ' %}
-                <span class="btn btn-secondary btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
+                <span class="btn btn-danger btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
                 {% elif article.status == 'Выдан' %}
                 <span class="btn btn-success btn-sm">{{ article.status }}</span>
                 {% endif %}
@@ -106,7 +106,7 @@
                 {% if article.status == 'В пути' %}
                 <span class="btn btn-primary btn-sm">{{ article.status }}</span>
                 {% elif article.status == 'Прибыл в РФ' %}
-                <span class="btn btn-secondary btn-sm">{{ article.status }}</span>
+                <span class="btn btn-danger btn-sm">{{ article.status }}</span>
                 {% elif article.status == 'Выдан' %}
                 <span class="btn btn-success btn-sm">{{ article.status }}</span>
                 {% endif %}

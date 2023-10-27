@@ -182,6 +182,7 @@
                     <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client" type="submit"/></li>
                 </ul>
             </div>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <div class="col-auto">
                 <button id="paid_to_the_carrier" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_to_the_carrier" type="button" >
                     {{ paid_to_the_carrier_current }}
@@ -192,6 +193,7 @@
                     <li><input class="dropdown-item" value="Не оплачено" name="paid_to_the_carrier" type="submit"/></li>
                 </ul>
             </div>
+            {% endif %}
             <div class="col-auto">
                 <div class="row">
                     <div class="col-auto">
