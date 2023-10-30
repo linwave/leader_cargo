@@ -1,0 +1,49 @@
+<div class="row p-1">
+    <div class="collapse" id="collapseWithoutInsuranceArticles">
+        <div class="card card-body">
+            <div id="text_for_all_articles_without_insurance" style="display: none;">
+                Уважаемые менеджеры напоминаю, что у нас есть требование, что бы все груза отправлялись со страховкой, поэтому прошу вас связаться со складом Китай и донести информацию до кладовщиков о стоимости товара по следующим грузам, для подключения страховки:
+                <br><br>
+                {% for art in all_articles_without_insurance %}
+                <span style="font-weight: 700;">#{{ forloop.counter }} {{ art.article }}</span><br>
+                Дата отправки со склада Китай: {{ art.time_from_china|date:"d F Y" }}<br><br>
+                {% endfor %}
+            </div>
+            <div>
+                Уважаемые менеджеры напоминаю, что у нас есть требование, что бы все груза отправлялись со страховкой, поэтому прошу вас связаться со складом Китай и донести информацию до кладовщиков о стоимости товара по следующим грузам, для подключения страховки:
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Артикул</th>
+                        <th scope="col"></th>
+                        <th scope="col">Дата отправки со склада Китай</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for art in all_articles_without_insurance %}
+                    <tr>
+                        <th scope="row">{{ forloop.counter }}</th>
+                        <td>{{ art.article }}</td>
+                        <td></td>
+                        <td>{{ art.time_from_china|date:"d F Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button type="button" class="btn btn-danger" id="copyButton" data-bs-toggle="button" autocomplete="off">
+                Скопировать
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+            document.querySelector("#copyButton").addEventListener("click", function() {
+    navigator.clipboard.writeText(document.querySelector("#text_for_all_articles_without_insurance").innerText).then(function() {
+        console.log('Text copied to clipboard');
+    }).catch(function(error) {
+        console.error('Error:', error);
+    });
+});
+</script>

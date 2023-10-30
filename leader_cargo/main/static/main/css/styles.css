@@ -113,34 +113,19 @@
     opacity: 1;
 }
 
-
-
-:root {
-    --border-width: 1px;
-    --border-color: #CED4DA;
-    --border: var(--border-width) solid var(--border-color);
+div.dataTables_wrapper {
+        width: 100%;
+        margin: 0 auto;
 }
-.scrollable {
-    overflow-x:auto;
-    overflow-y: auto;
+.table_border  {
+  border-spacing: 0;
 }
-.scrollable table {
-    border-collapse: separate;
-    border-spacing: 0;
+.table_border th  {
+  border-right: 0.5px solid #333;
 }
-.scrollable thead {
-    position: sticky;
-    top: 0;
+.table_border td  {
+  border-right: 1px solid #CED4DA;
 }
-.scrollable th {
-    border-right: var(--border);
-    border-bottom: var(--border);
+.table_border td:nth-child(2) {
+  border-left: 1px solid #CED4DA;
 }
-.scrollable td {
-    border-right: var(--border);
-    border-bottom: var(--border);
-}
-.scrollable td:nth-child(2) {
-  border-left: var(--border);
-}
-

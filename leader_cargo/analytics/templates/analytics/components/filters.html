@@ -1,0 +1,136 @@
+<form id="date_picker" method="get" action="{% url 'carrier' %}">
+    <input id="status" type="hidden" name="status" value="{{ status_now }}">
+    <input id="responsible_manager" type="hidden" name="responsible_manager" value="{{ responsible_manager_current }}">
+    <input id="carrier" type="hidden" name="carrier" value="{{ carrier_now }}">
+    <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
+    <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
+    <div class="row g-2 justify-content-center">
+        <div class="col-auto">
+            <input id="article_search" onkeyup="FilterFunc()"  class="form-control" type="text" name="article" placeholder="Поиск по артикулу"/>
+        </div>
+        <div class="col-auto">
+            <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2 position-relative" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
+                {{ status_now }}
+                {% if user.role != 'Логист'  %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ count_notifications }}
+                </span>
+                {% endif %}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><input class="dropdown-item" value="Статус прибытия" name="status" type="button" onclick="edit_func_input('Статус прибытия', 'status', 'date_picker')"/></li>
+                <li><input class="dropdown-item" value="В пути" name="status" type="button" onclick="edit_func_input('В пути', 'status', 'date_picker')"/></li>
+                <li><input class="dropdown-item" value="Прибыл в РФ" name="status" type="button" onclick="edit_func_input('Прибыл в РФ', 'status', 'date_picker')"/></li>
+                <li><input class="dropdown-item" value="Выдан" name="status" type="button" onclick="edit_func_input('Выдан', 'status', 'date_picker')"/></li>
+            </ul>
+        </div>
+        {% if user.role == 'РОП' or user.role == 'Супер Администратор' or user.role == 'Логист' %}
+        <div class="col-auto">
+            <button id="responsible_manager_get" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="responsible_manager" type="button" >
+                {% if responsible_manager_current == 'Все менеджеры' %}
+                {{ responsible_manager_current }}
+                {% else %}
+                {% for man in managers %}
+                {% if man.pk == responsible_manager_current %}
+                {{ man.fi }}
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><input class="dropdown-item" value="Все менеджеры" name="responsible_manager" type="button" onclick="edit_func_input('Все менеджеры', 'responsible_manager', 'date_picker')"/></li>
+                {% for man in managers %}
+                <li><input class="dropdown-item" value="{{ man.fi }}" name="responsible_manager" type="button" onclick="edit_func_input('{{ man.pk }}', 'responsible_manager', 'date_picker')"/></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="col-auto">
+            <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >
+                {{ carrier_now }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><input class="dropdown-item" value="Все перевозчики" name="carrier" type="submit"/></li>
+                <li><input class="dropdown-item" value="Ян" name="carrier" type="submit"/></li>
+                <li><input class="dropdown-item" value="Валька" name="carrier" type="submit"/></li>
+                <li><input class="dropdown-item" value="Мурад" name="carrier" type="submit"/></li>
+                <li><input class="dropdown-item" value="Гелик" name="carrier" type="submit"/></li>
+            </ul>
+        </div>
+        <div class="col-auto">
+            <button id="paid_by_the_client" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_by_the_client" type="button" >
+                {{ paid_by_the_client_current }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><input class="dropdown-item" value="Оплата клиентом" name="paid_by_the_client" type="submit"/></li>
+                <li><input class="dropdown-item" value="Оплачено полностью" name="paid_by_the_client" type="submit"/></li>
+                <li><input class="dropdown-item" value="Оплачено частично" name="paid_by_the_client" type="submit"/></li>
+                <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client" type="submit"/></li>
+            </ul>
+        </div>
+        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+        <div class="col-auto">
+            <button id="paid_to_the_carrier" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_to_the_carrier" type="button" >
+                {{ paid_to_the_carrier_current }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><input class="dropdown-item" value="Оплата перевозчику" name="paid_to_the_carrier" type="submit"/></li>
+                <li><input class="dropdown-item" value="Оплачено" name="paid_to_the_carrier" type="submit"/></li>
+                <li><input class="dropdown-item" value="Не оплачено" name="paid_to_the_carrier" type="submit"/></li>
+            </ul>
+        </div>
+        {% endif %}
+        <div class="col-auto">
+            <div class="row">
+                <div class="col-auto">
+                    <label for="startDate" class="col-form-label">От</label>
+                </div>
+                <div class="col-auto">
+                    <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"/>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="row">
+                <div class="col-auto">
+                    <label for="endDate" class="col-form-label">До</label>
+                </div>
+                <div class="col-auto">
+                    <input id="endDate" class="form-control" type="date" name="end_date" value="{{ end_date_current }}"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script>
+            function edit_func_input(value, name, form){
+                document.getElementById(name).value = value;
+                document.getElementById(form).submit();
+            }
+            form_filter = document.getElementById('date_picker')
+            let startDate = document.getElementById('startDate')
+            startDate.addEventListener('change',(e)=>{
+                form_filter.submit()
+                })
+            let endDate = document.getElementById('endDate')
+            endDate.addEventListener('change',(e)=>{
+                form_filter.submit()
+                })
+function FilterFunc() {
+  var input, filter, table, tr, td, i;
+  input = document.getElementById("article_search");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("myTable");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];
+    if (td) {
+      if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+</script>

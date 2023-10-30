@@ -38,8 +38,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         context = super().get_context_data(**kwargs)
         context['all_articles'] = CargoArticle.objects.all().order_by('-time_from_china')
         now = datetime.datetime.now()
-        context['date_current'] = now.replace(day=1).strftime("%Y-%m-%d")
-        context['end_date_current'] = now.strftime("%Y-%m-%d")
 
         context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
@@ -76,6 +74,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                 managers_pk.append(user['pk'])
             context['all_articles'] = context['all_articles'].filter(responsible_manager__in=managers_pk)
 
+        elif self.request.user.role == 'Логист':
+            context['managers'] = []
+            for user in CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], status=True).values('pk', 'last_name', 'first_name').order_by('last_name'):
+                context['managers'].append({
+                    "pk": f"{user['pk']}",
+                    "fi": f"{user['last_name']} {user['first_name']}"
+                })
         context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
 
         if self.request.GET.get('responsible_manager') and self.request.GET.get('responsible_manager') != 'Все менеджеры':
@@ -96,11 +101,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         else:
             context['paid_to_the_carrier_current'] = 'Оплата перевозчику'
 
-        if self.request.GET.get('date'):
-            context['date_current'] = self.request.GET.get('date')
-        if self.request.GET.get('end_date'):
-            context['end_date_current'] = self.request.GET.get('end_date')
-
         if self.request.GET.get('status') and self.request.GET.get('status') != 'Статус прибытия':
             context['status_now'] = self.request.GET.get('status')
             context['all_articles'] = context['all_articles'].filter(status=self.request.GET.get('status'))
@@ -113,11 +113,20 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         else:
             context['carrier_now'] = 'Все перевозчики'
 
-        context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
-                                                                 time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+        # context['date_current'] = now.replace(day=1).strftime("%Y-%m-%d")
+        # context['end_date_current'] = now.strftime("%Y-%m-%d")
+        # context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
+        #                                                          time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
 
-        context['all_articles_without_insurance'] = context['all_articles_without_insurance'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
-                                                                                                     time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+        if self.request.GET.get('date'):
+            context['date_current'] = self.request.GET.get('date')
+            context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
+            context['all_articles_without_insurance'] = context['all_articles_without_insurance'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
+        if self.request.GET.get('end_date'):
+            context['end_date_current'] = self.request.GET.get('end_date')
+            context['all_articles'] = context['all_articles'].filter(time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+            context['all_articles_without_insurance'] = context['all_articles_without_insurance'].filter(time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+
         context['count_articles_without_insurance'] = context['all_articles_without_insurance'].count()
         context['form_article'] = []
         for article in context['all_articles']:
@@ -195,7 +204,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         old_articles = CargoArticle.objects.filter(article=article)
                         for old in old_articles:
                             # ОБГОВОРЕНО
-                            if old.article == article and old.name_goods == name_goods and old.status == 'В пути':
+                            if old.article == article and old.name_goods == name_goods:
                                 check = True
                                 self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
                                 break
@@ -436,7 +445,7 @@ def change_article_status(request, article_id):
     if request.user.role in role_have_perm:
         article = CargoArticle.objects.get(pk=article_id)
         article.update_status_article()
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get('HTTP_REFERER') + f'#article-{article_id}')
 
 
 class EditTableArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
