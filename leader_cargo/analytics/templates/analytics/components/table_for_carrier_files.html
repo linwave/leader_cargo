@@ -19,7 +19,7 @@
 {% include "analytics/components/messagesError.html"  %}
 
 
-<table id="myTable" class="table table-hover table_border" style="width:100%;border-spacing: 0;">
+<table id="myTable" class="table table-sm table-hover table_border align-middle" style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.8rem;{% endif %}">
     <thead class="table-dark align-middle">
     <tr>
         <th scope="col" style="background-color: #111;">#</th>
@@ -45,11 +45,11 @@
         {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
         <th scope="col">Оплачено перевоз-чику</th>
         {% endif %}
-        <th scope="col">Дата прибытия груза в РФ</th>
-        <th scope="col">Дата выдачи груза</th>
-        <th scope="col">Кол-во дней в пути</th>
+        <th scope="col" style="background-color: #111;">Дата прибытия груза в РФ</th>
+        <th scope="col" style="background-color: #111;">Дата выдачи груза</th>
+        <th scope="col" style="background-color: #111;">Кол-во дней в пути</th>
         {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-        <th scope="col">Удаление</th>
+        <th scope="col" style="background-color: #111;">Удаление</th>
         {% endif %}
     </tr>
     </thead>

@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView, DeleteView, UpdateView
+from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
 from .forms import AddCarrierFilesForm, EditTableArticleForm
 from .utils import DataMixinAll
 from .models import CargoFiles, CargoArticle
@@ -167,6 +167,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         file_carrier.save()
         self.message['success_articles'] = []
         self.message['warning_articles'] = []
+        self.message['info_articles'] = []
         self.message['error'] = []
 
         try:
@@ -204,9 +205,25 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         old_articles = CargoArticle.objects.filter(article=article)
                         for old in old_articles:
                             # ОБГОВОРЕНО
-                            if old.article == article and old.name_goods == name_goods:
+                            if old.article == article and old.name_goods == name_goods and old.time_from_china == make_aware(time_from_china):
                                 check = True
-                                self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}' - уже существует")
+                                # self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' "
+                                #                                         f"и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}'"
+                                #                                         f" - уже существует")
+                                old.carrier = carrier
+                                old.number_of_seats = number_of_seats
+                                old.weight = weight
+                                old.volume = volume
+                                old.transportation_tariff = transportation_tariff
+                                old.cost_goods = cost_goods
+                                old.insurance_cost = insurance_cost
+                                old.packaging_cost = packaging_cost
+                                old.total_cost = total_cost
+                                old.cargo_id = file_carrier
+                                old.address_transportation_cost = address_transportation_cost
+                                old.save()
+                                self.message['info_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' "
+                                                                     f"и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}'")
                                 break
                         if not check:
                             CargoArticle.objects.create(
