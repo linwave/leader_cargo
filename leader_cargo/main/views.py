@@ -300,14 +300,33 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
+        months = ["", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+        years = ["", 2023, 2024, 2025, 2026, 2027, 2028]
         now = datetime.datetime.now()
+        month = now.month
+        year = now.year
+        if self.request.GET.get('month') or self.request.GET.get('year'):
+            if 'month' in self.request.GET:
+                month = self.request.GET.get('month')
+                for index, m in enumerate(months):
+                    if m == month:
+                        month = index
+                        break
+                now = now.replace(month=month)
+            if 'year' in self.request.GET:
+                year = int(self.request.GET.get('year'))
+                now = now.replace(year=year)
+        context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=month, report_upload_date__year=year)
+        context['month'] = months[now.month]
+        context['months'] = months
+        context['year'] = now.year
+        context['years'] = years
+
+        context['all_data'] = dict()
         if self.request.user.role == 'Супер Администратор':
             context['managers'] = CustomUser.objects.filter(role='Менеджер')
         else:
             context['managers'] = CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}', status=True)
-        context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=now.month, report_upload_date__year=now.year)
-
-        context['all_data'] = dict()
         for manager in context['managers']:
             if manager.pk != 18:
                 context['all_data'][f'{manager.pk}'] = dict()
@@ -386,7 +405,6 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                     context['all_data'][f'{manager.pk}']['calls_duration_need'] = context['all_data'][f'{manager.pk}']['sum_duration_calls_need'] / context['all_data'][f'{manager.pk}']['sum_calls_need']
                 except ZeroDivisionError:
                     context['all_data'][f'{manager.pk}']['calls_duration_need'] = 0
-
         c_def = self.get_user_context(title="Таблица результатов")
         return dict(list(context.items()) + list(c_def.items()))
 
