@@ -122,7 +122,7 @@ class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
         if self.request.user.role == 'Супер Администратор':
             return CustomUser.objects.filter(role='Менеджер')
         else:
-            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}', status=True)
+            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -489,7 +489,7 @@ class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
         if self.request.user.role == 'Супер Администратор':
             return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик', 'РОП', 'Администратор'])
         else:
-            return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик']).filter(status=True)
+            return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик'])
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:

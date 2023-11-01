@@ -16,7 +16,11 @@
         {% if employees %}
         {% for employee in employees %}
         <div class="col-sm-4">
+            {% if employee.status %}
             <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 420px;">
+            {% else %}
+            <div class="card text-dark mb-3 border-secondary shadow p-1 rounded" style="max-width: 420px;background: #C0C0C0;">
+            {% endif %}
                 <div class="row g-0">
                     <div class="col-3">
                     </div>
