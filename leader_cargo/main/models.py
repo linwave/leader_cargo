@@ -31,7 +31,7 @@ class CustomUser(AbstractUser):
     description = models.CharField('Описание', max_length=240, blank=True)
     manager = models.IntegerField('Менеджер', blank=True, null=True)
     pass_no_sha = models.CharField('Доп.пароль', max_length=200, blank=True)
-    manager_monthly_net_profit_plan = models.CharField('План по чистой прибыли в месяц', max_length=200, blank=True, null=True)
+    # manager_monthly_net_profit_plan = models.CharField('План по чистой прибыли в месяц', max_length=200, blank=True, null=True)
 
     time_create = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     time_update = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
@@ -41,6 +41,9 @@ class CustomUser(AbstractUser):
         verbose_name = 'Пользователи'
         verbose_name_plural = 'Пользователи'
         ordering = ['-status', 'town', 'role', '-time_create']
+
+    def __str__(self):
+        return f"{self.last_name} {self.first_name} - {self.phone}"
 
     def get_absolute_url_client(self):
         return reverse('card_client', kwargs={'client_id': self.pk})
@@ -240,3 +243,15 @@ class ManagersReports(models.Model):
         verbose_name = 'Отчетность менеджеров'
         verbose_name_plural = 'Отчетность менеджеров'
         ordering = ['-report_upload_date']
+
+
+class ManagerPlans(models.Model):
+    manager_monthly_net_profit_plan = models.CharField('План по чистой прибыли в месяц', max_length=200, blank=True, null=True)
+    month = models.IntegerField('Месяц', blank=True, null=True)
+    year = models.IntegerField('Год', blank=True, null=True)
+    manager_id = models.ForeignKey('CustomUser', on_delete=models.PROTECT, blank=True, null=True)
+    time_create = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    time_update = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
+
+    def __str__(self):
+        return f"План по чистой прибыли менеджера {self.manager_id} на {self.month}.{self.year} = {self.manager_monthly_net_profit_plan}"

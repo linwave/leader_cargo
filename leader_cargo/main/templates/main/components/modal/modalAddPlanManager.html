@@ -1,0 +1,23 @@
+<div class="modal fade" id="add-manager-plan" tabindex="-1" aria-labelledby="add-manager-plan-label" aria-hidden="true">
+  <div class="modal-dialog ">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="add-manager-plan-label">
+          Добавление плана сотрудника<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" id="add-manager-plan-form" action="{% url 'monitoring_manager_add_plan' manager.pk year month_int %}?{{ request.META.QUERY_STRING }}">
+          {% csrf_token %}
+          {{ manager_plan_add_form.manager_monthly_net_profit_plan.label }}
+          {{ manager_plan_add_form.manager_monthly_net_profit_plan }}
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button form="add-manager-plan-form" type="submit" class="btn btn-success">Добавить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>

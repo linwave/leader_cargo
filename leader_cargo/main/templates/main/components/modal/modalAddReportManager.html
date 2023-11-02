@@ -1,0 +1,27 @@
+<div class="modal fade" id="edit-table-report-{{ forloop.counter }}" tabindex="-1" aria-labelledby="edit-table-report-label-{{ forloop.counter }}" aria-hidden="true">
+  <div class="modal-dialog ">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="edit-table-report-label-{{ forloop.counter }}">Добавление отчета сотрудника {{ day }}<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% for fm in form_day_report %}
+        {% if fm.day == day %}
+        <form method="post" id="edit-report-{{ forloop.counter }}" action="{% url 'monitoring_manager_add_report' manager.pk day %}?{{ request.META.QUERY_STRING }}">
+          {% csrf_token %}
+          {% for line in fm.f %}
+          {{ line.label }}
+          {{ line }}
+          {% endfor %}
+        </form>
+        {% endif %}
+        {% endfor %}
+      </div>
+      <div class="modal-footer">
+        <button form="edit-report-{{ forloop.counter }}" type="submit" class="btn btn-success">Добавить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>

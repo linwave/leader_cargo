@@ -1,7 +1,7 @@
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 
-from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports
+from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans
 from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
 
 
@@ -31,6 +31,17 @@ class EditRopReportForm(ModelForm):
                   "number_of_goods_issued", "weight_of_goods_sent", "volume_of_cargo_sent", "number_of_calls", "duration_of_calls"]
 
 
+class AddManagerPlanForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control', 'type': 'text'})
+
+    class Meta:
+        model = ManagerPlans
+        fields = ["manager_monthly_net_profit_plan"]
+
+
 class EditManagerPlanForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,7 +49,7 @@ class EditManagerPlanForm(ModelForm):
             self.fields[field].widget.attrs.update({'class': 'form-control', 'type': 'text'})
 
     class Meta:
-        model = CustomUser
+        model = ManagerPlans
         fields = ["manager_monthly_net_profit_plan"]
 
 

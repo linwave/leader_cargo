@@ -14,7 +14,7 @@ from django.utils.timezone import make_aware
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
-    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm
+    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm
 from .models import *
 from .utils import DataMixin
 
@@ -196,7 +196,15 @@ class MonitoringManagerReportView(LoginRequiredMixin, DataMixin, ListView):
                     'f': RopReportForm(),
                     'report_id': '',
                 })
-        context['manage_plan_form'] = EditManagerPlanForm(instance=context['manager'])
+        try:
+            context['manager_plan'] = context['manager'].managerplans_set.get(month=now.month, year=now.year)
+            context['manager_plan_id'] = context['manager_plan'].pk
+            context['manager_plan_edit_form'] = EditManagerPlanForm(instance=context['manager_plan'])
+            context['manager_plan_value'] = context['manager_plan'].manager_monthly_net_profit_plan
+            print(context['manager_plan'])
+        except:
+            context['manager_plan_add_form'] = AddManagerPlanForm()
+        context['month_int'] = now.month
         context['month'] = months[now.month]
         context['months'] = months
         context['year'] = now.year
@@ -271,13 +279,44 @@ class MonitoringManagerEditReportView(LoginRequiredMixin, DataMixin, UpdateView)
             return self.handle_no_permission()
 
 
-class MonitoringManagerEditPlanView(LoginRequiredMixin, DataMixin, UpdateView):
-    form_class = EditManagerPlanForm
-    model = CustomUser
+class MonitoringManagerAddPlanView(LoginRequiredMixin, DataMixin, CreateView):
+    form_class = AddManagerPlanForm
+    model = ManagerPlans
     pk_url_kwarg = 'manager_id'
     login_url = reverse_lazy('login')
     role_have_perm = ['Супер Администратор', 'РОП']
 
+    def form_valid(self, form):
+        manager_plan = form.save(commit=False)
+        manager_plan.month = self.kwargs['month']
+        manager_plan.year = self.kwargs['year']
+        manager_plan.manager_id = CustomUser.objects.get(pk=self.kwargs['manager_id'])
+        manager_plan.save()
+        return redirect(self.request.META.get('HTTP_REFERER'))
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class MonitoringManagerEditPlanView(LoginRequiredMixin, DataMixin, UpdateView):
+    form_class = EditManagerPlanForm
+    model = ManagerPlans
+    pk_url_kwarg = 'plan_id'
+    login_url = reverse_lazy('login')
+    role_have_perm = ['Супер Администратор', 'РОП']
+
+    # def get_initial(self):
+    #     initial_base = super(MonitoringManagerEditPlanView, self).get_initial()
+    #     initial_base['password'] = generate_password(12)
+    #     return initial_base
+    #
+    # def get_object(self, queryset=None):
+    #     super(MonitoringManagerEditPlanView, self).get_object()
     def form_valid(self, form):
         form.save()
         return redirect(self.request.META.get('HTTP_REFERER'))
@@ -329,9 +368,13 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
             context['managers'] = CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}', status=True)
         for manager in context['managers']:
             if manager.pk != 18:
+
                 context['all_data'][f'{manager.pk}'] = dict()
                 context['all_data'][f'{manager.pk}']['fio'] = f"{manager.last_name} {manager.first_name}"
-                context['all_data'][f'{manager.pk}']['manager_monthly_net_profit_plan'] = float(manager.manager_monthly_net_profit_plan.replace(" ", "").replace(",", "."))
+                try:
+                    context['all_data'][f'{manager.pk}']['manager_monthly_net_profit_plan'] = float(manager.managerplans_set.get(month=now.month, year=now.year).manager_monthly_net_profit_plan.replace(" ", "").replace(",", "."))
+                except:
+                    context['all_data'][f'{manager.pk}']['manager_monthly_net_profit_plan'] = 240000
                 context['all_data'][f'{manager.pk}']['net_profit'] = 0
                 context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] = 0
                 context['all_data'][f'{manager.pk}']['buyer_files'] = 0
@@ -363,8 +406,7 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                         if report.duration_of_calls:
                             context['all_data'][f'{manager.pk}']['sum_duration_calls'] = context['all_data'][f'{manager.pk}']['sum_duration_calls'] + float(report.duration_of_calls.replace(" ", "").replace(",", "."))
 
-                if manager.manager_monthly_net_profit_plan:
-                    context['all_data'][f'{manager.pk}']['procent_plan'] = context['all_data'][f'{manager.pk}']['net_profit'] / float(manager.manager_monthly_net_profit_plan.replace(" ", "").replace(",", ".")) * 100
+                context['all_data'][f'{manager.pk}']['procent_plan'] = context['all_data'][f'{manager.pk}']['net_profit'] / float(context['all_data'][f'{manager.pk}']['manager_monthly_net_profit_plan']) * 100
                 try:
                     context['all_data'][f'{manager.pk}']['marga'] = context['all_data'][f'{manager.pk}']['net_profit'] / context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] * 100
                 except ZeroDivisionError:
@@ -542,8 +584,8 @@ class AddEmployeeView(LoginRequiredMixin, DataMixin, CreateView):
             new_data.username = ''.join(re.findall(r'\d+', form.cleaned_data['phone']))
             new_data.set_password(form.cleaned_data['password'])
             new_data.pass_no_sha = form.cleaned_data['password']
-            if new_data.role == 'Менеджер':
-                new_data.manager_monthly_net_profit_plan = '240 000'
+            # if new_data.role == 'Менеджер':
+            #     new_data.manager_monthly_net_profit_plan = '240 000'
             new_data.save()
             return redirect('employees')
         form.add_error(None, f'Ошибка добавления сотрудника')

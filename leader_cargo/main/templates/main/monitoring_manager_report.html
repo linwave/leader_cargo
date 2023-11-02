@@ -6,27 +6,6 @@
 
 {% block content %}
 <div class="container">
-    <div class="modal fade" id="edit-manager-plan" tabindex="-1" aria-labelledby="edit-manager-plan-label" aria-hidden="true">
-        <div class="modal-dialog ">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="edit-manager-plan-label">Изменение плана сотрудника<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form method="post" id="edit-manager-plan-form" action="{% url 'monitoring_manager_edit_plan' manager.pk %}?{{ request.META.QUERY_STRING }}">
-                        {% csrf_token %}
-                        {{ manage_plan_form.manager_monthly_net_profit_plan.label }}
-                        {{ manage_plan_form.manager_monthly_net_profit_plan }}
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button form="edit-manager-plan-form" type="submit" class="btn btn-success">Изменить</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                </div>
-            </div>
-        </div>
-    </div>
     <form id="date_picker_in_monitoring" action="{% url 'monitoring_manager_report' manager.pk %}" method="get">
         <input id="month" type="hidden" name="month" value="{{ month }}">
         <input id="year" type="hidden" name="year" value="{{ year }}">
@@ -56,23 +35,29 @@
             </div>
         </div>
     </form>
-    <script>
-    function edit_func_input(value, name, form){
-    document.getElementById(name).value = value;
-    document.getElementById(form).submit();
-    }
-    </script>
     <div class="row">
         <div class="col-auto m-2">
-            <h2>Текущий план сотрудника:</h2>
+            <h2>План сотрудника:</h2>
         </div>
+        {% if manager_plan_value %}
+        {% include "main/components/modal/modalEditPlanManager.html" %}
         <div class="col-auto m-1">
-            <span class="btn btn-secondary btn shadow" role="button" data-bs-toggle="modal" data-bs-target="#edit-manager-plan" style="font-size: 1.5rem;">{{ manager.manager_monthly_net_profit_plan }}</span>
+            <span class="btn btn-secondary btn shadow" role="button" data-bs-toggle="modal" data-bs-target="#edit-manager-plan" style="font-size: 1.5rem;">
+                {{ manager_plan_value|default:"0" }}
+            </span>
         </div>
+        {% else %}
+        {% include "main/components/modal/modalAddPlanManager.html" %}
+        <div class="col-auto m-1">
+            <span class="btn btn-secondary btn shadow" role="button" data-bs-toggle="modal" data-bs-target="#add-manager-plan" style="font-size: 1.5rem;">
+                {{ manager_plan_value|default:"0" }}
+            </span>
+        </div>
+        {% endif %}
     </div>
 </div>
 <div class="table-responsive m-3 scrollable" style="height:660px;">
-    <table class="table table-bordered table-striped table-hover" >
+    <table class="table table-bordered table-hover" >
         <thead class="table-warning align-middle">
         <tr>
             <th scope="col">Дата</th>
@@ -94,33 +79,7 @@
         <tbody>
         {% for day in all_days %}
         {% if day in day_reports %}
-        <div class="modal fade" id="edit-table-report-edit-{{ forloop.counter }}" tabindex="-1" aria-labelledby="edit-table-report-edit-label-{{ forloop.counter }}" aria-hidden="true">
-            <div class="modal-dialog ">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="edit-table-report-edit-label-{{ forloop.counter }}">Изменение отчета сотрудника {{ day }}<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        {% for fm in form_day_report %}
-                        {% if fm.day == day %}
-                        <form method="post" id="edit-report-edit-{{ forloop.counter }}" action="{% url 'monitoring_manager_edit_report' manager.pk fm.report_id %}?{{ request.META.QUERY_STRING }}">
-                            {% csrf_token %}
-                            {% for line in fm.f %}
-                            {{ line.label }}
-                            {{ line }}
-                            {% endfor %}
-                        </form>
-                        {% endif %}
-                        {% endfor %}
-                    </div>
-                    <div class="modal-footer">
-                        <button form="edit-report-edit-{{ forloop.counter }}" type="submit" class="btn btn-success">Изменить</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% include "main/components/modal/modalEditReportManager.html" %}
         <tr data-bs-toggle="modal" data-bs-target="#edit-table-report-edit-{{ forloop.counter }}">
             {% for report in manager_reports %}
             {% if report.report_upload_date|date:"d.m.Y" == day %}
@@ -142,46 +101,21 @@
             {% endfor %}
         </tr>
         {% else %}
-        <div class="modal fade" id="edit-table-report-{{ forloop.counter }}" tabindex="-1" aria-labelledby="edit-table-report-label-{{ forloop.counter }}" aria-hidden="true">
-            <div class="modal-dialog ">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="edit-table-report-label-{{ forloop.counter }}">Добавление отчета сотрудника {{ day }}<br>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        {% for fm in form_day_report %}
-                        {% if fm.day == day %}
-                        <form method="post" id="edit-report-{{ forloop.counter }}" action="{% url 'monitoring_manager_add_report' manager.pk day %}?{{ request.META.QUERY_STRING }}">
-                            {% csrf_token %}
-                            {% for line in fm.f %}
-                            {{ line.label }}
-                            {{ line }}
-                            {% endfor %}
-                        </form>
-                        {% endif %}
-                        {% endfor %}
-                    </div>
-                    <div class="modal-footer">
-                        <button form="edit-report-{{ forloop.counter }}" type="submit" class="btn btn-success">Добавить</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {% include "main/components/modal/modalAddReportManager.html" %}
         <tr data-bs-toggle="modal" data-bs-target="#edit-table-report-{{ forloop.counter }}">
             <th >{{ day }}</th>
             <th colspan="20"></th>
         </tr>
         {% endif %}
-
-
         {% endfor %}
         </tbody>
     </table>
 </div>
-
 <script>
+    function edit_func_input(value, name, form){
+    document.getElementById(name).value = value;
+    document.getElementById(form).submit();
+    }
     let element = document.querySelectorAll('input[class="form-control"]');
     let maskOptions = {
         mask: Number,
