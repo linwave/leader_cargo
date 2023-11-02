@@ -163,3 +163,4 @@ leader_cargo/main/__pycache__
 leader_cargo/db.sqlite3
 leader_cargo/analytics/migrations
 leader_cargo/leader_cargo/__pycache__/settings.cpython-311.pyc
+leader_cargo/main/migrations
