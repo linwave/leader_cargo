@@ -13,7 +13,7 @@ urlpatterns = [
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 htmx_patterns = [
-    path('filter-table/', views.index_x, name='filter_table')
+    # path('filter-table/', views.index_x, name='filter_table')
 ]
 
 urlpatterns += htmx_patterns
