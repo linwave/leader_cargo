@@ -129,3 +129,16 @@ div.dataTables_wrapper {
 .table_border td:nth-child(2) {
   border-left: 1px solid #CED4DA;
 }
+.scrollable table {
+    border-spacing: 0;
+}
+.scrollable thead {
+    position: sticky;
+    top: 0;
+    border-top: 1px solid #CED4DA;
+    border-bottom: 1px solid #CED4DA;
+}
+.scrollable td {
+    border-right: 1px solid #CED4DA;
+    border-bottom: 1px solid #CED4DA;
+}
