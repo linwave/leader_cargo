@@ -3,7 +3,7 @@ import os
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.timezone import make_aware
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
 from .forms import AddCarrierFilesForm, EditTableArticleForm
@@ -37,8 +37,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context['all_articles'] = CargoArticle.objects.all().order_by('-time_from_china')
-        now = datetime.datetime.now()
-
         context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
         context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
@@ -112,11 +110,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
             context['all_articles'] = context['all_articles'].filter(carrier=self.request.GET.get('carrier'))
         else:
             context['carrier_now'] = 'Все перевозчики'
-
-        # context['date_current'] = now.replace(day=1).strftime("%Y-%m-%d")
-        # context['end_date_current'] = now.strftime("%Y-%m-%d")
-        # context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')),
-        #                                                          time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
 
         if self.request.GET.get('date'):
             context['date_current'] = self.request.GET.get('date')

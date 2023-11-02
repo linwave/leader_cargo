@@ -12,5 +12,11 @@ urlpatterns = [
     path('carrier-files/edit-article-manager/<int:article_id>', views.change_article_for_manager, name='edit_table_manager_article'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
+htmx_patterns = [
+    path('filter-table/', views.index_x, name='filter_table')
+]
+
+urlpatterns += htmx_patterns
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
