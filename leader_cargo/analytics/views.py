@@ -41,7 +41,8 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
         context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
         context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
-        context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).values('article', 'time_from_china')
+        context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=4))).values('article', 'time_from_china')
+        context['count_articles_without_insurance'] = context['all_articles_without_insurance'].count()
         context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
         context['all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None)
         context['count_all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None).count()
@@ -80,7 +81,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     "fi": f"{user['last_name']} {user['first_name']}"
                 })
         context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
-
         if self.request.GET.get('responsible_manager') and self.request.GET.get('responsible_manager') != 'Все менеджеры':
             context['responsible_manager_current'] = self.request.GET.get('responsible_manager')
             context['all_articles'] = context['all_articles'].filter(responsible_manager=context['responsible_manager_current'])
@@ -114,13 +114,10 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         if self.request.GET.get('date'):
             context['date_current'] = self.request.GET.get('date')
             context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
-            context['all_articles_without_insurance'] = context['all_articles_without_insurance'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
         if self.request.GET.get('end_date'):
             context['end_date_current'] = self.request.GET.get('end_date')
             context['all_articles'] = context['all_articles'].filter(time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
-            context['all_articles_without_insurance'] = context['all_articles_without_insurance'].filter(time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
 
-        context['count_articles_without_insurance'] = context['all_articles_without_insurance'].count()
         context['form_article'] = []
         for article in context['all_articles']:
             context['form_article'].append({
@@ -162,7 +159,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         self.message['warning_articles'] = []
         self.message['info_articles'] = []
         self.message['error'] = []
-
         try:
             if file_carrier.name_carrier == 'Ян':
                 carrier = 'Ян'
@@ -170,7 +166,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'media', str(file_carrier.file_path)), data_only=True)
                 else:
                     dataframe = openpyxl.load_workbook(os.path.join(str(os.getcwd()), 'leader_cargo/media', str(file_carrier.file_path)), data_only=True)
-                sheet = dataframe.active
+                sheet = dataframe.get_sheet_by_name('运单')
                 address_transportation_cost = ""
                 for row in range(6, sheet.max_row):
                     if sheet[row][0].value == '送货费':
@@ -197,12 +193,8 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)
                         for old in old_articles:
-                            # ОБГОВОРЕНО
                             if old.article == article and old.name_goods == name_goods and old.time_from_china == make_aware(time_from_china):
                                 check = True
-                                # self.message['warning_articles'].append(f"Артикул '{old.article}' со статусом '{old.status}' "
-                                #                                         f"и датой '{(old.time_from_china + datetime.timedelta(hours=3)).strftime('%d-%m-%Y')}'"
-                                #                                         f" - уже существует")
                                 old.carrier = carrier
                                 old.number_of_seats = number_of_seats
                                 old.weight = weight

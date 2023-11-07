@@ -194,10 +194,6 @@
         {% endif %}
     </tr>
     {% endfor %}
-    {% else %}
-    <tr align="center">
-        <td colspan="25" >Нет данных</td>
-    </tr>
     {% endif %}
     </tbody>
 </table>
@@ -208,15 +204,21 @@ $(document).ready( function () {
     "searching": false,
     info: false,
     paging: false,
-    columnDefs: [
-      {targets: '_all', className: 'dt-head-center'}
-    ],
+    columnDefs: [{
+    render: function(data, type, row) {
+    return data;
+    },
+    targets: '_all', className: 'dt-head-center'
+    }],
     fixedColumns: {
         left: 2,
     },
     scrollCollapse: true,
     scrollX: true,
     scrollY: 555,
+    "language": {
+      "emptyTable": "Нет данных"
+    }
 });
 });
 
