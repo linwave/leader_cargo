@@ -2,27 +2,47 @@ import datetime
 import os
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
 from .forms import AddCarrierFilesForm, EditTableArticleForm
-from .utils import DataMixinAll
 from .models import CargoFiles, CargoArticle
+# FROM MAIN
 from main.models import CustomUser
-
+from main.utils import DataMixin
+# EXTERNAL LIBRARIES
 import openpyxl
 import xlrd
 
 
-class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
+class LogisticCalculatorView(LoginRequiredMixin, DataMixin, TemplateView):
+    role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
+    template_name = 'analytics/calculator.html'
+    login_url = reverse_lazy('main:login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        c_def = self.get_user_context(title="Калькулятор логистики")
+        return dict(list(super().get_context_data(**kwargs).items()) + list(c_def.items()))
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
     model = CargoFiles
     form_class = AddCarrierFilesForm
     template_name = 'analytics/carrier_files.html'
     context_object_name = 'all_articles'
-    login_url = reverse_lazy('login')
+    login_url = reverse_lazy('main:login')
     role_have_perm = ['Супер Администратор', 'РОП', 'Логист', 'Менеджер']
-    success_url = reverse_lazy('carrier')
+    success_url = reverse_lazy('analytics:carrier')
     message = dict()
     message['update'] = False
 
@@ -36,12 +56,12 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['all_articles'] = CargoArticle.objects.all().order_by('-time_from_china')
+        context['all_articles'] = CargoArticle.objects.all()
         context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
         context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
         context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
-        context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=4))).values('article', 'time_from_china')
+        context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=11))).values('article',                                                                                                                                                                                           'time_from_china')
         context['count_articles_without_insurance'] = context['all_articles_without_insurance'].count()
         context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
         context['all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None)
@@ -72,7 +92,6 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                 })
                 managers_pk.append(user['pk'])
             context['all_articles'] = context['all_articles'].filter(responsible_manager__in=managers_pk)
-
         elif self.request.user.role == 'Логист':
             context['managers'] = []
             for user in CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], status=True).values('pk', 'last_name', 'first_name').order_by('last_name'):
@@ -80,12 +99,39 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
                     "pk": f"{user['pk']}",
                     "fi": f"{user['last_name']} {user['first_name']}"
                 })
+
         context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
+
+        if self.request.htmx:
+            if self.request.htmx.trigger == 'article_search':
+                q = self.request.GET.get('q') if self.request.GET.get('q') is not None else ''
+                context['q'] = q
+                context['all_articles'] = context['all_articles'].filter(article__iregex=q)
+
+        if self.request.GET.get('status') and self.request.GET.get('status') != 'Статус прибытия':
+            context['status_now'] = self.request.GET.get('status')
+            context['all_articles'] = context['all_articles'].filter(status=self.request.GET.get('status'))
+        else:
+            context['status_now'] = 'Статус прибытия'
+
         if self.request.GET.get('responsible_manager') and self.request.GET.get('responsible_manager') != 'Все менеджеры':
             context['responsible_manager_current'] = self.request.GET.get('responsible_manager')
             context['all_articles'] = context['all_articles'].filter(responsible_manager=context['responsible_manager_current'])
         else:
             context['responsible_manager_current'] = 'Все менеджеры'
+
+        if self.request.GET.get('date'):
+            context['date_current'] = self.request.GET.get('date')
+            context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
+        else:
+            if self.request.user.role == 'Логист':
+                first_day = (datetime.datetime.now() - datetime.timedelta(days=28)).replace(day=1)
+                context['date_current'] = first_day.strftime('%Y-%m-%d')
+                context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(first_day))
+
+        if self.request.GET.get('end_date'):
+            context['end_date_current'] = self.request.GET.get('end_date')
+            context['all_articles'] = context['all_articles'].filter(time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
 
         if self.request.GET.get('paid_by_the_client') and self.request.GET.get('paid_by_the_client') != 'Оплата клиентом':
             context['paid_by_the_client_current'] = self.request.GET.get('paid_by_the_client')
@@ -99,58 +145,45 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         else:
             context['paid_to_the_carrier_current'] = 'Оплата перевозчику'
 
-        if self.request.GET.get('status') and self.request.GET.get('status') != 'Статус прибытия':
-            context['status_now'] = self.request.GET.get('status')
-            context['all_articles'] = context['all_articles'].filter(status=self.request.GET.get('status'))
-        else:
-            context['status_now'] = 'Статус прибытия'
-
         if self.request.GET.get('carrier') and self.request.GET.get('carrier') != 'Все перевозчики':
             context['carrier_now'] = self.request.GET.get('carrier')
             context['all_articles'] = context['all_articles'].filter(carrier=self.request.GET.get('carrier'))
         else:
             context['carrier_now'] = 'Все перевозчики'
 
-        if self.request.GET.get('date'):
-            context['date_current'] = self.request.GET.get('date')
-            context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
-        if self.request.GET.get('end_date'):
-            context['end_date_current'] = self.request.GET.get('end_date')
-            context['all_articles'] = context['all_articles'].filter(time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
-
         context['form_article'] = []
-        for article in context['all_articles']:
-            context['form_article'].append({
-                'art': article.pk,
-                'f': EditTableArticleForm(instance=article,
-                                          initial={
-                                              'time_cargo_arrival_to_RF': (article.time_cargo_arrival_to_RF + datetime.timedelta(hours=3)).strftime("%Y-%m-%d")
-                                              if article.time_cargo_arrival_to_RF else article.time_cargo_arrival_to_RF,
-                                              'time_cargo_release': (article.time_cargo_release + datetime.timedelta(hours=3)).strftime("%Y-%m-%d")
-                                              if article.time_cargo_release else article.time_cargo_release,
-                                          })
-            })
         context['all_weight'] = 0
         context['all_volume'] = 0
         context['all_prr'] = 0
         context['all_tat'] = 0
+        for article in context['all_articles']:
+            if article.status:
+                context['all_weight'] = context['all_weight'] + float(article.weight.replace(" ", "").replace(",", "."))
+                context['all_volume'] = context['all_volume'] + float(article.volume.replace(" ", "").replace(",", "."))
+                if article.prr:
+                    context['all_prr'] = context['all_prr'] + float(article.prr.replace(" ", "").replace(",", "."))
+                if article.tat_cost:
+                    context['all_tat'] = context['all_tat'] + float(article.tat_cost.replace(" ", "").replace(",", "."))
+        context['table_paginator'] = Paginator(context['all_articles'], 50)
+        page_number = self.request.GET.get('page')
+        context['table_paginator_obj'] = context['table_paginator'].get_page(page_number)
+        context['all_articles'] = context['table_paginator_obj']
+
+        context['vputi'] = 'В пути'
+        context['pribil'] = 'Прибыл в РФ'
         if self.message['update']:
             context['message'] = self.message
         else:
             context['message'] = []
         self.message['update'] = False
-        for art in context['all_articles']:
-            if art.status:
-                context['all_weight'] = context['all_weight'] + float(art.weight.replace(" ", "").replace(",", "."))
-                context['all_volume'] = context['all_volume'] + float(art.volume.replace(" ", "").replace(",", "."))
-                if art.prr:
-                    context['all_prr'] = context['all_prr'] + float(art.prr.replace(" ", "").replace(",", "."))
-                if art.tat_cost:
-                    context['all_tat'] = context['all_tat'] + float(art.tat_cost.replace(" ", "").replace(",", "."))
-        context['vputi'] = 'В пути'
-        context['pribil'] = 'Прибыл в РФ'
         c_def = self.get_user_context(title="Учет грузов")
         return dict(list(context.items()) + list(c_def.items()))
+
+    def get_template_names(self):
+        if self.request.htmx:
+            return "analytics/components/table_for_carrier_files.html"
+        else:
+            return 'analytics/carrier_files.html'
 
     def form_valid(self, form, **kwargs):
         file_carrier = form.save(commit=False)
@@ -439,7 +472,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixinAll, CreateView):
         except Exception as e:
             self.message['error'].append(e)
         self.message['update'] = True
-        return redirect('{}?{}'.format(reverse('carrier'), self.request.META['QUERY_STRING']))
+        return redirect('{}?{}'.format(reverse('analytics:carrier'), self.request.META['QUERY_STRING']))
+
+
+# def search_article_in_table(request):
+#     q = request.GET.get('q') if request.GET.get('q') is not None else ''
+#     all_articles = CargoArticle.objects.filter(article__iregex=q)
+#     return render(request, 'analytics/components/table_for_carrier_files.html', {'data': all_articles})
 
 
 def change_article_status(request, article_id):
@@ -450,13 +489,13 @@ def change_article_status(request, article_id):
     return redirect(request.META.get('HTTP_REFERER') + f'#article-{article_id}')
 
 
-class EditTableArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
+class EditTableArticleView(LoginRequiredMixin, DataMixin, UpdateView):
     model = CargoArticle
     form_class = EditTableArticleForm
     pk_url_kwarg = 'article_id'
     role_have_perm = ['Супер Администратор', 'Логист']
-    success_url = reverse_lazy('carrier')
-    login_url = reverse_lazy('login')
+    success_url = reverse_lazy('analytics:carrier')
+    login_url = reverse_lazy('main:login')
 
     def form_valid(self, form):
         file_carrier = form.save(commit=False)
@@ -476,6 +515,18 @@ class EditTableArticleView(LoginRequiredMixin, DataMixinAll, UpdateView):
             return self.handle_no_permission()
 
 
+def edit_article_in_table(request, article_id):
+    article = CargoArticle.objects.get(pk=article_id)
+    form_article = EditTableArticleForm(instance=article,
+                                        initial={
+                                            'time_cargo_arrival_to_RF': (article.time_cargo_arrival_to_RF + datetime.timedelta(hours=3)).strftime("%Y-%m-%d")
+                                            if article.time_cargo_arrival_to_RF else article.time_cargo_arrival_to_RF,
+                                            'time_cargo_release': (article.time_cargo_release + datetime.timedelta(hours=3)).strftime("%Y-%m-%d")
+                                            if article.time_cargo_release else article.time_cargo_release,
+                                        })
+    return render(request, 'analytics/components/modal/htmxModalEditArticleForLogist.html', {'article': article, 'form_article': form_article})
+
+
 def change_article_for_manager(request, article_id):
     role_have_perm = ['Супер Администратор', 'Менеджер', 'РОП']
     if request.user.role in role_have_perm:
@@ -486,12 +537,12 @@ def change_article_for_manager(request, article_id):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-class DeleteArticleView(LoginRequiredMixin, DataMixinAll, DeleteView):
+class DeleteArticleView(LoginRequiredMixin, DataMixin, DeleteView):
     model = CargoArticle
     pk_url_kwarg = 'article_id'
     role_have_perm = ['Супер Администратор', 'Логист']
-    success_url = reverse_lazy('carrier')
-    login_url = reverse_lazy('login')
+    success_url = reverse_lazy('analytics:carrier')
+    login_url = reverse_lazy('main:login')
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()

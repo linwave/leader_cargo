@@ -46,10 +46,10 @@ class CustomUser(AbstractUser):
         return f"{self.last_name} {self.first_name} - {self.phone}"
 
     def get_absolute_url_client(self):
-        return reverse('card_client', kwargs={'client_id': self.pk})
+        return reverse('main:card_client', kwargs={'client_id': self.pk})
 
     def get_absolute_url_employee(self):
-        return reverse('card_employees', kwargs={'employee_id': self.pk})
+        return reverse('main:card_employees', kwargs={'employee_id': self.pk})
 
     def get_net_profit_to_the_company(self):
         for reports in self.managersreports_set.all():
@@ -117,8 +117,8 @@ class CustomUser(AbstractUser):
 
 
 class ExchangeRates(models.Model):
-    yuan = models.FloatField(verbose_name='Курс ¥', blank=False, null=True)
-    dollar = models.FloatField(verbose_name='Курс $', blank=False, null=True)
+    yuan = models.FloatField(verbose_name='Курс ¥', blank=True, null=True)
+    dollar = models.FloatField(verbose_name='Курс $', blank=True, null=True)
     time_create = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -127,6 +127,7 @@ class ExchangeRates(models.Model):
     class Meta:
         verbose_name = 'Курсы валют'
         verbose_name_plural = 'Курсы валют'
+        ordering = ['-time_create']
 
 
 class Appeals(models.Model):
@@ -148,9 +149,10 @@ class Appeals(models.Model):
     class Meta:
         verbose_name = 'Список заявок'
         verbose_name_plural = 'Список заявок'
+        ordering = ['-time_create']
 
     def get_absolute_url(self):
-        return reverse('card_appeal', kwargs={'appeal_id': self.pk})
+        return reverse('main:card_appeal', kwargs={'appeal_id': self.pk})
 
     def get_appeal_photo(self):
         for good in self.goods_set.all():

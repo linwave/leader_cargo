@@ -49,7 +49,7 @@
                 <div class="text-danger">{{ form.price_delivery_rf_real.errors }}</div>
                 {% endif %}
                 <button type="submit" class="btn btn-success">Изменить</button>
-                <a class="btn btn-success" href="{% url 'card_appeal' appeal_id_form %}" role="button">Отменить</a>
+                <a class="btn btn-success" href="{% url 'main:card_appeal' appeal_id_form %}" role="button">Отменить</a>
         </form>
 </div>
 <script>

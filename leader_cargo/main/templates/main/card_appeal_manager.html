@@ -93,12 +93,12 @@
 
     <div class="container">
         {% if appeal.status == 'Новая' %}
-        <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+        <a class="btn btn-secondary btn-sm shadow" href="{% url 'main:appeals' %}" role="button">Назад</a><br><br>
         {% elif appeal.status == 'Черновик' or appeal.status == 'В работе' or appeal.status == 'Просчёт готов' or appeal.status == 'Доставка' %}
-        <a class="btn btn-success btn-sm shadow" href="{% url 'create_goods' appeal.pk %}" role="button">Добавить товар</a>
-        <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+        <a class="btn btn-success btn-sm shadow" href="{% url 'main:create_goods' appeal.pk %}" role="button">Добавить товар</a>
+        <a class="btn btn-secondary btn-sm shadow" href="{% url 'main:appeals' %}" role="button">Назад</a><br><br>
         {% else %}
-        <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+        <a class="btn btn-secondary btn-sm shadow" href="{% url 'main:appeals' %}" role="button">Назад</a><br><br>
         {% endif %}
     </div>
 
@@ -268,14 +268,14 @@
                             <div class="row">
                                 <div class="col-6">
                                     {% if appeal.status == 'Черновик' or appeal.status == 'В работе' or appeal.status == 'Просчёт готов' or appeal.status == 'Доставка' %}
-                                    <a href="{% url 'card_goods' appeal.pk good.pk %}" class="btn btn-success btn-sm">Редактировать</a>
+                                    <a href="{% url 'main:card_goods' appeal.pk good.pk %}" class="btn btn-success btn-sm">Редактировать</a>
                                     {% else %}
                                     {% endif %}
                                 </div>
                                 <div class="col-6">
                                     <div align="right">
                                         {% if appeal.status == 'Черновик' or appeal.status == 'В работе' or appeal.status == 'Просчёт готов' or appeal.status == 'Доставка' %}
-                                        <form id="delete_goods_form{{ good.pk }}" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
+                                        <form id="delete_goods_form{{ good.pk }}" action="{% url 'main:delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
                                         <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete_goods_modal{{ good.pk }}">Удалить</p>
                                         <div class="modal fade" id="delete_goods_modal{{ good.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                             <div class="modal-dialog">

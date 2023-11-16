@@ -1,0 +1,35 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+    <div class="row g-2 justify-content-left">
+        <div class="col-auto">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalInputCarrierFile">
+                Загрузить прайс-лист перевозчика
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+<!--<table id="myTable" class="table table-sm table-hover table_border align-middle" style="width:100%;border-spacing: 0;">-->
+<!--    <thead class="table-dark align-middle">-->
+<!--    <tr>-->
+<!--        <th scope="col" style="background-color: #111;">#</th>-->
+<!--        <th scope="col" width="200px" style="background-color: #111;">Артикул</th>-->
+<!--        <th scope="col" >Менеджер</th>-->
+<!--        <th scope="col" >Пере-возчик</th>-->
+<!--    </tr>-->
+<!--    </thead>-->
+<!--    <tbody style="text-align:center;">-->
+<!--    <tr>-->
+<!--        <th scope="row"></th>-->
+<!--        <td></td>-->
+<!--    </tr>-->
+<!--    </tbody>-->
+<!--</table>-->
+{% endblock %}

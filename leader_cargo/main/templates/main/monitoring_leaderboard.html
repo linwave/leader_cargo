@@ -19,7 +19,7 @@
         </symbol>
     </svg>
 
-    <form id="date_picker_in_monitoring" action="{% url 'monitoring_leaderboard' %}" method="get">
+    <form id="date_picker_in_monitoring" action="{% url 'main:monitoring_leaderboard' %}" method="get">
         <input id="month" type="hidden" name="month" value="{{ month }}">
         <input id="year" type="hidden" name="year" value="{{ year }}">
         <div class="row">
@@ -81,7 +81,7 @@ function edit_func_input(value, name, form){
         {% for manager, value in all_data.items %}
         <tr align="center">
             {% if user.role == 'РОП' or user.role == 'Супер Администратор' %}
-            <td><a href="{% url 'monitoring_manager_report' manager %}" class="text-decoration-none" id="list-employees">{{ value.fio }}</a></td>
+            <td><a href="{% url 'main:monitoring_manager_report' manager %}" class="text-decoration-none" id="list-employees">{{ value.fio }}</a></td>
             {% else %}
             <td>{{ value.fio }}</td>
             {% endif %}

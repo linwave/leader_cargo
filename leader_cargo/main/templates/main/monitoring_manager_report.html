@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="container">
-    <form id="date_picker_in_monitoring" action="{% url 'monitoring_manager_report' manager.pk %}" method="get">
+    <form id="date_picker_in_monitoring" action="{% url 'main:monitoring_manager_report' manager.pk %}" method="get">
         <input id="month" type="hidden" name="month" value="{{ month }}">
         <input id="year" type="hidden" name="year" value="{{ year }}">
         <div class="row">

@@ -1,0 +1,94 @@
+
+<div class="row g-2 justify-content-center">
+    <div class="col-auto">
+        <button id="statuses" class="btn btn-outline-dark btn-sm dropdown-toggle p-2 position-relative"
+                data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
+            {{ status_now }}
+            {% if user.role != 'Логист'  %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ count_notifications }}
+                </span>
+            {% endif %}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark">
+            <li>
+                <button class="dropdown-item" name="status" value="Статус прибытия"
+                        hx-get="{% url 'analytics:carrier' %}" hx-trigger="click" hx-target="#hx-table" hx-push-url="?status='Статус прибытия'">
+                    Статус прибытия
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" name="status" value="В пути"
+                        hx-get="{% url 'analytics:carrier' %}" hx-trigger="click" hx-target="#hx-table" hx-push-url="?status='В пути'">
+                    В пути
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" name="status" value="Прибыл в РФ"
+                        hx-get="{% url 'analytics:carrier' %}" hx-trigger="click" hx-target="#hx-table" hx-push-url="?status='Прибыл в РФ'">
+                    Прибыл в РФ
+                </button>
+            </li>
+            <li>
+                <button class="dropdown-item" name="status" value="Выдан"
+                        hx-get="{% url 'analytics:carrier' %}" hx-trigger="click" hx-target="#hx-table" hx-push-url="?status='Выдан'">
+                    Выдан
+                </button>
+            </li>
+        </ul>
+    </div>
+    {% if user.role == 'РОП' or user.role == 'Супер Администратор' or user.role == 'Логист' %}
+    <div class="col-auto">
+        <button id="responsible_manager_get" class="btn btn-outline-dark btn-sm dropdown-toggle p-2"
+                data-bs-toggle="dropdown" aria-expanded="false" name="responsible_manager" type="button" >
+            {% if responsible_manager_current == 'Все менеджеры' %}
+            {{ responsible_manager_current }}
+            {% else %}
+            {% for man in managers %}
+            {% if man.pk == responsible_manager_current %}
+            {{ man.fi }}
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark">
+            <li>
+                <button class="dropdown-item" name="responsible_manager" value="Все менеджеры"
+                        hx-get="{% url 'analytics:carrier' %}" hx-trigger="click" hx-target="#hx-table" hx-push-url="?responsible_manager='Все менеджеры'">
+                    Все менеджеры
+                </button>
+            </li>
+            {% for man in managers %}
+            <li>
+                <button class="dropdown-item" name="responsible_manager" value="{{ man.pk }}"
+                        hx-get="{% url 'analytics:carrier' %}" hx-trigger="click" hx-target="#hx-table" hx-push-url="?responsible_manager={{ man.pk }}">
+                    {{ man.fi }}
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <div class="col-auto">
+        <div class="row">
+            <div class="col-auto">
+                <label for="startDate" class="col-form-label">От</label>
+            </div>
+            <div class="col-auto">
+                <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"
+                       hx-get="{% url 'analytics:carrier' %}" hx-trigger="change" hx-target="#hx-table"/>
+            </div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="row">
+            <div class="col-auto">
+                <label for="endDate" class="col-form-label">До</label>
+            </div>
+            <div class="col-auto">
+                <input id="endDate" class="form-control" type="date" name="end_date" value="{{ end_date_current }}"
+                       hx-get="{% url 'analytics:carrier' %}" hx-trigger="change" hx-target="#hx-table"/>
+            </div>
+        </div>
+    </div>
+</div>

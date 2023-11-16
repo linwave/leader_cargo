@@ -4,7 +4,9 @@
             <div class="card card-body">
                 Груза с пустыми менеджерами:<br>
                 <div class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ pb_count_empty_responsible_manager }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pb_count_empty_responsible_manager }}%">{{ pb_count_empty_responsible_manager }}%</div>
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ pb_count_empty_responsible_manager }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pb_count_empty_responsible_manager }}%">
+                        {{ pb_count_empty_responsible_manager }}%
+                    </div>
                 </div>
                 <div class="row">
                     {% for art in all_article_with_empty_responsible_manager %}
@@ -21,7 +23,9 @@
             <div class="card card-body">
                 Груза с пустой дорогой:<br>
                 <div class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ pb_count_empty_path_format }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pb_count_empty_path_format }}%">{{ pb_count_empty_path_format }}%</div>
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="{{ pb_count_empty_path_format }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ pb_count_empty_path_format }}%">
+                        {{ pb_count_empty_path_format }}%
+                    </div>
                 </div>
                 <div class="row">
                     {% for art in all_article_with_empty_path_format %}

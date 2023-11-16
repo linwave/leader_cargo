@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="container">
-    <a class="btn btn-success shadow" href="{% url 'create_client' %}" role="button">Добавить клиента</a><br><br>
+    <a class="btn btn-success shadow" href="{% url 'main:create_client' %}" role="button">Добавить клиента</a><br><br>
     <div class="row g-2">
         {% if all_clients %}
         {% for client in all_clients %}

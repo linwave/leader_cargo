@@ -94,7 +94,7 @@ class CargoArticle(models.Model):
     class Meta:
         verbose_name = 'Артикула'
         verbose_name_plural = 'Артикула'
-        ordering = ['-time_create']
+        ordering = ['-time_from_china']
 
     def get_FI_responsible_manager(self):
         try:
@@ -120,3 +120,38 @@ class CargoArticle(models.Model):
         elif self.status == 'В пути':
             self.status = 'Прибыл в РФ'
         self.save()
+
+
+class PriceListsOfCarriers(models.Model):
+    carriers = [
+        ('Ян', 'Ян'),
+        ('Валька', 'Валька'),
+        ('Мурад', 'Мурад'),
+        ('Гелик', 'Гелик')
+    ]
+    types_of_transportation = [
+        ('Авто', 'Авто'),
+        ('ЖД', 'ЖД'),
+    ]
+    types_of_product = [
+        ('ТНП', 'ТНП'),
+        ('Хозтовары', 'Хозтовары'),
+        ('Одежда', 'Одежда'),
+    ]
+    carrier = models.CharField(max_length=50, choices=carriers, verbose_name='Перевозчик')
+    type_of_transportation = models.CharField(max_length=50, choices=types_of_transportation, verbose_name='Тип перевозки')
+    type_of_product = models.CharField(max_length=50, choices=types_of_product, verbose_name='Вид товара')
+    min_transportation_time = models.IntegerField(verbose_name='Минимальный срок перевозки')
+    max_transportation_time = models.IntegerField(verbose_name='Максимальный срок перевозки')
+    min_density = models.IntegerField(verbose_name='Минимальная плотность')
+    max_density = models.IntegerField(verbose_name='Максимальная плотность')
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.carrier} {self.type_of_transportation} {self.type_of_product} {self.min_transportation_time}-{self.max_transportation_time}"
+
+    class Meta:
+        verbose_name = 'Прайс листы перевозчиков'
+        verbose_name_plural = 'Прайс листы перевозчиков'

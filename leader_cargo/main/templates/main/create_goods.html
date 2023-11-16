@@ -7,7 +7,7 @@
 {% block content %}
 <div class="container">
         <h2>Добавление нового товара</h2>
-        <form action="{% url 'create_goods' appeal_id_form %}" method="post" enctype="multipart/form-data" id="create-client-form">
+        <form action="{% url 'main:create_goods' appeal_id_form %}" method="post" enctype="multipart/form-data" id="create-client-form">
                 <span class="text-danger">{{ form.non_field_errors }}</span>
                 {% csrf_token %}
                 {{ form.name }}<br>
@@ -39,7 +39,7 @@
                 <div class="text-danger">{{ form.price_delivery_rf_real.errors }}</div>
                 {% endif %}
                 <button type="submit" class="btn btn-success">Сохранить</button>
-                <a class="btn btn-success" href="{% url 'card_appeal' appeal_id_form %}" role="button">Отменить</a>
+                <a class="btn btn-success" href="{% url 'main:card_appeal' appeal_id_form %}" role="button">Отменить</a>
         </form>
 </div>
 <script>

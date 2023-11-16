@@ -7,7 +7,7 @@
 {% block content %}
 <div class="container">
     <h2>Регистрация сотрудника</h2>
-    <form action="{% url 'create_employees' %}" method="post" id="create-employees-form">
+    <form action="{% url 'main:create_employees' %}" method="post" id="create-employees-form">
         <span class="text-danger">{{ form.non_field_errors }}</span>
         {% csrf_token %}
         {{ form.phone }}<br>
@@ -33,7 +33,7 @@
         {{ form.town }}<br>
         <div class="text-danger">{{ form.town.errors }}</div>
         <button type="submit" class="btn btn-success">Добавить</button>
-        <a class="btn btn-success" href="{% url 'employees' %}" role="button">Отменить</a>
+        <a class="btn btn-success" href="{% url 'main:employees' %}" role="button">Отменить</a>
     </form>
 </div>
 <script>

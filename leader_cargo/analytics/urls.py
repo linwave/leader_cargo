@@ -4,7 +4,10 @@ from django.conf.urls.static import static
 
 from . import views
 
+app_name = 'analytics'
+
 urlpatterns = [
+    path('calculator/', views.LogisticCalculatorView.as_view(), name='calculator'),
     path('carrier-files/', views.CarrierFilesView.as_view(), name='carrier'),
     path('carrier-files/delete-article/<int:article_id>', views.DeleteArticleView.as_view(), name='delete_article'),
     path('carrier-files/update-article-status/<int:article_id>', views.change_article_status, name='update_article'),
@@ -13,7 +16,8 @@ urlpatterns = [
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 htmx_patterns = [
-    # path('filter-table/', views.index_x, name='filter_table')
+    path('carrier-files/edit/<int:article_id>', views.edit_article_in_table, name='edit_article'),
+    # path('search-article', views.search_article_in_table, name='search_article'),
 ]
 
 urlpatterns += htmx_patterns

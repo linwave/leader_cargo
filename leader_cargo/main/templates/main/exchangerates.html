@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="container">
-    <a class="btn btn-success" href="{% url 'create_exchangerates' %}" role="button">Установить курс</a><br><br>
+    <a class="btn btn-success" href="{% url 'main:create_exchangerates' %}" role="button">Установить курс</a><br><br>
     <div class="row g-1 ">
         {% if currencies %}
         {% for currency in currencies %}
@@ -18,8 +18,8 @@
                     <div class="col-12">
                         <div class="card-body">
                             <h5 class="card-text">
-                                ¥ {{ currency.yuan }}<br>
-                                $ {{ currency.dollar }}<br>
+                                ¥ {{ currency.yuan|default:"-" }}<br>
+                                $ {{ currency.dollar|default:"-" }}<br>
                             </h5>
                             <p class="card-text"><small class="text-muted">{{ currency.time_create }}</small></p>
                         </div>

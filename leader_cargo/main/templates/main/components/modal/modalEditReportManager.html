@@ -8,7 +8,7 @@
             <div class="modal-body">
                 {% for fm in form_day_report %}
                 {% if fm.day == day %}
-                <form method="post" id="edit-report-edit-{{ forloop.counter }}" action="{% url 'monitoring_manager_edit_report' manager.pk fm.report_id %}?{{ request.META.QUERY_STRING }}">
+                <form method="post" id="edit-report-edit-{{ forloop.counter }}" action="{% url 'main:monitoring_manager_edit_report' manager.pk fm.report_id %}?{{ request.META.QUERY_STRING }}">
                     {% csrf_token %}
                     {% for line in fm.f %}
                     {{ line.label }}

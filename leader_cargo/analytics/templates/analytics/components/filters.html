@@ -1,13 +1,14 @@
-<form id="date_picker" method="get" action="{% url 'carrier' %}">
+<form id="date_picker" method="get" action="{% url 'analytics:carrier' %}">
     <input id="status" type="hidden" name="status" value="{{ status_now }}">
     <input id="responsible_manager" type="hidden" name="responsible_manager" value="{{ responsible_manager_current }}">
     <input id="carrier" type="hidden" name="carrier" value="{{ carrier_now }}">
     <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
     <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
     <div class="row g-2 justify-content-center">
-        <div class="col-auto">
-            <input id="article_search" onkeyup="FilterFunc()"  class="form-control" type="text" name="article" placeholder="Поиск по артикулу"/>
-        </div>
+<!--        <div class="col-auto">-->
+<!--            <input id="article_search" class="form-control" type="text" name="q" placeholder="Поиск по артикулу"-->
+<!--                   hx-get="{% url 'analytics:carrier' %}" hx-trigger="keyup changed delay:300ms" hx-target="#hx-table"/>-->
+<!--        </div>-->
         <div class="col-auto">
             <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2 position-relative" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
                 {{ status_now }}
@@ -26,7 +27,8 @@
         </div>
         {% if user.role == 'РОП' or user.role == 'Супер Администратор' or user.role == 'Логист' %}
         <div class="col-auto">
-            <button id="responsible_manager_get" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="responsible_manager" type="button" >
+            <button id="responsible_manager_get" class="btn btn-secondary btn-sm dropdown-toggle p-2"
+                    data-bs-toggle="dropdown" aria-expanded="false" name="responsible_manager" type="button" >
                 {% if responsible_manager_current == 'Все менеджеры' %}
                 {{ responsible_manager_current }}
                 {% else %}
@@ -116,24 +118,4 @@
             endDate.addEventListener('change',(e)=>{
                 form_filter.submit()
                 })
-function FilterFunc() {
-  var input, filter, table, tr, td, i;
-  input = document.getElementById("article_search");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("myTable");
-  tr = table.getElementsByTagName("tr");
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[0];
-    if (td) {
-      if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
-      }
-    }
-  }
-}
 </script>
-<div id="hx-table">
-    {% include "analytics/components/table_for_carrier_files.html"  %}
-</div>

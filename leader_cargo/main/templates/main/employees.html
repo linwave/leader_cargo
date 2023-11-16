@@ -8,7 +8,7 @@
 <div class="container">
     <div class="d-flex justify-content-between">
         <h2>Сотрудники</h2>
-        <a href="{% url 'create_employees' %}" class="btn btn-phoenix-secondary square-icon-btn" >
+        <a href="{% url 'main:create_employees' %}" class="btn btn-phoenix-secondary square-icon-btn" >
             <i class="fa-solid fa-square-plus fa-beat fa-2xl" style="color: #080808;"></i>
         </a>
     </div>
@@ -18,36 +18,37 @@
         <div class="col-sm-4">
             {% if employee.status %}
             <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 420px;">
-            {% else %}
-            <div class="card text-dark mb-3 border-secondary shadow p-1 rounded" style="max-width: 420px;background: #C0C0C0;">
-            {% endif %}
-                <div class="row g-0">
-                    <div class="col-3">
-                    </div>
-                    <div class="col-12">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <a href="{{ employee.get_absolute_url_employee }}" class="stretched-link text-decoration-none" id="list-employees">
-                                    {{ employee.last_name }} {{ employee.first_name }} {{ employee.patronymic }}
-                                </a>
-                            </h5>
-                            {{ employee.phone }}<br>
-                            {{ employee.town }}<br>
-                            {{ employee.role }}<br>
-                            {% if employee.status %}
-                            Активен<br>
-                            {% else %}
-                            Заблокирован<br>
-                            {% endif %}
+                {% else %}
+                <div class="card text-dark mb-3 border-secondary shadow p-1 rounded" style="max-width: 420px;background: #C0C0C0;">
+                    {% endif %}
+                    <div class="row g-0">
+                        <div class="col-3">
+                        </div>
+                        <div class="col-12">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <a href="{{ employee.get_absolute_url_employee }}" class="stretched-link text-decoration-none" id="list-employees">
+                                        {{ employee.last_name }} {{ employee.first_name }} {{ employee.patronymic }}
+                                    </a>
+                                </h5>
+                                {{ employee.phone }}<br>
+                                {{ employee.town }}<br>
+                                {{ employee.role }}<br>
+                                {% if employee.status %}
+                                Активен<br>
+                                {% else %}
+                                Заблокирован<br>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            {% endfor %}
+            {% else %}
+            <p>Нет сотрудников</p>
+            {% endif %}
         </div>
-        {% endfor %}
-        {% else %}
-        <p>Нет сотрудников</p>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -5,46 +5,58 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="container-fluid">
-{% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-<div class="row g-2 justify-content-center">
-    <div class="col-auto">
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalInputCarrierFile">
-            Загрузить файл перевозчика
-        </button>
+    {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+    {% include "analytics/components/modal/modalInputCarrierFile.html"  %}
+    <div class="modal fade" id="edit" tabindex="-1" aria-labelledby="table-article-Label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div id="hx-modal-edit-article-for-logist">
+            </div>
+        </div>
     </div>
-    <div class="col-auto">
-        <button type="button" class="btn btn-dark ">
-            Выгрузка отчета по грузам
-        </button>
+    <div class="row g-2 justify-content-center">
+        <div class="col-auto">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalInputCarrierFile">
+                Загрузить файл перевозчика
+            </button>
+        </div>
+
+        <div class="col-auto">
+            <button type="button" class="btn btn-dark">
+                Выгрузка отчета по грузам
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWithoutInsuranceArticles" aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >
+                Груза без страховки: {{ count_articles_without_insurance }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNotIssuedArticles" aria-expanded="false" aria-controls="collapseNotIssuedArticles" >
+                Не выданные: {{ count_all_articles_not_issued }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseResponsibleManager" aria-expanded="false" aria-controls="multiCollapseResponsibleManager">
+                С пустым менеджером: {{ count_empty_responsible_manager }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapsePathFormat" aria-expanded="false" aria-controls="multiCollapsePathFormat">
+                С пустой дорогой: {{ count_empty_path_format }}
+            </button>
+        </div>
     </div>
-    <div class="col-auto">
-        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWithoutInsuranceArticles" aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >
-            Груза без страховки: {{ count_articles_without_insurance }}
-        </button>
+    {% include "analytics/components/collapse/collapseNotIssuedArticles.html"  %}
+    {% include "analytics/components/collapse/collapseWithoutInsuranceArticles.html"  %}
+    {% include "analytics/components/collapse/collapseEmptyPathAndResponsibleManager.html"  %}
+    {% include "analytics/components/messagesError.html"  %}
+    {% endif %}
+    {% include "analytics/components/filters.html"  %}
+    <div id="hx-table">
+    {% include "analytics/components/table_for_carrier_files.html"  %}
     </div>
-    <div class="col-auto">
-        <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNotIssuedArticles" aria-expanded="false" aria-controls="collapseNotIssuedArticles" >
-            Не выданные: {{ count_all_articles_not_issued }}
-        </button>
-    </div>
-    <div class="col-auto">
-        <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseResponsibleManager" aria-expanded="false" aria-controls="multiCollapseResponsibleManager">
-            С пустым менеджером: {{ count_empty_responsible_manager }}
-        </button>
-    </div>
-    <div class="col-auto">
-        <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapsePathFormat" aria-expanded="false" aria-controls="multiCollapsePathFormat">
-            С пустой дорогой: {{ count_empty_path_format }}
-        </button>
-    </div>
-</div>
-{% include "analytics/components/collapse/collapseNotIssuedArticles.html"  %}
-{% include "analytics/components/collapse/collapseWithoutInsuranceArticles.html"  %}
-{% include "analytics/components/collapse/collapseEmptyPathAndResponsibleManager.html"  %}
-{% endif %}
-{% include "analytics/components/filters.html"  %}
-{% include "analytics/components/modal/modalInputCarrierFile.html"  %}
 </div>
 <script>
 let maskOptions = {
@@ -57,7 +69,9 @@ let maskOptions = {
         max: 10000000000,
         thousandsSeparator: ' '
 };
-let element = document.querySelectorAll('input[id="id_prr"]');
+var myModal = document.getElementById('edit')
+myModal.addEventListener('shown.bs.modal', function () {
+  let element = document.querySelectorAll('input[id="id_prr"]');
 for (let i = 0; i < element.length; i++){
         let mask = IMask(element[i], maskOptions);
 }
@@ -65,5 +79,6 @@ let element2 = document.querySelectorAll('input[id="id_tat_cost"]');
 for (let i = 0; i < element2.length; i++){
         let mask = IMask(element2[i], maskOptions);
 }
+})
 </script>
 {% endblock %}

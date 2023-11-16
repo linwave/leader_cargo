@@ -10,7 +10,7 @@
         <div class="row">
             {% if user.role == 'Менеджер' or user.role == 'Клиент' or user.role == 'Супер Администратор' %}
             <div class="col-auto m-1">
-                <a class="btn btn-success btn-sm shadow" href="{% url 'create_appeal' %}" role="button">Новая заявка</a>
+                <a class="btn btn-success btn-sm shadow" href="{% url 'main:create_appeal' %}" role="button">Новая заявка</a>
             </div>
             {% endif %}
             {% if user.role != 'Клиент' %}
@@ -27,7 +27,7 @@
                     </button>
                     {% endif %}
                     <ul class="dropdown-menu dropdown-menu-dark">
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}">Все клиенты</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}">Все клиенты</a></li>
                     </ul>
                 </div>
             </div>
@@ -43,15 +43,15 @@
                     </button>
                     {% endif %}
                     <ul class="dropdown-menu dropdown-menu-dark">
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}">Все статусы</a></li>
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Черновик">Черновик</a></li>
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Новая">Новая</a></li>
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=В работе">В работе</a></li>
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Просчёт">Просчёт</a></li>
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Просчёт готов">Просчёт готов</a></li>
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Выкуп и проверка">Выкуп и проверка</a></li>
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Доставка">Доставка</a></li>
-                        <li><a class="dropdown-item" href="{% url 'appeals' %}?status=Завершено">Завершено</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}">Все статусы</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}?status=Черновик">Черновик</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}?status=Новая">Новая</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}?status=В работе">В работе</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}?status=Просчёт">Просчёт</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}?status=Просчёт готов">Просчёт готов</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}?status=Выкуп и проверка">Выкуп и проверка</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}?status=Доставка">Доставка</a></li>
+                        <li><a class="dropdown-item" href="{% url 'main:appeals' %}?status=Завершено">Завершено</a></li>
                     </ul>
                 </div>
             </div>
@@ -75,7 +75,9 @@
                         </div>
                         <div class="col-9">
                             <div class="card-body">
-                                <h5 class="card-title"><a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a></h5>
+                                <h5 class="card-title">
+                                    <a href="{{ appeal.get_absolute_url }}" class="stretched-link text-decoration-none" id="list-employees">{{ appeal.tag }}</a>
+                                </h5>
                                 {% if user.role != 'Клиент' %}
                                 <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.first_name }}</span><br>
                                 <span class="card-text" style="font-size: .9rem;">{{ appeal.get_client.phone }}</span><br>

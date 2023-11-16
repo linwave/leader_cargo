@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser, Appeals, Goods
+from .models import CustomUser, Appeals, Goods, ManagersReports
 
 
 class CustomUserAdmin(admin.ModelAdmin):
@@ -10,5 +10,6 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(ManagersReports)
 admin.site.register(Appeals)
 admin.site.register(Goods)

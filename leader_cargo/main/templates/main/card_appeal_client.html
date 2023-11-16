@@ -90,7 +90,7 @@
     <div class="container">
         {% if appeal.status == 'Новая' %}
         <form method="post" id="for_manager_appeal_form" >{% csrf_token %}</form>
-        <a class="btn btn-success btn-sm shadow" href="{% url 'create_goods' appeal.pk %}" role="button">Добавить товар</a>
+        <a class="btn btn-success btn-sm shadow" href="{% url 'main:create_goods' appeal.pk %}" role="button">Добавить товар</a>
         <a href="javascript:void()" onclick="for_manager_appeal_question()" class="btn btn-primary btn-sm shadow">Отправить в работу менеджеру</a>
         <script>
                         function for_manager_appeal_question() {
@@ -99,11 +99,11 @@
                                 }
                         }
     </script>
-        <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+        <a class="btn btn-secondary btn-sm shadow" href="{% url 'main:appeals' %}" role="button">Назад</a><br><br>
         {% elif appeal.status == 'В работе' %}
-        <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+        <a class="btn btn-secondary btn-sm shadow" href="{% url 'main:appeals' %}" role="button">Назад</a><br><br>
         {% else %}
-        <a class="btn btn-secondary btn-sm shadow" href="{% url 'appeals' %}" role="button">Назад</a><br><br>
+        <a class="btn btn-secondary btn-sm shadow" href="{% url 'main:appeals' %}" role="button">Назад</a><br><br>
         {% endif %}
     </div>
 
@@ -202,11 +202,11 @@
                             {% if appeal.status == 'Новая' %}
                             <div class="row">
                                 <div class="col-6">
-                                    <a href="{% url 'card_goods' appeal.pk good.pk %}" class="btn btn-success btn-sm">Редактировать</a>
+                                    <a href="{% url 'main:card_goods' appeal.pk good.pk %}" class="btn btn-success btn-sm">Редактировать</a>
                                 </div>
                                 <div class="col-6">
                                     <div align="right">
-                                        <form id="delete_goods_form{{ good.pk }}" action="{% url 'delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
+                                        <form id="delete_goods_form{{ good.pk }}" action="{% url 'main:delete_goods' appeal.pk good.pk %}" method="post">{% csrf_token %}</form>
                                         <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete_goods_modal{{ good.pk }}">Удалить</p>
                                         <div class="modal fade" id="delete_goods_modal{{ good.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                             <div class="modal-dialog">

@@ -1,13 +1,11 @@
-<div class="row p-1">
-    <div class="collapse" id="collapseNotIssuedArticles">
-        <div class="card card-body">
-            <div class="row">
-                {% for art in all_articles_not_issued %}
-                <div class="col-4">
-                    {{ forloop.counter }}.  {{ art.article }}
-                </div>
-                {% endfor %}
+<div class="collapse" id="collapseNotIssuedArticles">
+    <div class="card card-body">
+        <div class="row">
+            {% for art in all_articles_not_issued %}
+            <div class="col-4">
+                {{ forloop.counter }}.  {{ art.article }}
             </div>
+            {% endfor %}
         </div>
     </div>
 </div>

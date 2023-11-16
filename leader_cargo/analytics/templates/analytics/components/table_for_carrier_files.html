@@ -1,208 +1,251 @@
-<div class="row justify-content-center">
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Всего грузов: {{ all_articles|length }}</h6>
-    </div>
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Общий вес: {{ all_weight|floatformat:"2g" }}</h6>
-    </div>
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Общий объем: {{ all_volume|floatformat:"2g" }}</h6>
-    </div>
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Общий ПРР: {{ all_prr|floatformat:"2g" }}</h6>
-    </div>
-    <div class="col-auto">
-        <h6 class="d-inline-flex ms-md-auto p-2">Общий ТАТ: {{ all_tat|floatformat:"2g" }}</h6>
+<div class="container-fluid">
+    <div class="row justify-content-start g-1">
+        <div class="col-auto">
+            <input id="article_search" class="form-control" type="text" name="q" placeholder="Поиск по артикулу" value="{{ q }}"
+                   hx-get="{% url 'analytics:carrier' %}" hx-trigger="keyup changed delay:300ms" hx-target="#hx-table"/>
+        </div>
+        <div class="col-auto">
+            <span class="d-inline-flex ms-md-auto p-2">Всего грузов: {{ table_paginator.count }}</span>
+        </div>
+        <div class="col-auto">
+            <span class="d-inline-flex ms-md-auto p-2">Общий вес: {{ all_weight|floatformat:"2g" }} кг</span>
+        </div>
+        <div class="col-auto">
+            <span class="d-inline-flex ms-md-auto p-2">Общий объем: {{ all_volume|floatformat:"2g" }} м3</span>
+        </div>
+        <div class="col-auto">
+            <span class="d-inline-flex ms-md-auto p-2">Общий ПРР: ₽{{ all_prr|floatformat:"2g" }}</span>
+        </div>
+        <div class="col-auto">
+            <span class="d-inline-flex ms-md-auto p-2">Общий ТАТ: ₽{{ all_tat|floatformat:"2g" }}</span>
+        </div>
     </div>
 </div>
-
-{% include "analytics/components/messagesError.html"  %}
-
-<table id="myTable" class="table table-sm table-hover table_border align-middle" style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.8rem;{% endif %}">
-    <thead class="table-dark align-middle">
-    <tr>
-        <th scope="col" style="background-color: #111;">#</th>
-        <th scope="col" width="200px" style="background-color: #111;">Артикул</th>
-        <th scope="col" >Менеджер</th>
-        <th scope="col" >Пере-возчик</th>
-        <th scope="col" >Дорога</th>
-        <th scope="col" >Статус</th>
-        <th scope="col">Наимено-вание товара</th>
-        <th scope="col">Кол-мест</th>
-        <th scope="col">Вес, кг</th>
-        <th scope="col">Объем, м3</th>
-        <th scope="col">Тариф пере-возки</th>
-        <th scope="col">Цена товара</th>
-        <th scope="col">Цена стра-ховки</th>
-        <th scope="col">Цена упа-ковки</th>
-        <th scope="col">Дата отправки с Китая</th>
-        <th scope="col">Итоговая стоимость перевозки</th>
-        <th scope="col">Адресная доставка</th>
-        <th scope="col">ПРР</th>
-        <th scope="col">Оплата ТАТ</th>
-        <th scope="col">Оплачено клиентом</th>
-        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-        <th scope="col">Оплачено перевоз-чику</th>
-        {% endif %}
-        <th scope="col" style="background-color: #111;">Дата прибытия груза в РФ</th>
-        <th scope="col" style="background-color: #111;">Дата выдачи груза</th>
-        <th scope="col" style="background-color: #111;">Кол-во дней в пути</th>
-        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-        <th scope="col" style="background-color: #111;">Удаление</th>
-        {% endif %}
-    </tr>
-    </thead>
-    <tbody style="text-align:center;">
-    {% if all_articles %}
-    {% for article in all_articles %}
-    {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-    {% include "analytics/components/modal/modalEditArticleForLogist.html" with article=article %}
-    {% endif %}
-    <tr>
-        <th id="article-{{ article.pk }}" scope="row">{{ forloop.counter }}</th>
-        <td>
-            {{ article.article }}
-        </td>
-        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {{ article.get_FI_responsible_manager|default:"" }}
-        </td>
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {{ article.carrier|default:"" }}
-        </td>
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {{ article.path_format|default:"" }}
-        </td>
-        {% else %}
-        <td>
-            {{ article.get_FI_responsible_manager|default:"" }}
-        </td>
-        <td>
-            {{ article.carrier|default:"" }}
-        </td>
-        <td>
-            {{ article.path_format|default:"" }}
-        </td>
-        {% endif %}
-        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-        <td>
-            {% if article.status == 'В пути' %}
-            <span class="btn btn-primary btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
-            {% elif article.status == 'Прибыл в РФ' %}
-            <span class="btn btn-danger btn-sm" onclick="location.href='{% url 'update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">{{ article.status }}</span>
-            {% elif article.status == 'Выдан' %}
-            <span class="btn btn-success btn-sm">{{ article.status }}</span>
+<div class="container-fluid" style="overflow-y: auto;height: 700px;">
+    <table id="myTable" class="table table-sm table-hover table_border align-middle"
+           style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.8rem;{% else %}font-size: 0.9rem;{% endif %}">
+        <thead class="table-dark align-middle">
+        <tr>
+            <th scope="col" style="background-color: #111;">#</th>
+            <th scope="col" width="200px" style="background-color: #111;">Артикул</th>
+            <th scope="col" >Менеджер</th>
+            <th scope="col" >Пере-возчик</th>
+            <th scope="col" >Дорога</th>
+            <th scope="col" >Статус</th>
+            <th scope="col">Наимено-вание товара</th>
+            <th scope="col">Кол-мест</th>
+            <th scope="col">Вес, кг</th>
+            <th scope="col">Объем, м3</th>
+            <th scope="col">Тариф пере-возки</th>
+            <th scope="col">Цена товара</th>
+            <th scope="col">Цена стра-ховки</th>
+            <th scope="col">Цена упа-ковки</th>
+            <th scope="col">Дата отправки с Китая</th>
+            <th scope="col">Итоговая стоимость перевозки</th>
+            <th scope="col">Адресная доставка</th>
+            <th scope="col">ПРР</th>
+            <th scope="col">Оплата ТАТ</th>
+            <th scope="col">Оплачено клиентом</th>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <th scope="col">Оплачено перевоз-чику</th>
             {% endif %}
-        </td>
-        {% else %}
-        <td>
-            {% if article.status == 'В пути' %}
-            <span class="btn btn-primary btn-sm">{{ article.status }}</span>
-            {% elif article.status == 'Прибыл в РФ' %}
-            <span class="btn btn-danger btn-sm">{{ article.status }}</span>
-            {% elif article.status == 'Выдан' %}
-            <span class="btn btn-success btn-sm">{{ article.status }}</span>
+            <th scope="col" style="background-color: #111;">Дата прибытия груза в РФ</th>
+            <th scope="col" style="background-color: #111;">Дата выдачи груза</th>
+            <th scope="col" style="background-color: #111;">Кол-во дней в пути</th>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <th scope="col" style="background-color: #111;">Удаление</th>
             {% endif %}
-        </td>
-        {% endif %}
-        <td>{{ article.name_goods|default:"" }}</td>
-        <td>{{ article.number_of_seats|floatformat:"0g" }}</td>
-        <td>{{ article.weight }}</td>
-        <td>{{ article.volume|floatformat:"2g" }}</td>
-        <td>{{ article.get_short_name_transportation_tariff }}</td>
-        <td>{{ article.cost_goods|floatformat:"2g"|default:"" }}</td>
-        <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>
-        <td>{{ article.packaging_cost|default:"" }}</td>
-        <td>{{ article.time_from_china|date:"d F Y" }}</td>
-        <td>${{ article.total_cost|floatformat:"0g"}}</td>
-        <td>{% if article.address_transportation_cost %}${%endif%}{{ article.address_transportation_cost|default:""|floatformat:"1g"}}</td>
-        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {% if article.prr %}₽{%endif%}{{ article.prr|default:"" }}
-        </td>
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {% if article.tat_cost %}₽{%endif%}{{ article.tat_cost|default:"" }}
-        </td>
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {% if article.paid_by_the_client_status == 'Не оплачено'  %}
-            <span class="btn btn-secondary btn-sm">{{ article.paid_by_the_client_status }}</span>
-            {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
-            <span class="btn btn-primary btn-sm">{{ article.paid_by_the_client_status }}</span>
-            {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
-            <span class="btn btn-success btn-sm">{{ article.paid_by_the_client_status }}</span>
+        </tr>
+        </thead>
+        <tbody style="text-align:center;">
+        {% if all_articles %}
+        {% for article in all_articles %}
+        <tr>
+            <th id="article-{{ article.pk }}" scope="row" data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">{{ forloop.counter }}</th>
+            <td>
+                {{ article.article }}
+            </td>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {{ article.get_FI_responsible_manager|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {{ article.carrier|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {{ article.path_format|default:"" }}
+            </td>
+            {% else %}
+            <td>
+                {{ article.get_FI_responsible_manager|default:"" }}
+            </td>
+            <td>
+                {{ article.carrier|default:"" }}
+            </td>
+            <td>
+                {{ article.path_format|default:"" }}
+            </td>
             {% endif %}
-        </td>
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {% if article.payment_to_the_carrier_status == 'Не оплачено'  %}
-            <span class="btn btn-secondary btn-sm">{{ article.payment_to_the_carrier_status }}</span>
-            {% elif article.payment_to_the_carrier_status == 'Оплачено'  %}
-            <span class="btn btn-success btn-sm">{{ article.payment_to_the_carrier_status }}</span>
-            {% endif %}
-        </td>
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {% if article.time_cargo_arrival_to_RF %}
-            {{ article.time_cargo_arrival_to_RF|date:"d F Y" }}
-            {% endif %}
-        </td>
-        <td data-bs-toggle="modal" data-bs-target="#edit-table-article-{{ article.pk }}">
-            {% if article.time_cargo_release %}
-            {{ article.time_cargo_release|date:"d F Y" }}
-            {% endif %}
-        </td>
-        {% else %}
-        <td>
-            {% if article.prr %}₽{%endif%}{{ article.prr|default:"" }}
-        </td>
-        <td>
-            {% if article.tat_cost %}₽{%endif%}{{ article.tat_cost|default:"" }}
-        </td>
-        <td>
-            {% if user.role == 'Менеджер' or user.role == 'РОП' or user.role == 'Супер Администратор'%}
-            <form action="{% url 'edit_table_manager_article' article.pk %}" method="get">
-                {% if article.paid_by_the_client_status == 'Не оплачено'  %}
-                <input class="btn btn-secondary btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false" value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
-                {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
-                <input class="btn btn-primary btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false" value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
-                {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
-                <input class="btn btn-success btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false" value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td>
+                {% if article.status == 'В пути' %}
+                <span class="btn btn-primary btn-sm" onclick="location.href='{% url 'analytics:update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">
+                {{ article.status }}
+            </span>
+                {% elif article.status == 'Прибыл в РФ' %}
+                <span class="btn btn-danger btn-sm" onclick="location.href='{% url 'analytics:update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">
+                {{ article.status }}
+            </span>
+                {% elif article.status == 'Выдан' %}
+                <span class="btn btn-success btn-sm">
+                {{ article.status }}
+            </span>
                 {% endif %}
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li><input class="dropdown-item" value="Оплачено полностью" name="paid_by_the_client_status" type="submit"/></li>
-                    <li><input class="dropdown-item" value="Оплачено частично" name="paid_by_the_client_status" type="submit"/></li>
-                    <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client_status" type="submit"/></li>
-                </ul>
-            </form>
+            </td>
+            {% else %}
+            <td>
+                {% if article.status == 'В пути' %}
+                <span class="btn btn-primary btn-sm">{{ article.status }}</span>
+                {% elif article.status == 'Прибыл в РФ' %}
+                <span class="btn btn-danger btn-sm">{{ article.status }}</span>
+                {% elif article.status == 'Выдан' %}
+                <span class="btn btn-success btn-sm">{{ article.status }}</span>
+                {% endif %}
+            </td>
             {% endif %}
-        </td>
-        <td>
-            {% if article.time_cargo_arrival_to_RF %}
-            {{ article.time_cargo_arrival_to_RF|date:"d F Y" }}
+            <td>{{ article.name_goods|default:"" }}</td>
+            <td>{{ article.number_of_seats|floatformat:"0g" }}</td>
+            <td>{{ article.weight }}</td>
+            <td>{{ article.volume|floatformat:"2g" }}</td>
+            <td>{{ article.get_short_name_transportation_tariff }}</td>
+            <td>{{ article.cost_goods|floatformat:"2g"|default:"" }}</td>
+            <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>
+            <td>{{ article.packaging_cost|default:"" }}</td>
+            <td>{{ article.time_from_china|date:"d F Y" }}</td>
+            <td>${{ article.total_cost|floatformat:"0g"}}</td>
+            <td>{% if article.address_transportation_cost %}${%endif%}{{ article.address_transportation_cost|default:""|floatformat:"1g"}}</td>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {% if article.prr %}₽{%endif%}{{ article.prr|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {% if article.tat_cost %}₽{%endif%}{{ article.tat_cost|default:"" }}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {% if article.paid_by_the_client_status == 'Не оплачено'  %}
+                <span class="btn btn-secondary btn-sm">{{ article.paid_by_the_client_status }}</span>
+                {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
+                <span class="btn btn-primary btn-sm">{{ article.paid_by_the_client_status }}</span>
+                {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
+                <span class="btn btn-success btn-sm">{{ article.paid_by_the_client_status }}</span>
+                {% endif %}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {% if article.payment_to_the_carrier_status == 'Не оплачено'  %}
+                <span class="btn btn-secondary btn-sm">{{ article.payment_to_the_carrier_status }}</span>
+                {% elif article.payment_to_the_carrier_status == 'Оплачено'  %}
+                <span class="btn btn-success btn-sm">{{ article.payment_to_the_carrier_status }}</span>
+                {% endif %}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {% if article.time_cargo_arrival_to_RF %}
+                {{ article.time_cargo_arrival_to_RF|date:"d F Y" }}
+                {% endif %}
+            </td>
+            <td data-bs-toggle="modal" data-bs-target="#edit"
+                hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
+                {% if article.time_cargo_release %}
+                {{ article.time_cargo_release|date:"d F Y" }}
+                {% endif %}
+            </td>
+            {% else %}
+            <td>
+                {% if article.prr %}₽{%endif%}{{ article.prr|default:"" }}
+            </td>
+            <td>
+                {% if article.tat_cost %}₽{%endif%}{{ article.tat_cost|default:"" }}
+            </td>
+            <td>
+                {% if user.role == 'Менеджер' or user.role == 'РОП' or user.role == 'Супер Администратор'%}
+                <form action="{% url 'analytics:edit_table_manager_article' article.pk %}" method="get">
+                    {% if article.paid_by_the_client_status == 'Не оплачено'  %}
+                    <input class="btn btn-secondary btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false"
+                           value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
+                    {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
+                    <input class="btn btn-primary btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false"
+                           value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
+                    {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
+                    <input class="btn btn-success btn-sm dropdown-toggle p-1" data-bs-toggle="dropdown" aria-expanded="false"
+                           value="{{ article.paid_by_the_client_status }}" name="paid_by_the_client_status" type="button" />
+                    {% endif %}
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><input class="dropdown-item" value="Оплачено полностью" name="paid_by_the_client_status" type="submit"/></li>
+                        <li><input class="dropdown-item" value="Оплачено частично" name="paid_by_the_client_status" type="submit"/></li>
+                        <li><input class="dropdown-item" value="Не оплачено" name="paid_by_the_client_status" type="submit"/></li>
+                    </ul>
+                </form>
+                {% endif %}
+            </td>
+            <td>
+                {% if article.time_cargo_arrival_to_RF %}
+                {{ article.time_cargo_arrival_to_RF|date:"d F Y" }}
+                {% endif %}
+            </td>
+            <td>
+                {% if article.time_cargo_release %}
+                {{ article.time_cargo_release|date:"d F Y" }}
+                {% endif %}
+            </td>
             {% endif %}
-        </td>
-        <td>
-            {% if article.time_cargo_release %}
-            {{ article.time_cargo_release|date:"d F Y" }}
+            <td>{{ article.get_number_of_days_on_the_way}}</td>
+            {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+            <td>
+                <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalDeleteArticle{{ article.pk }}" style="text-align: center;">
+                    Удалить
+                </p>
+            </td>
+            {% include "analytics/components/modal/modalDeleteArticle.html" with article=article %}
             {% endif %}
-        </td>
+        </tr>
+        {% endfor %}
         {% endif %}
-        <td>{{ article.get_number_of_days_on_the_way}}</td>
-        {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-        <td>
-            <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalDeleteArticle{{ article.pk }}" style="text-align: center;">Удалить</p>
-        </td>
-        {% include "analytics/components/modal/modalDeleteArticle.html" with article=article %}
-        {% endif %}
-    </tr>
-    {% endfor %}
+        </tbody>
+    </table>
+    {% if table_paginator_obj.has_other_pages %}
+    <nav aria-label="Навигация для таблиц">
+        <ul class="pagination justify-content-center">
+            {% if table_paginator_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ table_paginator_obj.previous_page_number }}">&lt;</a></li>
+            {% endif %}
+            {% for p in table_paginator.page_range %}
+            {% if table_paginator_obj.number == p %}
+            <li class="page-item active"><a class="page-link" href="?page={{ p }}">{{ p }}</a></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ p }}">{{ p }}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% if table_paginator_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ table_paginator_obj.next_page_number }}">&gt;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
     {% endif %}
-    </tbody>
-</table>
-
+</div>
 <script>
 $(document).ready( function () {
   var table = $('#myTable').DataTable({
-    "searching": false,
+    searching: false,
     info: false,
+    lengthMenu: [ 10, 25, 50, 75, 100, 200, 400, 1000],
     paging: false,
     columnDefs: [{
     render: function(data, type, row) {
@@ -215,11 +258,22 @@ $(document).ready( function () {
     },
     scrollCollapse: true,
     scrollX: true,
-    scrollY: 555,
-    "language": {
-      "emptyTable": "Нет данных"
-    }
+    scrollY: 530,
+<!--    dom: "<'row justify-content-left'<'col-auto'f><'col-auto'l>>"+"<'row p-1'<'col-sm-12'tr>>"+"<'row justify-content-left'<'col align-self-end'p>>",-->
+    language: {
+      "loadingRecords": "Загрузка...",
+      "emptyTable": "Нет данных",
+      "sSearch": "",
+      "searchPlaceholder": "Поиск...",
+      "paginate": {
+        "next":       "Следующая",
+        "previous":   "Предыдущая"
+        },
+       "lengthMenu":     "Количество _MENU_",
+       "info":           "Всего _TOTAL_ грузов",
+       "infoEmpty":      "Всего 0",
+    },
+    stateSave: true,
 });
 });
-
 </script>

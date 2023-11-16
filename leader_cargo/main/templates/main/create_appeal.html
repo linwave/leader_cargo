@@ -7,14 +7,13 @@
 {% block content %}
 <div class="container">
         <h2>Добавление новой заявки</h2>
-
-        <form action="{% url 'create_appeal' %}" method="post" id="create-client-form">
+        <form action="{% url 'main:create_appeal' %}" method="post" id="create-client-form">
                 <span class="text-danger">{{ form.non_field_errors }}</span>
                 {% csrf_token %}
                 {{ form.tag }}<br>
                 <div class="text-danger">{{ form.tag.errors }}</div>
                 <button type="submit" class="btn btn-success">Сохранить</button>
-                <a class="btn btn-success" href="{% url 'appeals' %}" role="button">Отменить</a>
+                <a class="btn btn-success" href="{% url 'main:appeals' %}" role="button">Отменить</a>
         </form>
 </div>
 

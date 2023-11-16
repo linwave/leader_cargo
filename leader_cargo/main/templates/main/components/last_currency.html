@@ -1,0 +1,15 @@
+{% if user.role == 'Супер Администратор' or user.role == 'Администратор' or user.role == 'Логист'%}
+<a href="{% url 'main:exchangerates' %}" class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >
+    ¥ {{ last_currency.yuan|default:"Курс ожидается" }}  $ {{ last_currency.dollar|default:"Курс ожидается" }}
+</a>
+{% else %}
+{% if 'leaderboard' in request.path %}
+<h3 class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >
+    ¥ {{ last_currency.yuan|default:"Курс ожидается" }}  $ {{ last_currency.dollar|default:"Курс ожидается" }}
+</h3>
+{% else %}
+<span class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >
+    ¥ {{ last_currency.yuan|default:"Курс ожидается" }}  $ {{ last_currency.dollar|default:"Курс ожидается" }}
+</span>
+{% endif %}
+{% endif %}

@@ -8,7 +8,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form method="post" id="add-manager-plan-form" action="{% url 'monitoring_manager_add_plan' manager.pk year month_int %}?{{ request.META.QUERY_STRING }}">
+        <form method="post" id="add-manager-plan-form" action="{% url 'main:monitoring_manager_add_plan' manager.pk year month_int %}?{{ request.META.QUERY_STRING }}">
           {% csrf_token %}
           {{ manager_plan_add_form.manager_monthly_net_profit_plan.label }}
           {{ manager_plan_add_form.manager_monthly_net_profit_plan }}
