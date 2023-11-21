@@ -5,14 +5,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="col-auto">
+<div class="container-fluid">
+    <div class="mb-3">
         <a class="btn btn-primary btn shadow" href="{% url 'main:monitoring_leaderboard' %}" role="button">Таблица результатов</a>
     </div>
-    <br>
     <div class="row g-1">
         {% for manager in managers %}
-        <div class="col-sm-4">
+        <div class="col-sm-3">
             {% if manager.status %}
             <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 420px;">
                 {% else %}

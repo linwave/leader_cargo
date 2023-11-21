@@ -7,17 +7,22 @@ from . import views
 app_name = 'analytics'
 
 urlpatterns = [
+    path('logistic-requests/', views.LogisticRateView.as_view(), name='logistic-requests'),
+    path('logistic-requests/add', views.LogisticRateView.as_view(), name='add_logistic-requests'),
+    path('logistic-requests/edit/<int:request_id>', views.LogisticRateView.as_view(), name='edit_logistic-requests'),
+
     path('calculator/', views.LogisticCalculatorView.as_view(), name='calculator'),
+
     path('carrier-files/', views.CarrierFilesView.as_view(), name='carrier'),
-    path('carrier-files/delete-article/<int:article_id>', views.DeleteArticleView.as_view(), name='delete_article'),
     path('carrier-files/update-article-status/<int:article_id>', views.change_article_status, name='update_article'),
-    path('carrier-files/edit-article/<int:article_id>', views.EditTableArticleView.as_view(), name='edit_table_article'),
     path('carrier-files/edit-article-manager/<int:article_id>', views.change_article_for_manager, name='edit_table_manager_article'),
+    path('carrier-files/edit-article/<int:article_id>', views.EditTableArticleView.as_view(), name='edit_table_article'),
+    path('carrier-files/delete-article/<int:article_id>', views.DeleteArticleView.as_view(), name='delete_table_article'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 htmx_patterns = [
     path('carrier-files/edit/<int:article_id>', views.edit_article_in_table, name='edit_article'),
-    # path('search-article', views.search_article_in_table, name='search_article'),
+    path('carrier-files/delete/<int:article_id>', views.delete_article_in_table, name='delete_article'),
 ]
 
 urlpatterns += htmx_patterns

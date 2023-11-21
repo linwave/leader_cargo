@@ -1,0 +1,30 @@
+<div class="card card-body">
+    <div>
+        <table class="table table-hover" style="font-size: 0.8rem;">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Название</th>
+                <th scope="col">Менеджер</th>
+                <th scope="col">Статус</th>
+                <th scope="col">Перевозчики</th>
+                <th scope="col">Ставка</th>
+                <th scope="col">Дата последнего обновления</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for report in draft_reports %}
+            <tr>
+                <th scope="row">{{ forloop.counter }}</th>
+                <td>{{ report.name }}</td>
+                <td>{{ report.manager }}</td>
+                <td>{{ report.status }}</td>
+                <td>{{ report.carriers }}</td>
+                <td>{{ report.bid }}</td>
+                <td>{{ report.time_update }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

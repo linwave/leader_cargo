@@ -54,12 +54,12 @@ class EditManagerPlanForm(ModelForm):
 
 
 class LoginUserForm(AuthenticationForm):
-    phone = CharField(label='Телефон', max_length=50, widget=TextInput(attrs={'class': 'form-control',
+    phone = CharField(label='Телефон', max_length=50, widget=TextInput(attrs={
                                                                               'id': 'phone-mask',
                                                                               'type': 'text',
-                                                                              'placeholder': '+7 (___) ___-__-__'}))
-    password = CharField(label='Пароль', max_length=50, widget=TextInput(attrs={'class': 'form-control',
-                                                                                'placeholder': "Введите пароль",
+                                                                              }))
+    password = CharField(label='Пароль', max_length=50, widget=TextInput(attrs={
+
                                                                                 "type": "password",
                                                                                 "id": "inputPassword5"}))
 

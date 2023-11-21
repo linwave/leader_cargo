@@ -2,66 +2,172 @@ import datetime
 
 from .models import ExchangeRates
 
+
+categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки']
+
 menu = {
-    'Курсы валют': {'title': 'Курсы валют', 'url_name': 'main:exchangerates', 'short_url': 'exchangerates'},
-    'Сотрудники': {'title': 'Сотрудники', 'url_name': 'main:employees', 'short_url': 'employees'},
-    'Система мониторинга': {'title': 'Система мониторинга', 'url_name': 'main:monitoring', 'short_url': 'monitoring'},
-    'Калькулятор логистики': {'title': 'Калькулятор логистики', 'url_name': 'analytics:calculator', 'short_url': 'calculator'},
-    'Учет грузов': {'title': 'Учет грузов', 'url_name': 'analytics:carrier', 'short_url': 'carrier'},
-    'Клиенты': {'title': 'Клиенты', 'url_name': 'main:clients', 'short_url': 'clients'},
-    'Заявки': {'title': 'Заявки', 'url_name': 'main:appeals', 'short_url': 'appeals'},
+    'Вход': {'title': 'Вход', 'url_name': 'main:login', 'short_url': 'login', 'display': True},
+
+    'Учет грузов': {'title': 'Учет грузов', 'url_name': 'analytics:carrier', 'short_url': 'carrier', 'display': True,
+                    'category_name': categories[1], 'menu_role': 'sub'},
+    'Запросы на просчет': {'title': 'Запросы на просчет', 'url_name': 'analytics:logistic-requests', 'short_url': 'logistic-requests', 'display': False,
+                           'category_name': categories[1], 'menu_role': 'sub'},
+    'Калькулятор логистики': {'title': 'Калькулятор логистики', 'url_name': 'analytics:calculator', 'short_url': 'calculator', 'display': False,
+                              'category_name': categories[1], 'menu_role': 'sub'},
+
+    'Курсы валют': {'title': 'Курсы валют', 'url_name': 'main:exchangerates', 'short_url': 'exchangerates', 'display': True,
+                    'category_name': categories[0], 'menu_role': 'basic'},
+    'Установка курса валют': {'title': 'Установка курса валют', 'url_name': 'main:create_exchangerates', 'short_url': 'create_exchangerates', 'display': True,
+                              'category_name': categories[0], 'menu_role': 'sub'},
+
+    'Мониторинг': {'title': 'Мониторинг', 'url_name': 'main:monitoring', 'short_url': 'monitoring', 'display': True,
+                   'category_name': categories[2], 'menu_role': 'basic'},
+    'Таблица результатов': {'title': 'Таблица результатов', 'url_name': 'main:monitoring_leaderboard', 'short_url': 'monitoring_leaderboard', 'display': True,
+                            'category_name': categories[2], 'menu_role': 'sub'},
+
+    'Сотрудники': {'title': 'Сотрудники', 'url_name': 'main:employees', 'short_url': 'employees', 'display': True,
+                   'category_name': categories[3], 'menu_role': 'basic'},
+    'Регистрация сотрудника': {'title': 'Регистрация сотрудника', 'url_name': 'main:create_employees', 'short_url': 'create_employees', 'display': True,
+                               'category_name': categories[3], 'menu_role': 'sub'},
+
+    'Клиенты': {'title': 'Клиенты', 'url_name': 'main:clients', 'short_url': 'clients', 'display': False,
+                'category_name': categories[4], 'menu_role': 'basic'},
+    'Создание клиента': {'title': 'Создание клиента', 'url_name': 'main:create_client', 'short_url': 'create_client', 'display': False,
+                         'category_name': categories[4], 'menu_role': 'sub'},
+
+    'Заявки': {'title': 'Клиенты', 'url_name': 'main:appeals', 'short_url': 'appeals', 'display': False,
+               'category_name': categories[5], 'menu_role': 'basic'},
+    'Создание заявки': {'title': 'Создание клиента', 'url_name': 'main:create_appeal', 'short_url': 'create_appeal', 'display': False,
+                        'category_name': categories[5], 'menu_role': 'sub'},
 }
 
 menu_super_admin = [
-    menu['Курсы валют'],
-    menu['Сотрудники'],
-    menu['Система мониторинга'],
-    menu['Калькулятор логистики'],
-    menu['Учет грузов'],
-    menu['Клиенты'],
-    menu['Заявки'],
+    {
+        'name': categories[0],
+        'basic': menu['Курсы валют'],
+        'sub_menu': [menu['Установка курса валют']]
+    },
+    {
+        'name': categories[1],
+        'basic': menu['Учет грузов'],
+        'sub_menu': [menu['Запросы на просчет'], menu['Калькулятор логистики']]
+    },
+    {
+        'name': categories[2],
+        'basic': menu['Мониторинг'],
+        'sub_menu': [menu['Таблица результатов']]
+    },
+    {
+        'name': categories[3],
+        'basic': menu['Сотрудники'],
+        'sub_menu': [menu['Регистрация сотрудника']]
+    },
+    {
+        'name': categories[4],
+        'basic': menu['Клиенты'],
+        'sub_menu': [menu['Создание клиента']]
+    },
+    {
+        'name': categories[5],
+        'basic': menu['Заявки'],
+        'sub_menu': [menu['Создание заявки']]
+    }
 ]
-
 menu_rop = [
-    menu['Система мониторинга'],
-    # menu['Калькулятор логистики'],
-    menu['Учет грузов'],
+    {
+        'name': categories[1],
+        'basic': menu['Учет грузов'],
+        'sub_menu': []
+    },
+    {
+        'name': categories[2],
+        'basic': menu['Мониторинг'],
+        'sub_menu': [menu['Таблица результатов']]
+    },
+    {
+        'name': categories[3],
+        'basic': menu['Сотрудники'],
+        'sub_menu': [menu['Регистрация сотрудника']]
+    },
+    {
+        'name': categories[4],
+        'basic': menu['Клиенты'],
+        'sub_menu': [menu['Создание клиента']]
+    },
+    {
+        'name': categories[5],
+        'basic': menu['Заявки'],
+        'sub_menu': [menu['Создание заявки']]
+    }
 ]
-
 menu_admin = [
-    menu['Курсы валют'],
-    menu['Сотрудники'],
+    {
+        'name': categories[0],
+        'basic': menu['Курсы валют'],
+        'sub_menu': [menu['Установка курса валют']]
+    },
+    {
+        'name': categories[3],
+        'basic': menu['Сотрудники'],
+        'sub_menu': [menu['Регистрация сотрудника']]
+    }
 ]
 
 menu_manager = [
-    menu['Система мониторинга'],
-    # menu['Калькулятор логистики'],
-    menu['Учет грузов'],
+    {
+        'name': categories[1],
+        'basic': menu['Учет грузов'],
+        'sub_menu': []
+    },
+    {
+        'name': categories[2],
+        'basic': menu['Таблица результатов'],
+        'sub_menu': []
+    }
 ]
-
 menu_buyer = [
-    menu['Заявки'],
+    {
+        'name': categories[5],
+        'basic': menu['Заявки'],
+        'sub_menu': [menu['Создание заявки']]
+    }
 ]
 
 menu_client = [
-    menu['Заявки'],
+    {
+        'name': categories[5],
+        'basic': menu['Заявки'],
+        'sub_menu': [menu['Создание заявки']]
+    }
 ]
 
 menu_logist = [
-    menu['Учет грузов'],
-    # menu['Калькулятор логистики'],
-    menu['Курсы валют'],
+    {
+        'name': categories[0],
+        'basic': menu['Курсы валют'],
+        'sub_menu': [menu['Установка курса валют']]
+    },
+    {
+        'name': categories[1],
+        'basic': menu['Учет грузов'],
+        'sub_menu': []
+    },
+    {
+        'name': categories[2],
+        'basic': menu['Таблица результатов'],
+        'sub_menu': []
+    }
 ]
 
 initial_user_parameters = {
-            'Супер Администратор': {'login_url': 'main:home', 'menu': menu_super_admin},
-            'РОП': {'login_url': 'main:monitoring', 'menu': menu_rop},
-            'Администратор': {'login_url': 'main:exchangerates', 'menu': menu_admin},
-            'Логист': {'login_url': 'analytics:carrier', 'menu': menu_logist},
-            'Менеджер': {'login_url': 'main:monitoring', 'menu': menu_manager},
-            'Закупщик': {'login_url': 'main:appeals', 'menu': menu_buyer},
-            'Клиент': {'login_url': 'main:appeals', 'menu': menu_client},
-        }
+    'Супер Администратор': {'login_url': 'main:home', 'menu': menu_super_admin},
+    'РОП': {'login_url': 'main:monitoring', 'menu': menu_rop},
+    'Администратор': {'login_url': 'main:exchangerates', 'menu': menu_admin},
+    'Логист': {'login_url': 'analytics:carrier', 'menu': menu_logist},
+    'Менеджер': {'login_url': 'main:monitoring_leaderboard', 'menu': menu_manager},
+    'Закупщик': {'login_url': 'main:appeals', 'menu': menu_buyer},
+    'Клиент': {'login_url': 'main:appeals', 'menu': menu_client},
+}
 
 
 class DataMixin:
@@ -92,5 +198,3 @@ class DataMixin:
             return curs
         except IndexError:
             return False
-
-

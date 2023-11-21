@@ -1,0 +1,72 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+
+
+<div class="container">
+    <div class="row g-2 justify-content-left">
+        <div class="col-auto">
+            <a type="button" class="btn btn-success" href="{% url 'analytics:add_logistic-requests' %}">
+                Отправить запрос
+            </a>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-secondary"
+                    data-bs-toggle="collapse" data-bs-target="#collapseDraft" aria-expanded="false" aria-controls="collapseDraft"
+                    hx-get="{% url 'analytics:logistic-requests' %}" hx-trigger="click" hx-target="#collapseDraft">
+                Черновики
+            </button>
+        </div>
+    </div>
+</div>
+<div class="collapse" id="collapseDraft">
+</div>
+<div class="table-responsive">
+    <table class="table align-middle  table-hover g-1" style="font-size: 0.8rem;">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Название</th>
+            <th scope="col">Менеджер</th>
+            <th scope="col">Статус</th>
+            <th scope="col">Перевозчики</th>
+            <th scope="col">Ставка</th>
+            <th scope="col">Дата последнего обновления</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for report in reports %}
+        <tr>
+            <th scope="row">{{ forloop.counter }}</th>
+            <td>{{ report.name }}</td>
+            <td>{{ report.manager }}</td>
+            <td>{{ report.status }}</td>
+            <td>{{ report.carriers }}</td>
+            <td>{{ report.bid }}</td>
+            <td>{{ report.time_update }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!--<table id="myTable" class="table table-sm table-hover table_border align-middle" style="width:100%;border-spacing: 0;">-->
+<!--    <thead class="table-dark align-middle">-->
+<!--    <tr>-->
+<!--        <th scope="col" style="background-color: #111;">#</th>-->
+<!--        <th scope="col" width="200px" style="background-color: #111;">Артикул</th>-->
+<!--        <th scope="col" >Менеджер</th>-->
+<!--        <th scope="col" >Пере-возчик</th>-->
+<!--    </tr>-->
+<!--    </thead>-->
+<!--    <tbody style="text-align:center;">-->
+<!--    <tr>-->
+<!--        <th scope="row"></th>-->
+<!--        <td></td>-->
+<!--    </tr>-->
+<!--    </tbody>-->
+<!--</table>-->
+{% endblock %}

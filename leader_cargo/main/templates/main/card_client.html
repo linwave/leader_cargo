@@ -5,9 +5,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid">
     <h2>Карточка клиента</h2>
-    <form method="post" id="card-clients-form">
+    <form method="post" id="card-employees-form">
         <span class="text-danger">{{ form.non_field_errors }}</span>
         {% csrf_token %}
         {{ form.phone }}<br>

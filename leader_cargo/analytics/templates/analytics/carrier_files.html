@@ -9,41 +9,52 @@
 <div class="container-fluid">
     {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
     {% include "analytics/components/modal/modalInputCarrierFile.html"  %}
-    <div class="modal fade" id="edit" tabindex="-1" aria-labelledby="table-article-Label" aria-hidden="true">
-        <div class="modal-dialog">
-            <div id="hx-modal-edit-article-for-logist">
-            </div>
-        </div>
-    </div>
-    <div class="row g-2 justify-content-center">
+    {% include "analytics/components/modal/modalEditArticleForLogist.html"  %}
+    {% include "analytics/components/modal/modalDeleteArticleForLogist.html"  %}
+    <div class="row g-2 justify-content-start">
         <div class="col-auto">
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalInputCarrierFile">
+
+            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
+                    data-bs-target="#modalInputCarrierFile">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
                 Загрузить файл перевозчика
             </button>
         </div>
-
         <div class="col-auto">
-            <button type="button" class="btn btn-dark">
+            <button type="button" class="btn btn-sm btn-dark">
+                <i class="fa-solid fa-file-export"></i>
                 Выгрузка отчета по грузам
             </button>
         </div>
         <div class="col-auto">
-            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWithoutInsuranceArticles" aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >
+
+            <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseWithoutInsuranceArticles" aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >
+                <i class="fa-solid fa-car-burst"></i>
                 Груза без страховки: {{ count_articles_without_insurance }}
             </button>
         </div>
         <div class="col-auto">
-            <button class="btn btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNotIssuedArticles" aria-expanded="false" aria-controls="collapseNotIssuedArticles" >
+
+            <button class="btn btn-sm btn-danger" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseNotIssuedArticles" aria-expanded="false" aria-controls="collapseNotIssuedArticles" >
+                <i class="fa-solid fa-house-lock"></i>
                 Не выданные: {{ count_all_articles_not_issued }}
             </button>
         </div>
         <div class="col-auto">
-            <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapseResponsibleManager" aria-expanded="false" aria-controls="multiCollapseResponsibleManager">
+
+            <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#multiCollapseResponsibleManager" aria-expanded="false" aria-controls="multiCollapseResponsibleManager">
+                <i class="fa-solid fa-users-slash"></i>
                 С пустым менеджером: {{ count_empty_responsible_manager }}
             </button>
         </div>
         <div class="col-auto">
-            <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#multiCollapsePathFormat" aria-expanded="false" aria-controls="multiCollapsePathFormat">
+
+            <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#multiCollapsePathFormat" aria-expanded="false" aria-controls="multiCollapsePathFormat">
+                <i class="fa-solid fa-road-circle-xmark"></i>
                 С пустой дорогой: {{ count_empty_path_format }}
             </button>
         </div>
@@ -54,8 +65,9 @@
     {% include "analytics/components/messagesError.html"  %}
     {% endif %}
     {% include "analytics/components/filters.html"  %}
+
     <div id="hx-table">
-    {% include "analytics/components/table_for_carrier_files.html"  %}
+        {% include "analytics/components/table_for_carrier_files.html"  %}
     </div>
 </div>
 <script>

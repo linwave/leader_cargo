@@ -8,6 +8,8 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <!--FAVICON-->
     <link rel="shortcut icon" type="image/png" href="{% static 'main/images/favicon.ico' %}">
+    <!--MY CSS-->
+    <link rel="stylesheet" href="{% static 'main/css/styles.css' %}">
     <!--Ajax-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!--Bootstrap CSS-->
@@ -20,8 +22,6 @@
     <!--DATATABLES CSS-->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.bootstrap5.min.css">
-    <!--MY CSS-->
-    <link rel="stylesheet" href="{% static 'main/css/styles.css' %}">
     <!--TITLE-->
     <title>{% block title %}{% endblock %}</title>
 </head>
@@ -38,49 +38,12 @@
 <script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
 <!--MY JS-->
 <script src="{% static 'main/js/script.js' %}"></script>
-
-<!--SIDEBAR-->
-{% if user.is_authenticated %}
-{% include "main/components/sidebar.html"  %}
+<!--NAVIGATION-->
+{% include "main/components/navigation.html"  %}
+<!--CONTENT-->
+{% block content %}{% endblock %}
+<!--PAGINATION-->
+{% if page_obj.has_other_pages %}
+{% include "main/components/pagination.html"  %}
 {% endif %}
-<section class="home-section">
-    <div class="home-content" style="text-align: center;">
-            <span class="text">
-            {% if user.is_authenticated %}
-            {% include "main/components/last_currency.html"  %}
-            {% endif %}
-            {% if user.role == 'Клиент'%}
-             | {% include "main/components/client_wallet.html"  %}
-            {% endif %}
-            </span>
-    </div>
-    {% if user.is_authenticated %}
-    <hr class="bg-200 mb-2 mt-0">
-    {% endif %}
-    <!--CONTENT-->
-    {% block content %}{% endblock %}
-    <!--PAGINATION-->
-    {% if page_obj.has_other_pages %}
-    {% include "main/components/pagination.html"  %}
-    {% endif %}
-</section>
-
-
-
 </body>
-<script>
-let arrow = document.querySelectorAll(".arrow");
-
-for (var i=0; i < arrow.length; i++) {
-    arrow[i].addEventListener("click", (e)=>{
-    let arrowParent = e.target.parentElement.parentElement;
-    arrowParent.classList.toggle("showMenu");
-    });
-    }
-let sidebar = document.querySelector(".sidebar");
-let sidebarBtn = document.getElementById("sidebarBtn");
-console.log(sidebarBtn);
-sidebarBtn.addEventListener("click", ()=>{
-    sidebar.classList.toggle("close");
-    });
-</script>

@@ -155,3 +155,86 @@ class PriceListsOfCarriers(models.Model):
     class Meta:
         verbose_name = 'Прайс листы перевозчиков'
         verbose_name_plural = 'Прайс листы перевозчиков'
+
+
+class RequestsForLogisticsCalculations(models.Model):
+    statuses = [
+        ('Черновик', 'Черновик'),
+        ('Новый', 'Новый'),
+        ('В работе', 'В работе'),
+        ('Частично обработано', 'Частично обработано'),
+        ('Обработано', 'Обработано'),
+        ('Запрос снижения тарифа', 'Запрос снижения тарифа'),
+        ('Снижение невозможно', 'Снижение невозможно'),
+        ('Перевозчик утвержден', 'Перевозчик утвержден'),
+        ('Отклонено', 'Отклонено')
+    ]
+    name = models.CharField(max_length=50, verbose_name='Название запроса')
+    manager = models.ForeignKey(CustomUser, on_delete=models.PROTECT)
+    status = models.CharField(max_length=50, verbose_name='Статус', blank=True, null=True)
+    carriers = models.CharField(max_length=50, verbose_name='Перевозчики', blank=True, null=True)
+    bid = models.CharField(max_length=50, verbose_name='Окончательная ставка', blank=True, null=True)
+    # file_path_requests = models.FileField(verbose_name='Файл запроса', upload_to='files/logistic/requests/%Y/%m/%d/', blank=True, null=True)
+    time_new = models.DateTimeField(verbose_name='Дата статуса Новый', blank=True, null=True)
+    time_in_work = models.DateTimeField(verbose_name='Дата статуса В работе', blank=True, null=True)
+    time_to_close_yes = models.DateTimeField(verbose_name='Дата статуса Перевозчик утвержден', blank=True, null=True)
+    time_to_close_no = models.DateTimeField(verbose_name='Дата статуса Отклонено', blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name}"
+
+    class Meta:
+        verbose_name = 'Запросы на логистику'
+        verbose_name_plural = 'Запросы на логистику'
+        ordering = ['-time_update']
+
+
+class RequestsForLogisticsGoods(models.Model):
+    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.PROTECT)
+    photo_path_logistic_goods = models.ImageField(verbose_name='Фото товара', upload_to='photo/logistic/goods/%Y/%m/%d/', blank=True, null=True)
+    description = models.CharField(max_length=50, verbose_name='Описание товара', blank=True, null=True)
+    material = models.CharField(max_length=50, verbose_name='Материал', blank=True, null=True)
+    number_of_packages = models.CharField(max_length=50, verbose_name='Количество упаковок/мест', blank=True, null=True)
+    quantity_in_each_package = models.CharField(max_length=50, verbose_name='Количество в каждой упаковке (шт)', blank=True, null=True)
+    size_of_packaging = models.CharField(max_length=50, verbose_name='Объём/размер упаковки (м3)', blank=True, null=True)
+    gross_weight_of_packaging = models.CharField(max_length=50, verbose_name='Вес брутто упаковки (кг)', blank=True, null=True)
+    total_volume = models.CharField(max_length=50, verbose_name='Общий объём (м3)', blank=True, null=True)
+    total_gross_weight = models.CharField(max_length=50, verbose_name='Общий вес брутто (кг)', blank=True, null=True)
+    total_quantity = models.CharField(max_length=50, verbose_name='Общее кол-во (шт)', blank=True, null=True)
+    trademark = models.CharField(max_length=50, verbose_name='Торговая марка', blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Товар {self.pk} запроса {self.request}"
+
+    class Meta:
+        verbose_name = 'Товары на запрос в логистику'
+        verbose_name_plural = 'Товары на запрос в логистику'
+
+
+class RequestsForLogisticsRate(models.Model):
+    carriers = [
+        ('Ян', 'Ян'),
+        ('Валька', 'Валька'),
+        ('Мурад', 'Мурад'),
+        ('Гелик', 'Гелик')
+    ]
+    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.PROTECT)
+    road_name = models.CharField(max_length=50, verbose_name='Название дороги')
+    carrier_name = models.CharField(max_length=50, verbose_name='Название перевозчика', choices=carriers)
+    bid = models.CharField(max_length=50, verbose_name='Ставка')
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Ставка {self.bid} по запросу {self.request}"
+
+    class Meta:
+        verbose_name = 'Ставки на запрос в логистику'
+        verbose_name_plural = 'Ставки на запрос в логистику'

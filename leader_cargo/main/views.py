@@ -11,7 +11,7 @@ import random
 
 from django.urls import reverse_lazy
 from django.utils.timezone import make_aware
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
     UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm
@@ -46,11 +46,14 @@ def logout_user(request):
 # ВЬЮХИИИИИИ КЛАССЫ
 class LoginUser(DataMixin, LoginView):
     form_class = LoginUserForm
-    template_name = 'main/login.html'
+    template_name = 'main/login_new.html'
+    message = False
 
     def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['message'] = self.message
         c_def = self.get_user_context(title="Авторизация")
-        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+        return dict(list(context.items())+list(c_def.items()))
 
     def form_invalid(self, form):
         login_user = authenticate(self.request, username=''.join(re.findall(r'\d+', form.cleaned_data['phone'])), password=form.cleaned_data['password'])
@@ -58,6 +61,7 @@ class LoginUser(DataMixin, LoginView):
             login(self.request, login_user)
             return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
         else:
+            self.message = True
             form.add_error(None, f'Ошибка авторизации')
             return super(LoginUser, self).form_invalid(form)
 
@@ -68,8 +72,27 @@ class LoginUser(DataMixin, LoginView):
             return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
 
+class ProfileUser(LoginRequiredMixin, DataMixin, TemplateView):
+    template_name = 'main/profile.html'
+    login_url = reverse_lazy('main:login')
+    role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Профиль пользователя")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
+
+
 class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 9
+    paginate_by = 8
     model = CustomUser
     template_name = 'main/monitoring_system.html'
     context_object_name = 'managers'
@@ -280,7 +303,7 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
     template_name = 'main/monitoring_leaderboard.html'
     context_object_name = 'managers_all'
     login_url = reverse_lazy('main:login')
-    role_have_perm = ['Супер Администратор', 'РОП', 'Менеджер']
+    role_have_perm = ['Супер Администратор', 'РОП', 'Логист', 'Менеджер']
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -452,7 +475,7 @@ class AddExchangeRatesView(LoginRequiredMixin, DataMixin, CreateView):
 
 
 class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 8
+    paginate_by = 16
     model = ExchangeRates
     template_name = 'main/exchangerates.html'
     context_object_name = 'currencies'
@@ -474,7 +497,7 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
 
 
 class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
-    paginate_by = 6
+    paginate_by = 8
     model = CustomUser
     template_name = 'main/employees.html'
     context_object_name = 'employees'

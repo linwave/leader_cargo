@@ -4,13 +4,13 @@
     <input id="carrier" type="hidden" name="carrier" value="{{ carrier_now }}">
     <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
     <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
-    <div class="row g-2 justify-content-center">
+    <div class="row g-2 justify-content-start">
 <!--        <div class="col-auto">-->
 <!--            <input id="article_search" class="form-control" type="text" name="q" placeholder="Поиск по артикулу"-->
 <!--                   hx-get="{% url 'analytics:carrier' %}" hx-trigger="keyup changed delay:300ms" hx-target="#hx-table"/>-->
 <!--        </div>-->
         <div class="col-auto">
-            <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle p-2 position-relative" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
+            <button id="statuses" class="btn btn-secondary btn-sm dropdown-toggle position-relative" data-bs-toggle="dropdown" aria-expanded="false" name="status" type="button" >
                 {{ status_now }}
                 {% if user.role != 'Логист'  %}
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -27,7 +27,7 @@
         </div>
         {% if user.role == 'РОП' or user.role == 'Супер Администратор' or user.role == 'Логист' %}
         <div class="col-auto">
-            <button id="responsible_manager_get" class="btn btn-secondary btn-sm dropdown-toggle p-2"
+            <button id="responsible_manager_get" class="btn btn-secondary btn-sm dropdown-toggle"
                     data-bs-toggle="dropdown" aria-expanded="false" name="responsible_manager" type="button" >
                 {% if responsible_manager_current == 'Все менеджеры' %}
                 {{ responsible_manager_current }}
@@ -48,7 +48,7 @@
         </div>
         {% endif %}
         <div class="col-auto">
-            <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >
+            <button id="carriers" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" name="carrier" type="button" >
                 {{ carrier_now }}
             </button>
             <ul class="dropdown-menu dropdown-menu-dark">
@@ -60,7 +60,7 @@
             </ul>
         </div>
         <div class="col-auto">
-            <button id="paid_by_the_client" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_by_the_client" type="button" >
+            <button id="paid_by_the_client" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" name="paid_by_the_client" type="button" >
                 {{ paid_by_the_client_current }}
             </button>
             <ul class="dropdown-menu dropdown-menu-dark">
@@ -72,7 +72,7 @@
         </div>
         {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
         <div class="col-auto">
-            <button id="paid_to_the_carrier" class="btn btn-secondary btn-sm dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false" name="paid_to_the_carrier" type="button" >
+            <button id="paid_to_the_carrier" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" name="paid_to_the_carrier" type="button" >
                 {{ paid_to_the_carrier_current }}
             </button>
             <ul class="dropdown-menu dropdown-menu-dark">
@@ -88,7 +88,7 @@
                     <label for="startDate" class="col-form-label">От</label>
                 </div>
                 <div class="col-auto">
-                    <input id="startDate" class="form-control" type="date" name="date" value="{{ date_current }}"/>
+                    <input id="startDate" class="form-control p-1" type="date" name="date" value="{{ date_current }}"/>
                 </div>
             </div>
         </div>
@@ -98,7 +98,7 @@
                     <label for="endDate" class="col-form-label">До</label>
                 </div>
                 <div class="col-auto">
-                    <input id="endDate" class="form-control" type="date" name="end_date" value="{{ end_date_current }}"/>
+                    <input id="endDate" class="form-control p-1" type="date" name="end_date" value="{{ end_date_current }}"/>
                 </div>
             </div>
         </div>

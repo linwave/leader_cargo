@@ -5,12 +5,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid">
     <a class="btn btn-success" href="{% url 'main:create_exchangerates' %}" role="button">Установить курс</a><br><br>
     <div class="row g-1 ">
         {% if currencies %}
         {% for currency in currencies %}
-        <div class="col-sm-3">
+        <div class="col-sm-2">
             <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 280px;">
                 <div class="row g-0">
                     <div class="col-3">

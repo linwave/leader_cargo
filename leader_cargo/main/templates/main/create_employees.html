@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid">
     <h2>Регистрация сотрудника</h2>
     <form action="{% url 'main:create_employees' %}" method="post" id="create-employees-form">
         <span class="text-danger">{{ form.non_field_errors }}</span>

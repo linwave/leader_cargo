@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid">
     <div class="d-flex justify-content-between">
         <h2>Сотрудники</h2>
         <a href="{% url 'main:create_employees' %}" class="btn btn-phoenix-secondary square-icon-btn" >
@@ -15,7 +15,7 @@
     <div class="row g-1">
         {% if employees %}
         {% for employee in employees %}
-        <div class="col-sm-4">
+        <div class="col-md-3">
             {% if employee.status %}
             <div class="card text-dark bg-light mb-3 border-secondary shadow p-1 rounded" style="max-width: 420px;">
                 {% else %}

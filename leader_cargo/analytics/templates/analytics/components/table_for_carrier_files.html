@@ -1,29 +1,27 @@
-<div class="container-fluid">
-    <div class="row justify-content-start g-1">
-        <div class="col-auto">
-            <input id="article_search" class="form-control" type="text" name="q" placeholder="Поиск по артикулу" value="{{ q }}"
-                   hx-get="{% url 'analytics:carrier' %}" hx-trigger="keyup changed delay:300ms" hx-target="#hx-table"/>
-        </div>
-        <div class="col-auto">
-            <span class="d-inline-flex ms-md-auto p-2">Всего грузов: {{ table_paginator.count }}</span>
-        </div>
-        <div class="col-auto">
-            <span class="d-inline-flex ms-md-auto p-2">Общий вес: {{ all_weight|floatformat:"2g" }} кг</span>
-        </div>
-        <div class="col-auto">
-            <span class="d-inline-flex ms-md-auto p-2">Общий объем: {{ all_volume|floatformat:"2g" }} м3</span>
-        </div>
-        <div class="col-auto">
-            <span class="d-inline-flex ms-md-auto p-2">Общий ПРР: ₽{{ all_prr|floatformat:"2g" }}</span>
-        </div>
-        <div class="col-auto">
-            <span class="d-inline-flex ms-md-auto p-2">Общий ТАТ: ₽{{ all_tat|floatformat:"2g" }}</span>
-        </div>
+<div class="row justify-content-start g-1">
+    <div class="col-auto">
+        <input id="article_search" class="form-control" type="text" name="q" placeholder="Поиск по артикулу" value="{{ q }}"
+               hx-get="{% url 'analytics:carrier' %}" hx-trigger="keyup changed delay:300ms" hx-target="#hx-table"/>
+    </div>
+    <div class="col-auto">
+        <i class="fa-solid fa-truck"></i><span class="d-inline-flex ms-md-auto p-2">Грузов: {{ table_paginator.count }}</span>
+    </div>
+    <div class="col-auto">
+        <i class="fa-solid fa-weight-hanging"></i><span class="d-inline-flex ms-md-auto p-2">Вес: {{ all_weight|floatformat:"2g" }} кг</span>
+    </div>
+    <div class="col-auto">
+        <i class="fa-solid fa-v"></i><span class="d-inline-flex ms-md-auto p-2">Объем: {{ all_volume|floatformat:"2g" }} м3</span>
+    </div>
+    <div class="col-auto">
+        <i class="fa-solid fa-person-digging"></i><span class="d-inline-flex ms-md-auto p-2">ПРР: ₽{{ all_prr|floatformat:"2g" }}</span>
+    </div>
+    <div class="col-auto">
+        <i class="fa-solid fa-truck-fast"></i><span class="d-inline-flex ms-md-auto p-2">ТАТ: ₽{{ all_tat|floatformat:"2g" }}</span>
     </div>
 </div>
-<div class="container-fluid" style="overflow-y: auto;height: 700px;">
+<div style="overflow-y: hidden;overflow-x: hidden;height: 745px;">
     <table id="myTable" class="table table-sm table-hover table_border align-middle"
-           style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.8rem;{% else %}font-size: 0.9rem;{% endif %}">
+           style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.79rem;{% else %}font-size: 0.9rem;{% endif %}">
         <thead class="table-dark align-middle">
         <tr>
             <th scope="col" style="background-color: #111;">#</th>
@@ -208,12 +206,12 @@
             {% endif %}
             <td>{{ article.get_number_of_days_on_the_way}}</td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
-            <td>
-                <p class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalDeleteArticle{{ article.pk }}" style="text-align: center;">
+            <td style="text-align: center;" data-bs-toggle="modal" data-bs-target="#delete"
+                hx-get="{% url 'analytics:delete_article' article.pk %}" hx-target="#hx-modal-delete-article-for-logist">
+                <button class="btn btn-danger btn-sm" >
                     Удалить
-                </p>
+                </button>
             </td>
-            {% include "analytics/components/modal/modalDeleteArticle.html" with article=article %}
             {% endif %}
         </tr>
         {% endfor %}
@@ -224,17 +222,17 @@
     <nav aria-label="Навигация для таблиц">
         <ul class="pagination justify-content-center">
             {% if table_paginator_obj.has_previous %}
-            <li class="page-item"><a class="page-link" href="?page={{ table_paginator_obj.previous_page_number }}">&lt;</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ table_paginator_obj.previous_page_number }}{{ set_query }}">&lt;</a></li>
             {% endif %}
             {% for p in table_paginator.page_range %}
             {% if table_paginator_obj.number == p %}
-            <li class="page-item active"><a class="page-link" href="?page={{ p }}">{{ p }}</a></li>
+            <li class="page-item active"><a class="page-link" href="?page={{ p }}{{ set_query }}">{{ p }}</a></li>
             {% else %}
-            <li class="page-item"><a class="page-link" href="?page={{ p }}">{{ p }}</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ p }}{{ set_query }}">{{ p }}</a></li>
             {% endif %}
             {% endfor %}
             {% if table_paginator_obj.has_next %}
-            <li class="page-item"><a class="page-link" href="?page={{ table_paginator_obj.next_page_number }}">&gt;</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ table_paginator_obj.next_page_number }}{{ set_query }}">&gt;</a></li>
             {% endif %}
         </ul>
     </nav>
@@ -258,7 +256,7 @@ $(document).ready( function () {
     },
     scrollCollapse: true,
     scrollX: true,
-    scrollY: 530,
+    scrollY: 590,
 <!--    dom: "<'row justify-content-left'<'col-auto'f><'col-auto'l>>"+"<'row p-1'<'col-sm-12'tr>>"+"<'row justify-content-left'<'col align-self-end'p>>",-->
     language: {
       "loadingRecords": "Загрузка...",

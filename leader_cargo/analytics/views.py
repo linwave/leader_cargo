@@ -8,7 +8,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
 from .forms import AddCarrierFilesForm, EditTableArticleForm
-from .models import CargoFiles, CargoArticle
+from .models import CargoFiles, CargoArticle, RequestsForLogisticsCalculations
 # FROM MAIN
 from main.models import CustomUser
 from main.utils import DataMixin
@@ -17,14 +17,49 @@ import openpyxl
 import xlrd
 
 
+class LogisticRateView(LoginRequiredMixin, DataMixin, TemplateView):
+    role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
+    template_name = 'analytics/logistics_requests.html'
+    login_url = reverse_lazy('main:login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reports'] = RequestsForLogisticsCalculations.objects.all()
+        context['table_paginator'] = Paginator(context['reports'], 20)
+        page_number = self.request.GET.get('page')
+        context['table_paginator_obj'] = context['table_paginator'].get_page(page_number)
+        context['reports'] = context['table_paginator_obj']
+
+        if self.request.user.role == 'Логист':
+            c_def = self.get_user_context(title="Запросы логисту")
+        else:
+            c_def = self.get_user_context(title="Запросы на просчет")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_template_names(self):
+        if self.request.htmx.target == 'collapseDraft':
+            return "analytics/components/collapse/collapseDraft.html"
+        else:
+            return self.template_name
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
 class LogisticCalculatorView(LoginRequiredMixin, DataMixin, TemplateView):
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
     template_name = 'analytics/calculator.html'
     login_url = reverse_lazy('main:login')
 
     def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Калькулятор логистики")
-        return dict(list(super().get_context_data(**kwargs).items()) + list(c_def.items()))
+        return dict(list(context.items()) + list(c_def.items()))
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -165,10 +200,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                 if article.tat_cost:
                     context['all_tat'] = context['all_tat'] + float(article.tat_cost.replace(" ", "").replace(",", "."))
         context['table_paginator'] = Paginator(context['all_articles'], 50)
-        page_number = self.request.GET.get('page')
+        page_number = self.request.GET.get('page', 1)
         context['table_paginator_obj'] = context['table_paginator'].get_page(page_number)
         context['all_articles'] = context['table_paginator_obj']
-
+        context['set_query'] = ''
+        for req in self.request.GET:
+            if req != 'page':
+                context['set_query'] += f'&{req}={self.request.GET.get(req)}'
         context['vputi'] = 'В пути'
         context['pribil'] = 'Прибыл в РФ'
         if self.message['update']:
@@ -226,11 +264,10 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)
                         for old in old_articles:
-                            if old.article == article and old.name_goods == name_goods and old.time_from_china == make_aware(time_from_china):
+                            if old.article == article and old.name_goods == name_goods and old.weight == weight and old.time_from_china == make_aware(time_from_china):
                                 check = True
                                 old.carrier = carrier
                                 old.number_of_seats = number_of_seats
-                                old.weight = weight
                                 old.volume = volume
                                 old.transportation_tariff = transportation_tariff
                                 old.cost_goods = cost_goods
@@ -525,6 +562,11 @@ def edit_article_in_table(request, article_id):
                                             if article.time_cargo_release else article.time_cargo_release,
                                         })
     return render(request, 'analytics/components/modal/htmxModalEditArticleForLogist.html', {'article': article, 'form_article': form_article})
+
+
+def delete_article_in_table(request, article_id):
+    article = CargoArticle.objects.get(pk=article_id)
+    return render(request, 'analytics/components/modal/htmxModalDeleteArticleForLogist.html', {'article': article})
 
 
 def change_article_for_manager(request, article_id):

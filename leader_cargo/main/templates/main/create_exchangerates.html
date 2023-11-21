@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid">
         <h2>Установка курса валют</h2>
         <form action="{% url 'main:create_exchangerates' %}" method="post" id="create-exchangerates-form">
                 <span class="text-danger">{{ form.non_field_errors }}</span>

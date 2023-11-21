@@ -1,47 +1,6 @@
-<div class="modal fade" id="edit-table-article-{{ article.pk }}" tabindex="-1" aria-labelledby="edit-table-article-Label-{{ article.pk }}" aria-hidden="true">
-    <div class="modal-dialog ">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="edit-table-article-Label-{{ article.pk }}">Редактирование груза<br>{{ article.article }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                {% for fm in form_article %}
-                {% if fm.art == article.pk %}
-                <form method="post" id="edit-{{ article.pk }}" action="{% url 'analytics:edit_table_article' article.pk %}?{{ request.META.QUERY_STRING }}">
-                    {% csrf_token %}
-                    {% for line in fm.f %}
-                    {{ line.label }}
-                    {{ line }}<br>
-                    {% endfor %}
-                </form>
-                {% endif %}
-                {% endfor %}
-            </div>
-            <div class="modal-footer">
-                <button form="edit-{{ article.pk }}" type="submit" class="btn btn-primary">Изменить</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
+<div class="modal fade" id="edit" tabindex="-1" aria-labelledby="table-article-Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-edit-article-for-logist">
         </div>
     </div>
 </div>
-<script>
-let maskOptions = {
-        mask: Number,
-        padFractionalZeros: false,  // if true, then pads zeros at end to the length of scale
-        normalizeZeros: true,  // appends or removes zeros at ends
-        radix: ',',  // fractional delimiter
-        mapToRadix: ['.'],
-        min: 0,
-        max: 10000000000,
-        thousandsSeparator: ' '
-};
-let element = document.querySelectorAll('input[id="id_prr"]');
-for (let i = 0; i < element.length; i++){
-        let mask = IMask(element[i], maskOptions);
-}
-let element2 = document.querySelectorAll('input[id="id_tat_cost"]');
-for (let i = 0; i < element2.length; i++){
-        let mask = IMask(element2[i], maskOptions);
-}
-</script>
