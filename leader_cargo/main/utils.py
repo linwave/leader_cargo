@@ -192,6 +192,10 @@ class DataMixin:
             except TypeError:
                 curs.yuan = ""
             try:
+                curs.yuan_non_cash = str(format(float(curs.yuan_non_cash), '.2f'))
+            except TypeError:
+                curs.yuan_non_cash = ""
+            try:
                 curs.dollar = str(format(float(curs.dollar), '.2f'))
             except TypeError:
                 curs.dollar = ""

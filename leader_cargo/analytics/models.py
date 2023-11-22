@@ -84,6 +84,9 @@ class CargoArticle(models.Model):
 
     cargo_id = models.ForeignKey('CargoFiles', on_delete=models.PROTECT)
 
+    transportation_tariff_with_factor = models.IntegerField(verbose_name='Тариф перевозки с коэффициентом', blank=True, null=True)
+    total_cost_with_factor = models.IntegerField(verbose_name='Итоговая стоимость перевозки с коэффициентом', blank=True, null=True)
+
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=50, default='В пути', choices=statuses, verbose_name='Статус', blank=True, null=True)

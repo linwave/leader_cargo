@@ -413,9 +413,10 @@ body{
     font-size: 26px;
     font-weight: 600;
     margin: 20px;
-
 }
-
+.home-section .home-content .text i{
+    padding: 8px;
+}
 
 
 
@@ -436,7 +437,7 @@ body{
     width: 330px
 }
 #create-exchangerates-form{
-    width: 330px
+    width: 300px
 }
 .password-container{
     position: relative;

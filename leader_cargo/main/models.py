@@ -117,7 +117,8 @@ class CustomUser(AbstractUser):
 
 
 class ExchangeRates(models.Model):
-    yuan = models.FloatField(verbose_name='Курс ¥', blank=True, null=True)
+    yuan = models.FloatField(verbose_name='Курс ¥ на карты', blank=True, null=True)
+    yuan_non_cash = models.FloatField(verbose_name='Курс ¥ по безналичному', blank=True, null=True)
     dollar = models.FloatField(verbose_name='Курс $', blank=True, null=True)
     time_create = models.DateTimeField(auto_now_add=True)
 

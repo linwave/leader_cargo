@@ -450,6 +450,7 @@ class AddExchangeRatesView(LoginRequiredMixin, DataMixin, CreateView):
         curs = self.get_last_currency_dollar_and_yuan()
         if curs:
             initial_base['yuan'] = curs.yuan
+            initial_base['yuan_non_cash'] = curs.yuan_non_cash
             initial_base['dollar'] = curs.dollar
         return initial_base
 

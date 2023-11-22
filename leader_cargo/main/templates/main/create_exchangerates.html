@@ -14,6 +14,9 @@
                 <label class="form-label">{{ form.yuan.label }}:</label>
                 {{ form.yuan }}<br>
                 <div class="text-danger">{{ form.yuan.errors }}</div>
+                <label class="form-label">{{ form.yuan_non_cash.label }}:</label>
+                {{ form.yuan_non_cash }}<br>
+                <div class="text-danger">{{ form.yuan_non_cash.errors }}</div>
                 <label class="form-label">{{ form.dollar.label }}:</label>
                 {{ form.dollar }}<br>
                 <div class="text-danger">{{ form.dollar.errors }}</div>
@@ -24,5 +27,6 @@
 <script>
 yuan_pattern()
 dollar_pattern()
+yuan_non_cash_pattern()
 </script>
 {% endblock %}
