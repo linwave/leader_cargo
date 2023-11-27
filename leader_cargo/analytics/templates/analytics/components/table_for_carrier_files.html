@@ -124,7 +124,7 @@
             <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>
             <td>{{ article.packaging_cost|default:"" }}</td>
             <td>{{ article.time_from_china|date:"d F Y" }}</td>
-            <td>${{ article.total_cost|floatformat:"0g"}}</td>
+            <td>${{ article.get_short_name_total_cost|floatformat:"0g"}}</td>
             <td>{% if article.address_transportation_cost %}${%endif%}{{ article.address_transportation_cost|default:""|floatformat:"1g"}}</td>
             {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
             <td data-bs-toggle="modal" data-bs-target="#edit"

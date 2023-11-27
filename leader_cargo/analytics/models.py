@@ -84,8 +84,8 @@ class CargoArticle(models.Model):
 
     cargo_id = models.ForeignKey('CargoFiles', on_delete=models.PROTECT)
 
-    transportation_tariff_with_factor = models.IntegerField(verbose_name='Тариф перевозки с коэффициентом', blank=True, null=True)
-    total_cost_with_factor = models.IntegerField(verbose_name='Итоговая стоимость перевозки с коэффициентом', blank=True, null=True)
+    transportation_tariff_with_factor = models.FloatField(verbose_name='Тариф перевозки с коэффициентом', blank=True, null=True)
+    total_cost_with_factor = models.FloatField(verbose_name='Итоговая стоимость перевозки с коэффициентом', blank=True, null=True)
 
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
@@ -109,7 +109,14 @@ class CargoArticle(models.Model):
             return None
 
     def get_short_name_transportation_tariff(self):
+        if self.transportation_tariff_with_factor:
+            return round(self.transportation_tariff_with_factor, 2)
         return self.transportation_tariff.replace('+', ' +')
+
+    def get_short_name_total_cost(self):
+        if self.total_cost_with_factor:
+            return self.total_cost_with_factor
+        return self.total_cost
 
     def get_number_of_days_on_the_way(self):
         if self.time_cargo_arrival_to_RF and self.time_from_china:

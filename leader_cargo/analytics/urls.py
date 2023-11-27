@@ -7,9 +7,9 @@ from . import views
 app_name = 'analytics'
 
 urlpatterns = [
-    path('logistic-requests/', views.LogisticRateView.as_view(), name='logistic-requests'),
-    path('logistic-requests/add', views.LogisticRateView.as_view(), name='add_logistic-requests'),
-    path('logistic-requests/edit/<int:request_id>', views.LogisticRateView.as_view(), name='edit_logistic-requests'),
+    path('logistic-requests/', views.LogisticRequestsView.as_view(), name='logistic-requests'),
+    path('logistic-requests/add', views.LogisticRequestsAddView.as_view(), name='add_logistic-requests'),
+    path('logistic-requests/edit/<int:request_id>', views.LogisticRequestsView.as_view(), name='edit_logistic-requests'),
 
     path('calculator/', views.LogisticCalculatorView.as_view(), name='calculator'),
 

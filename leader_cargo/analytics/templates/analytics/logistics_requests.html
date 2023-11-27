@@ -7,21 +7,21 @@
 {% block content %}
 
 
-<div class="container">
-    <div class="row g-2 justify-content-left">
-        <div class="col-auto">
-            <a type="button" class="btn btn-success" href="{% url 'analytics:add_logistic-requests' %}">
-                Отправить запрос
-            </a>
-        </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-secondary"
-                    data-bs-toggle="collapse" data-bs-target="#collapseDraft" aria-expanded="false" aria-controls="collapseDraft"
-                    hx-get="{% url 'analytics:logistic-requests' %}" hx-trigger="click" hx-target="#collapseDraft">
-                Черновики
-            </button>
-        </div>
+<div class="container-fluid">
+<div class="row g-2 mb-2 justify-content-left">
+    <div class="col-auto">
+        <a type="button" class="btn btn-sm btn-success" href="{% url 'analytics:add_logistic-requests' %}">
+            <i class="fa-solid fa-share"></i> Отправить запрос
+        </a>
     </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-sm btn-secondary"
+                data-bs-toggle="collapse" data-bs-target="#collapseDraft" aria-expanded="false" aria-controls="collapseDraft"
+                hx-get="{% url 'analytics:logistic-requests' %}" hx-trigger="click" hx-target="#collapseDraft">
+            <i class="fa-solid fa-trash"></i> Черновики
+        </button>
+    </div>
+</div>
 </div>
 <div class="collapse" id="collapseDraft">
 </div>

@@ -17,7 +17,7 @@ import openpyxl
 import xlrd
 
 
-class LogisticRateView(LoginRequiredMixin, DataMixin, TemplateView):
+class LogisticRequestsView(LoginRequiredMixin, DataMixin, TemplateView):
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
     template_name = 'analytics/logistics_requests.html'
     login_url = reverse_lazy('main:login')
@@ -48,7 +48,41 @@ class LogisticRateView(LoginRequiredMixin, DataMixin, TemplateView):
         else:
             if request.user.role in self.role_have_perm:
                 return super().dispatch(request, *args, **kwargs)
+            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
+
+
+class LogisticRequestsAddView(LoginRequiredMixin, DataMixin, TemplateView):
+    role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
+    template_name = 'analytics/logistics_requests.html'
+    login_url = reverse_lazy('main:login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reports'] = RequestsForLogisticsCalculations.objects.all()
+        context['table_paginator'] = Paginator(context['reports'], 20)
+        page_number = self.request.GET.get('page')
+        context['table_paginator_obj'] = context['table_paginator'].get_page(page_number)
+        context['reports'] = context['table_paginator_obj']
+
+        if self.request.user.role == 'Логист':
+            c_def = self.get_user_context(title="Запросы логисту")
+        else:
+            c_def = self.get_user_context(title="Запросы на просчет")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_template_names(self):
+        if self.request.htmx.target == 'collapseDraft':
+            return "analytics/components/collapse/collapseDraft.html"
+        else:
+            return self.template_name
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
             return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
 
 class LogisticCalculatorView(LoginRequiredMixin, DataMixin, TemplateView):
@@ -230,6 +264,11 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
         self.message['warning_articles'] = []
         self.message['info_articles'] = []
         self.message['error'] = []
+        self.factor_kg_01 = 0.1
+        self.factor_kg_02 = 0.2
+        self.factor_volume_10 = 10
+        self.factor_volume_20 = 20
+
         try:
             if file_carrier.name_carrier == 'Ян':
                 carrier = 'Ян'
@@ -261,6 +300,20 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                             except TypeError:
                                 time_from_china = sheet[3][6].value
                         total_cost = str(sheet[row][13].value) if sheet[row][13].value else ""
+                        try:
+                            if sheet[row][6].value > 60:
+                                transportation_tariff_with_factor = float(sheet[row][6].value + self.factor_volume_10)
+                            else:
+                                transportation_tariff_with_factor = float(sheet[row][6].value + self.factor_kg_01)
+                        except TypeError:
+                            transportation_tariff_with_factor = None
+                        if transportation_tariff_with_factor:
+                            if sheet[row][6].value > 60:
+                                total_cost_with_factor = float(total_cost) + self.factor_volume_10 * float(volume)
+                            else:
+                                total_cost_with_factor = float(total_cost) + self.factor_kg_01 * float(weight)
+                        else:
+                            total_cost_with_factor = None
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)
                         for old in old_articles:
@@ -270,6 +323,9 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                                 old.number_of_seats = number_of_seats
                                 old.volume = volume
                                 old.transportation_tariff = transportation_tariff
+                                if old.transportation_tariff_with_factor:
+                                    old.transportation_tariff_with_factor = transportation_tariff_with_factor
+                                    old.total_cost_with_factor = total_cost_with_factor
                                 old.cost_goods = cost_goods
                                 old.insurance_cost = insurance_cost
                                 old.packaging_cost = packaging_cost
@@ -289,11 +345,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                                 weight=weight,
                                 volume=volume,
                                 transportation_tariff=transportation_tariff,
+                                transportation_tariff_with_factor=transportation_tariff_with_factor,
                                 cost_goods=cost_goods,
                                 insurance_cost=insurance_cost,
                                 packaging_cost=packaging_cost,
                                 time_from_china=make_aware(time_from_china),
                                 total_cost=total_cost,
+                                total_cost_with_factor=total_cost_with_factor,
                                 cargo_id=file_carrier,
                                 address_transportation_cost=address_transportation_cost,
                             )
@@ -348,7 +406,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                 else:
                     dataframe = openpyxl.load_workbook(f"{os.getcwd()}/leader_cargo/media/{file_carrier.file_path}", data_only=True)
                 sheet = dataframe.active
-                for row in range(782, sheet.max_row):
+                for row in range(820, sheet.max_row):
                     if sheet[row][4].value and sheet[row][3].value and sheet[row][2].value:
                         article = str(sheet[row][4].value)
                         name_goods = str(sheet[row][6].value) if sheet[row][6].value else ""
@@ -364,6 +422,20 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                         except TypeError:
                             time_from_china = sheet[row][3].value
                         total_cost = str(sheet[row][16].value) if sheet[row][16].value else ""
+                        try:
+                            if round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) > 60:
+                                transportation_tariff_with_factor = float(round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) + self.factor_volume_20)
+                            else:
+                                transportation_tariff_with_factor = float(round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) + self.factor_kg_02)
+                        except TypeError:
+                            transportation_tariff_with_factor = None
+                        if transportation_tariff_with_factor:
+                            if round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) > 60:
+                                total_cost_with_factor = float(total_cost) + self.factor_volume_20 * float(volume)
+                            else:
+                                total_cost_with_factor = float(total_cost) + self.factor_kg_02 * float(weight)
+                        else:
+                            total_cost_with_factor = None
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)
                         for old in old_articles:
@@ -381,11 +453,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                                 weight=weight,
                                 volume=volume,
                                 transportation_tariff=transportation_tariff,
+                                transportation_tariff_with_factor=transportation_tariff_with_factor,
                                 cost_goods=cost_goods,
                                 insurance_cost=insurance_cost,
                                 packaging_cost=packaging_cost,
                                 time_from_china=make_aware(time_from_china),
                                 total_cost=total_cost,
+                                total_cost_with_factor=total_cost_with_factor,
                                 cargo_id=file_carrier,
                             )
                             self.message['success_articles'].append(article)
@@ -424,6 +498,20 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                         except TypeError:
                             time_from_china = sheet[row][1].value if sheet[row][1].value else ""
                         total_cost = str(sheet[row][18].value) if sheet[row][18].value else ""
+                        try:
+                            if sheet[row][15].value > 60:
+                                transportation_tariff_with_factor = float(sheet[row][15].value + self.factor_volume_20)
+                            else:
+                                transportation_tariff_with_factor = float(sheet[row][15].value + self.factor_kg_02)
+                        except TypeError:
+                            transportation_tariff_with_factor = None
+                        if transportation_tariff_with_factor:
+                            if sheet[row][15].value > 60:
+                                total_cost_with_factor = float(total_cost) + self.factor_volume_20 * float(volume)
+                            else:
+                                total_cost_with_factor = float(total_cost) + self.factor_kg_02 * float(weight)
+                        else:
+                            total_cost_with_factor = None
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)
                         for old in old_articles:
@@ -440,11 +528,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                                 weight=weight,
                                 volume=volume,
                                 transportation_tariff=transportation_tariff,
+                                transportation_tariff_with_factor=transportation_tariff_with_factor,
                                 cost_goods=cost_goods,
                                 insurance_cost=insurance_cost,
                                 packaging_cost=packaging_cost,
                                 time_from_china=make_aware(time_from_china),
                                 total_cost=total_cost,
+                                total_cost_with_factor=total_cost_with_factor,
                                 cargo_id=file_carrier,
                             )
                             self.message['success_articles'].append(article)
