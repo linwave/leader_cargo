@@ -301,10 +301,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                                 time_from_china = sheet[3][6].value
                         total_cost = str(sheet[row][13].value) if sheet[row][13].value else ""
                         try:
-                            if sheet[row][6].value > 60:
-                                transportation_tariff_with_factor = float(sheet[row][6].value + self.factor_volume_10)
+                            if time_from_china >= datetime.datetime.strptime('21.11.2023', '%d.%m.%Y'):
+                                if sheet[row][6].value > 60:
+                                    transportation_tariff_with_factor = float(sheet[row][6].value + self.factor_volume_10)
+                                else:
+                                    transportation_tariff_with_factor = float(sheet[row][6].value + self.factor_kg_01)
                             else:
-                                transportation_tariff_with_factor = float(sheet[row][6].value + self.factor_kg_01)
+                                transportation_tariff_with_factor = None
                         except TypeError:
                             transportation_tariff_with_factor = None
                         if transportation_tariff_with_factor:
@@ -406,7 +409,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                 else:
                     dataframe = openpyxl.load_workbook(f"{os.getcwd()}/leader_cargo/media/{file_carrier.file_path}", data_only=True)
                 sheet = dataframe.active
-                for row in range(820, sheet.max_row):
+                for row in range(790, sheet.max_row):
                     if sheet[row][4].value and sheet[row][3].value and sheet[row][2].value:
                         article = str(sheet[row][4].value)
                         name_goods = str(sheet[row][6].value) if sheet[row][6].value else ""
@@ -423,10 +426,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                             time_from_china = sheet[row][3].value
                         total_cost = str(sheet[row][16].value) if sheet[row][16].value else ""
                         try:
-                            if round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) > 60:
-                                transportation_tariff_with_factor = float(round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) + self.factor_volume_20)
+                            if time_from_china >= datetime.datetime.strptime('21.11.2023', '%d.%m.%Y'):
+                                if round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) > 60:
+                                    transportation_tariff_with_factor = float(round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) + self.factor_volume_20)
+                                else:
+                                    transportation_tariff_with_factor = float(round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) + self.factor_kg_02)
                             else:
-                                transportation_tariff_with_factor = float(round(float(sheet[row][12].value) / float(sheet[row][8].value), 2) + self.factor_kg_02)
+                                transportation_tariff_with_factor = None
                         except TypeError:
                             transportation_tariff_with_factor = None
                         if transportation_tariff_with_factor:
@@ -499,10 +505,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                             time_from_china = sheet[row][1].value if sheet[row][1].value else ""
                         total_cost = str(sheet[row][18].value) if sheet[row][18].value else ""
                         try:
-                            if sheet[row][15].value > 60:
-                                transportation_tariff_with_factor = float(sheet[row][15].value + self.factor_volume_20)
+                            if time_from_china >= datetime.datetime.strptime('21.11.2023', '%d.%m.%Y'):
+                                if sheet[row][15].value > 60:
+                                    transportation_tariff_with_factor = float(sheet[row][15].value + self.factor_volume_20)
+                                else:
+                                    transportation_tariff_with_factor = float(sheet[row][15].value + self.factor_kg_02)
                             else:
-                                transportation_tariff_with_factor = float(sheet[row][15].value + self.factor_kg_02)
+                                transportation_tariff_with_factor = None
                         except TypeError:
                             transportation_tariff_with_factor = None
                         if transportation_tariff_with_factor:
