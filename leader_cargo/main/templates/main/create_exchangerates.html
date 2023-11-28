@@ -11,13 +11,19 @@
                 <span class="text-danger">{{ form.non_field_errors }}</span>
                 {% csrf_token %}
                 <h5 class="fw-bold">{{ today }}</h5>
-                <label class="form-label">{{ form.yuan.label }}:</label>
+                <label class="form-label" style="font-weight: 600;">{{ form.yuan_cash_M.label }} <i class="fa-solid fa-money-bill-wave"></i>:</label>
+                {{ form.yuan_cash_M }}<br>
+                <div class="text-danger">{{ form.yuan_cash_M.errors }}</div>
+                <label class="form-label" style="font-weight: 600;">{{ form.yuan_cash_K.label }} <i class="fa-solid fa-money-bill-wave"></i>:</label>
+                {{ form.yuan_cash_K }}<br>
+                <div class="text-danger">{{ form.yuan_cash_K.errors }}</div>
+                <label class="form-label" style="font-weight: 600;">{{ form.yuan.label }} <i class="fa-solid fa-credit-card" style=""></i>:</label>
                 {{ form.yuan }}<br>
                 <div class="text-danger">{{ form.yuan.errors }}</div>
-                <label class="form-label">{{ form.yuan_non_cash.label }}:</label>
+                <label class="form-label" style="font-weight: 600;">{{ form.yuan_non_cash.label }} <i class="fa-solid fa-file-invoice"></i>:</label>
                 {{ form.yuan_non_cash }}<br>
                 <div class="text-danger">{{ form.yuan_non_cash.errors }}</div>
-                <label class="form-label">{{ form.dollar.label }}:</label>
+                <label class="form-label" style="font-weight: 600;">Курс <i class="fa-solid fa-dollar-sign"></i>:</label>
                 {{ form.dollar }}<br>
                 <div class="text-danger">{{ form.dollar.errors }}</div>
                 <button type="submit" class="btn btn-success">Сохранить</button>
@@ -25,6 +31,46 @@
         </form>
 </div>
 <script>
+function yuan_cash_M_pattern(){
+    var yuan = document.getElementById('yuan_cash_M');
+    var yuan_options = {
+    mask: Number,  // enable number mask
+
+    // other options are optional with defaults below
+    scale: 2,  // digits after point, 0 for integers
+    thousandsSeparator: '',  // any single char
+    padFractionalZeros: false,  // if true, then pads zeros at end to the length of scale
+    normalizeZeros: true,  // appends or removes zeros at ends
+    radix: '.',  // fractional delimiter
+    mapToRadix: ['.'],  // symbols to process as radix
+
+    // additional number interval options (e.g.)
+    min: -100,
+    max: 100
+};
+var mask_yuan = IMask(yuan_cash_M, yuan_options);
+}
+function yuan_cash_K_pattern(){
+    var yuan = document.getElementById('yuan_cash_K');
+    var yuan_options = {
+    mask: Number,  // enable number mask
+
+    // other options are optional with defaults below
+    scale: 2,  // digits after point, 0 for integers
+    thousandsSeparator: '',  // any single char
+    padFractionalZeros: false,  // if true, then pads zeros at end to the length of scale
+    normalizeZeros: true,  // appends or removes zeros at ends
+    radix: '.',  // fractional delimiter
+    mapToRadix: ['.'],  // symbols to process as radix
+
+    // additional number interval options (e.g.)
+    min: -100,
+    max: 100
+};
+var mask_yuan = IMask(yuan_cash_K, yuan_options);
+}
+yuan_cash_M_pattern()
+yuan_cash_K_pattern()
 yuan_pattern()
 dollar_pattern()
 yuan_non_cash_pattern()

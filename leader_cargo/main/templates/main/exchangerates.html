@@ -18,9 +18,11 @@
                     <div class="col-12">
                         <div class="card-body">
                             <h5 class="card-text">
-                                ¥ {{ currency.yuan|default:"-" }}<br>
-                                ¥ {{ currency.yuan_non_cash|default:"-" }}<br>
-                                $ {{ currency.dollar|default:"-" }}<br>
+                                <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-money-bill-wave"></i> M {{ currency.yuan_cash_M|default:"-" }}<br>
+                                <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-money-bill-wave"></i> K {{ currency.yuan_cash_K|default:"-" }}<br>
+                                <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-credit-card" style=""></i> {{ currency.yuan|default:"-" }}<br>
+                                <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-file-invoice"></i> {{ currency.yuan_non_cash|default:"-" }}<br>
+                                <i class="fa-solid fa-dollar-sign"></i> {{ currency.dollar|default:"-" }}<br>
                             </h5>
                             <p class="card-text"><small class="text-muted">{{ currency.time_create }}</small></p>
                         </div>

@@ -117,13 +117,16 @@ class CustomUser(AbstractUser):
 
 
 class ExchangeRates(models.Model):
+    yuan_cash_M = models.FloatField(verbose_name='Курс ¥ Наличка Москва', blank=True, null=True)
+    yuan_cash_K = models.FloatField(verbose_name='Курс ¥ Наличка Краснодар', blank=True, null=True)
     yuan = models.FloatField(verbose_name='Курс ¥ на карты', blank=True, null=True)
-    yuan_non_cash = models.FloatField(verbose_name='Курс ¥ по безналичному', blank=True, null=True)
+    yuan_non_cash = models.FloatField(verbose_name='Курс ¥ по безналичному р/с', blank=True, null=True)
     dollar = models.FloatField(verbose_name='Курс $', blank=True, null=True)
     time_create = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.time_create} {self.yuan} {self.dollar}"
+        return f"{self.time_create} Наличка Москва - {self.yuan_cash_M} Наличка Краснодар - {self.yuan_cash_K}" \
+               f"На карты - {self.yuan} По безналичному р/с - {self.yuan_non_cash} Курс $ - {self.dollar}"
 
     class Meta:
         verbose_name = 'Курсы валют'

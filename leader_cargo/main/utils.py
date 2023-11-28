@@ -2,7 +2,6 @@ import datetime
 
 from .models import ExchangeRates
 
-
 categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки']
 
 menu = {
@@ -10,6 +9,8 @@ menu = {
 
     'Учет грузов': {'title': 'Учет грузов', 'url_name': 'analytics:carrier', 'short_url': 'carrier', 'display': True,
                     'category_name': categories[1], 'menu_role': 'sub'},
+    'Запрос логисту': {'title': 'Запрос логисту', 'url_name': 'analytics:logistic-requests', 'short_url': 'logistic-requests', 'display': False,
+                       'category_name': categories[1], 'menu_role': 'sub'},
     'Запросы на просчет': {'title': 'Запросы на просчет', 'url_name': 'analytics:logistic-requests', 'short_url': 'logistic-requests', 'display': False,
                            'category_name': categories[1], 'menu_role': 'sub'},
     'Калькулятор логистики': {'title': 'Калькулятор логистики', 'url_name': 'analytics:calculator', 'short_url': 'calculator', 'display': False,
@@ -77,6 +78,7 @@ menu_rop = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
+        # 'sub_menu': [menu['Запрос логисту']]
         'sub_menu': []
     },
     {
@@ -117,6 +119,7 @@ menu_manager = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
+        # 'sub_menu': [menu['Запрос логисту']]
         'sub_menu': []
     },
     {
@@ -150,6 +153,7 @@ menu_logist = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
+        # 'sub_menu': [menu['Запросы на просчет']]
         'sub_menu': []
     },
     {
@@ -187,6 +191,14 @@ class DataMixin:
     def get_last_currency_dollar_and_yuan():
         try:
             curs = ExchangeRates.objects.filter(time_create__date=datetime.date.today())[:1][0]
+            try:
+                curs.yuan_cash_M = str(format(float(curs.yuan_cash_M), '.2f'))
+            except TypeError:
+                curs.yuan_cash_M = ""
+            try:
+                curs.yuan_cash_K = str(format(float(curs.yuan_cash_K), '.2f'))
+            except TypeError:
+                curs.yuan_cash_K = ""
             try:
                 curs.yuan = str(format(float(curs.yuan), '.2f'))
             except TypeError:

@@ -400,25 +400,37 @@ class CardClientsForm(ModelForm):
 class AddExchangeRatesForm(ModelForm):
     class Meta:
         model = ExchangeRates
-        fields = ["yuan", "yuan_non_cash", "dollar"]
+        fields = ["yuan_cash_M", "yuan_cash_K", "yuan", "yuan_non_cash", "dollar"]
         widgets = {
+            "yuan_cash_M": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'yuan_cash_M',
+                'type': 'text',
+                'placeholder': "Курс юаня по наличке Москва",
+            }),
+            "yuan_cash_K": TextInput(attrs={
+                'class': 'form-control',
+                'id': 'yuan_cash_K',
+                'type': 'text',
+                'placeholder': "Курс юаня по наличке Краснодар",
+            }),
             "yuan": TextInput(attrs={
                 'class': 'form-control',
                 'id': 'yuan',
                 'type': 'text',
-                'placeholder': "Введите курс юаня 00,00 на карты ",
+                'placeholder': "Курс юаня по карте",
             }),
             "yuan_non_cash": TextInput(attrs={
                 'class': 'form-control',
                 'id': 'yuan_non_cash',
                 'type': 'text',
-                'placeholder': "Введите курс юаня 00,00 по безналу",
+                'placeholder': "Курс юаня по безналу",
             }),
             "dollar": TextInput(attrs={
                 'class': 'form-control',
                 'id': 'dollar',
                 'type': 'text',
-                'placeholder': "Введите курс доллара 000,00",
+                'placeholder': "Курс доллара 000,00",
             }),
         }
 
