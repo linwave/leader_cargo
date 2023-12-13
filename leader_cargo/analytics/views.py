@@ -124,29 +124,30 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context['all_articles'] = CargoArticle.objects.all()
-        context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
-        context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
-        context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
-        context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
-        context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=11))).values('article', 'time_from_china')
-        context['new_all_articles_without_insurance'] = []
-        for art in context['all_articles_without_insurance']:
-            if float(art.weight.replace(" ", "").replace(",", ".")) > 10:
-                context['new_all_articles_without_insurance'].append(art)
-        context['all_articles_without_insurance'] = context['new_all_articles_without_insurance']
-        context['count_articles_without_insurance'] = len(context['all_articles_without_insurance'])
+        if self.request.user.role == 'Логист' or self.request.user.role == 'Супер Администратор':
+            context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
+            if 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100) == 100 and context['count_empty_responsible_manager'] != 0:
+                context['pb_count_empty_responsible_manager'] = 99
+            else:
+                context['pb_count_empty_responsible_manager'] = 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100)
+            context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
+            if 100 - int(context['count_empty_path_format'] / context['all_articles'].count() * 100) == 100 and context['count_empty_path_format'] != 0:
+                context['pb_count_empty_path_format'] = 99
+            else:
+                context['pb_count_empty_path_format'] = 100 - int(context['count_empty_path_format'] / context['all_articles'].count() * 100)
+            context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
+            context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
+            context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=11))).values('article', 'weight', 'time_from_china')
+            context['new_all_articles_without_insurance'] = []
+            for art in context['all_articles_without_insurance']:
+                if float(art['weight'].replace(" ", "").replace(",", ".")) > 10:
+                    context['new_all_articles_without_insurance'].append(art)
+            context['all_articles_without_insurance'] = context['new_all_articles_without_insurance']
+            context['count_articles_without_insurance'] = len(context['all_articles_without_insurance'])
+
         context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
         context['all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None)
         context['count_all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None).count()
-
-        if 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100) == 100 and context['count_empty_responsible_manager'] != 0:
-            context['pb_count_empty_responsible_manager'] = 99
-        else:
-            context['pb_count_empty_responsible_manager'] = 100 - int(context['count_empty_responsible_manager'] / context['all_articles'].count() * 100)
-        if 100 - int(context['count_empty_path_format'] / context['all_articles'].count() * 100) == 100 and context['count_empty_path_format'] != 0:
-            context['pb_count_empty_path_format'] = 99
-        else:
-            context['pb_count_empty_path_format'] = 100 - int(context['count_empty_path_format'] / context['all_articles'].count() * 100)
 
         if self.request.user.role == 'Менеджер':
             context['all_articles'] = context['all_articles'].filter(responsible_manager=f'{self.request.user.pk}')
