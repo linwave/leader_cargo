@@ -53,7 +53,7 @@ class LogisticRequestsView(LoginRequiredMixin, DataMixin, TemplateView):
 
 class LogisticRequestsAddView(LoginRequiredMixin, DataMixin, TemplateView):
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
-    template_name = 'analytics/logistics_requests.html'
+    template_name = 'analytics/logistics_requests_add.html'
     login_url = reverse_lazy('main:login')
 
     def get_context_data(self, *, object_list=None, **kwargs):
@@ -63,6 +63,7 @@ class LogisticRequestsAddView(LoginRequiredMixin, DataMixin, TemplateView):
         page_number = self.request.GET.get('page')
         context['table_paginator_obj'] = context['table_paginator'].get_page(page_number)
         context['reports'] = context['table_paginator_obj']
+        context['goods'] = context['table_paginator_obj']
 
         if self.request.user.role == 'Логист':
             c_def = self.get_user_context(title="Запросы логисту")
@@ -71,10 +72,7 @@ class LogisticRequestsAddView(LoginRequiredMixin, DataMixin, TemplateView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):
-        if self.request.htmx.target == 'collapseDraft':
-            return "analytics/components/collapse/collapseDraft.html"
-        else:
-            return self.template_name
+        return self.template_name
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -130,8 +128,13 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
         context['count_empty_path_format'] = context['all_articles'].filter(path_format=None).count()
         context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
         context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
-        context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=11))).values('article',                                                                                                                                                                                           'time_from_china')
-        context['count_articles_without_insurance'] = context['all_articles_without_insurance'].count()
+        context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=11))).values('article', 'time_from_china')
+        context['new_all_articles_without_insurance'] = []
+        for art in context['all_articles_without_insurance']:
+            if float(art.weight.replace(" ", "").replace(",", ".")) > 10:
+                context['new_all_articles_without_insurance'].append(art)
+        context['all_articles_without_insurance'] = context['new_all_articles_without_insurance']
+        context['count_articles_without_insurance'] = len(context['all_articles_without_insurance'])
         context['count_notifications'] = context['all_articles'].filter(status='Прибыл в РФ').filter(time_cargo_release=None).count()
         context['all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None)
         context['count_all_articles_not_issued'] = context['all_articles'].filter(paid_by_the_client_status='Оплачено полностью').filter(time_cargo_release=None).count()
