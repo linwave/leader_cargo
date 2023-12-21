@@ -70,8 +70,8 @@ function edit_func_input(value, name, form){
             <th scope="col">Сумма КП</th>
             <th scope="col">Оплачено/КП</th>
             <th scope="col">Теплые лиды</th>
-            <th scope="col">Сделки по теплым лидам</th>
-            <th scope="col">Конверсия ТЛ</th>
+            <th scope="col">Вес отправ.</th>
+            <th scope="col">Объем отправ.</th>
             <th scope="col">Звонков</th>
             <th scope="col">Время исх/вх</th>
             <th scope="col">Время в среднем</th>
@@ -95,8 +95,10 @@ function edit_func_input(value, name, form){
             <td>{{ value.sum_CP|default:"0"|floatformat:"0g" }}</td>
             <td>{{ value.paid_CP|default:"0"|floatformat:"0g" }}</td>
             <td>{{ value.warm_clients|default:"0"|floatformat:"0g" }}</td>
-            <td>{{ value.warm_clients_success|default:"0"|floatformat:"0g" }}</td>
-            <td>{{ value.conversion|default:"0"|floatformat:"0g" }} %</td>
+<!--            <td>{{ value.warm_clients_success|default:"0"|floatformat:"0g" }}</td>-->
+<!--            <td>{{ value.conversion|default:"0"|floatformat:"0g" }} %</td>-->
+            <td>{{ value.weight|default:"0"|floatformat:"2g" }}</td>
+            <td>{{ value.volume|default:"0"|floatformat:"2g" }}</td>
             <td>{{ value.sum_calls|default:"0"|floatformat:"0g" }}</td>
             <td>{{ value.sum_duration_calls|default:"0"|floatformat:"0g" }}</td>
             <td>{{ value.average_duration_calls|default:"0"|floatformat:"2g" }}</td>

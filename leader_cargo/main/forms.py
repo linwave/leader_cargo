@@ -14,8 +14,7 @@ class RopReportForm(ModelForm):
     class Meta:
         model = ManagersReports
         fields = ["net_profit_to_the_company", "raised_funds_to_the_company", "number_of_new_clients_attracted", "number_of_applications_to_buyers",
-                  "amount_of_issued_CP", "number_of_incoming_quality_applications", "number_of_completed_transactions_based_on_orders", "number_of_shipments_sent",
-                  "number_of_goods_issued", "weight_of_goods_sent", "volume_of_cargo_sent", "number_of_calls", "duration_of_calls"]
+                  "amount_of_issued_CP", "number_of_incoming_quality_applications", "number_of_completed_transactions_based_on_orders", "number_of_calls", "duration_of_calls"]
 
 
 class EditRopReportForm(ModelForm):
@@ -27,8 +26,7 @@ class EditRopReportForm(ModelForm):
     class Meta:
         model = ManagersReports
         fields = ["net_profit_to_the_company", "raised_funds_to_the_company", "number_of_new_clients_attracted", "number_of_applications_to_buyers",
-                  "amount_of_issued_CP", "number_of_incoming_quality_applications", "number_of_completed_transactions_based_on_orders", "number_of_shipments_sent",
-                  "number_of_goods_issued", "weight_of_goods_sent", "volume_of_cargo_sent", "number_of_calls", "duration_of_calls"]
+                  "amount_of_issued_CP", "number_of_incoming_quality_applications", "number_of_completed_transactions_based_on_orders", "number_of_calls", "duration_of_calls"]
 
 
 class AddManagerPlanForm(ModelForm):

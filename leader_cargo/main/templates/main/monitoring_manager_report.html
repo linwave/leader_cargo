@@ -6,54 +6,85 @@
 
 {% block content %}
 <div class="container">
-    <form id="date_picker_in_monitoring" action="{% url 'main:monitoring_manager_report' manager.pk %}" method="get">
-        <input id="month" type="hidden" name="month" value="{{ month }}">
-        <input id="year" type="hidden" name="year" value="{{ year }}">
-        <div class="row">
-            <div class="col-auto m-2">
-                <h2>{{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h2>
-            </div>
-            <div class="col-auto m-1">
-                <input id="month_get" class="btn btn-secondary btn shadow dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" value="{{ month }}" type="button" style="font-size: 1.5rem;"/>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    {% for m in months %}
-                    {% if m %}
-                    <li><input class="dropdown-item" value="{{ m }}" name="month" type="button" onclick="edit_func_input('{{ m }}', 'month', 'date_picker_in_monitoring')"/></li>
-                    {% endif %}
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="col-auto m-1">
-                <input id="year_get" class="btn btn-secondary btn shadow dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" value="{{ year }}" type="button" style="font-size: 1.5rem;"/>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    {% for y in years %}
-                    {% if y %}
-                    <li><input class="dropdown-item" value="{{ y }}" name="year" type="button" onclick="edit_func_input('{{ y }}', 'year', 'date_picker_in_monitoring')"/></li>
-                    {% endif %}
-                    {% endfor %}
-                </ul>
-            </div>
+    <div class="row mb-1">
+        <div class="col-auto m-0">
+            <form id="date_picker_in_monitoring" action="{% url 'main:monitoring_manager_report' manager.pk %}" method="get">
+                <input id="month" type="hidden" name="month" value="{{ month }}">
+                <input id="year" type="hidden" name="year" value="{{ year }}">
+                <div class="row">
+                    <div class="col-auto m-1">
+                        <h2><i class="fa-solid fa-person"></i> {{ manager.last_name }} {{ manager.first_name }} {{ manager.patronymic }}</h2>
+                    </div>
+                    <div class="col-auto m-0">
+                        <input id="month_get" class="btn btn-secondary btn shadow dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" value="{{ month }}" type="button" style="font-size: 1.5rem;"/>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            {% for m in months %}
+                            {% if m %}
+                            <li><input class="dropdown-item" value="{{ m }}" name="month" type="button" onclick="edit_func_input('{{ m }}', 'month', 'date_picker_in_monitoring')"/></li>
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-auto m-0">
+                        <input id="year_get" class="btn btn-secondary btn shadow dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" value="{{ year }}" type="button" style="font-size: 1.5rem;"/>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            {% for y in years %}
+                            {% if y %}
+                            <li><input class="dropdown-item" value="{{ y }}" name="year" type="button" onclick="edit_func_input('{{ y }}', 'year', 'date_picker_in_monitoring')"/></li>
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                </div>
+            </form>
         </div>
-    </form>
-    <div class="row">
-        <div class="col-auto m-2">
-            <h2>План сотрудника:</h2>
+        <div class="col-auto m-1">
+            <h2><i class="fa-solid fa-calendar-check"></i> План сотрудника:</h2>
         </div>
         {% if manager_plan_value %}
         {% include "main/components/modal/modalEditPlanManager.html" %}
-        <div class="col-auto m-1">
+        <div class="col-auto m-0">
             <span class="btn btn-secondary btn shadow" role="button" data-bs-toggle="modal" data-bs-target="#edit-manager-plan" style="font-size: 1.5rem;">
                 {{ manager_plan_value|default:"0" }}
             </span>
         </div>
         {% else %}
         {% include "main/components/modal/modalAddPlanManager.html" %}
-        <div class="col-auto m-1">
+        <div class="col-auto m-0">
             <span class="btn btn-secondary btn shadow" role="button" data-bs-toggle="modal" data-bs-target="#add-manager-plan" style="font-size: 1.5rem;">
                 {{ manager_plan_value|default:"0" }}
             </span>
         </div>
         {% endif %}
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-auto m-2">
+            <h3><i class="fa-solid fa-handshake"></i> Всего сделок:</h3>
+        </div>
+        <div class="col-auto m-0">
+            <span class="btn btn-secondary btn shadow" role="button" style="font-size: 1.5rem;">
+                {{ warm_clients_success|floatformat:"0g"|default:"0" }}
+            </span>
+        </div>
+        <div class="col-auto m-2">
+            <h3><i class="fa-solid fa-truck-moving"></i> Всего отправленных:</h3>
+        </div>
+        <div class="col-auto m-0">
+            <span class="btn btn-secondary btn shadow" role="button" style="font-size: 1.5rem;">
+                {{ manager_cargo_sent_count|default:"0" }}
+            </span>
+        </div>
+        <div class="col-auto m-2">
+            <h3><i class="fa-sharp fa-solid fa-check-to-slot"></i> Всего выданных:</h3>
+        </div>
+        <div class="col-auto m-0">
+            <span class="btn btn-secondary btn shadow" role="button" style="font-size: 1.5rem;">
+                {{ manager_cargo_issued_count|default:"0" }}
+            </span>
+        </div>
     </div>
 </div>
 <div class="table-responsive m-3 scrollable" style="height:660px;">
@@ -91,10 +122,14 @@
             <th> {{ report.amount_of_issued_CP|default:"" }} </th>
             <th> {{ report.number_of_incoming_quality_applications|default:"" }} </th>
             <th> {{ report.number_of_completed_transactions_based_on_orders|default:"" }} </th>
-            <th> {{ report.number_of_shipments_sent|default:"" }} </th>
-            <th> {{ report.number_of_goods_issued|default:"" }} </th>
-            <th> {{ report.weight_of_goods_sent|default:"" }} </th>
-            <th> {{ report.volume_of_cargo_sent|default:"" }} </th>
+            {% for cargo in manager_cargo_for_every_days %}
+            {% if cargo.day == day %}
+            <th>{{ cargo.count_sent|default:""|floatformat:"0g" }}</th>
+            <th>{{ cargo.count_issued|default:""|floatformat:"0g"}}</th>
+            <th>{{ cargo.weight|default:""|floatformat:"2g" }}</th>
+            <th>{{ cargo.volume|default:""|floatformat:"2g" }}</th>
+            {% endif %}
+            {% endfor %}
             <th> {{ report.number_of_calls|default:"" }} </th>
             <th> {{ report.duration_of_calls|default:"" }} </th>
             {% endif %}
@@ -104,7 +139,16 @@
         {% include "main/components/modal/modalAddReportManager.html" %}
         <tr data-bs-toggle="modal" data-bs-target="#edit-table-report-{{ forloop.counter }}">
             <th >{{ day }}</th>
-            <th colspan="20"></th>
+            <th colspan="7"></th>
+            {% for cargo in manager_cargo_for_every_days %}
+            {% if cargo.day == day %}
+            <th>{{ cargo.count_sent|default:""|floatformat:"0g" }}</th>
+            <th>{{ cargo.count_issued|default:""|floatformat:"0g" }}</th>
+            <th>{{ cargo.weight|default:""|floatformat:"2g" }}</th>
+            <th>{{ cargo.volume|default:""|floatformat:"2g" }}</th>
+            {% endif %}
+            {% endfor %}
+            <th colspan="2"></th>
         </tr>
         {% endif %}
         {% endfor %}

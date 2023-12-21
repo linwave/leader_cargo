@@ -18,6 +18,8 @@ from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardE
 from .models import *
 from .utils import DataMixin
 
+from analytics.models import CargoArticle
+
 statuses = [
     'Черновик',
     'Новая',
@@ -53,7 +55,7 @@ class LoginUser(DataMixin, LoginView):
         context = super().get_context_data(**kwargs)
         context['message'] = self.message
         c_def = self.get_user_context(title="Авторизация")
-        return dict(list(context.items())+list(c_def.items()))
+        return dict(list(context.items()) + list(c_def.items()))
 
     def form_invalid(self, form):
         login_user = authenticate(self.request, username=''.join(re.findall(r'\d+', form.cleaned_data['phone'])), password=form.cleaned_data['password'])
@@ -132,34 +134,52 @@ class MonitoringManagerReportView(LoginRequiredMixin, DataMixin, ListView):
         months = ["", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
         years = ["", 2023, 2024, 2025, 2026, 2027, 2028]
         context['get_queryset'] = ''
+        context['manager_cargo_sent'] = []
+        context['manager_cargo_issued'] = []
+
         if self.request.GET.get('month') or self.request.GET.get('year'):
             now = datetime.datetime.now()
+            context['manager_cargo'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id'])
             context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id'])
+
             if 'month' in self.request.GET:
                 month = self.request.GET.get('month')
                 for index, m in enumerate(months):
                     if m == month:
                         month = index
                         break
-                context['manager_reports'].filter(report_upload_date__month=month)
+
+                context['manager_reports'] = context['manager_reports'].filter(report_upload_date__month=month)
+                context['manager_cargo_sent'] = context['manager_cargo'].filter(time_from_china__month=month)
+                context['manager_cargo_issued'] = context['manager_cargo'].filter(time_cargo_release__month=month)
                 now = now.replace(month=month)
+
             if 'year' in self.request.GET:
                 year = int(self.request.GET.get('year'))
-                context['manager_reports'].filter(report_upload_date__year=year)
+                context['manager_reports'] = context['manager_reports'].filter(report_upload_date__year=year)
+                context['manager_cargo_sent'] = context['manager_cargo_sent'].filter(time_from_china__year=year)
+                context['manager_cargo_issued'] = context['manager_cargo_issued'].filter(time_cargo_release__year=year)
                 now = now.replace(year=year)
         else:
             now = datetime.datetime.now()
             month = now.month
             year = now.year
             context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id'], report_upload_date__month=month, report_upload_date__year=year)
+            context['manager_cargo_sent'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id'], time_from_china__month=month, time_from_china__year=year)
+            context['manager_cargo_issued'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id'], time_cargo_release__month=month, time_cargo_release__year=year)
 
         context['day_reports'] = dict()
+        context['warm_clients_success'] = 0
+
         for report in context['manager_reports']:
-            context['day_reports'].update({(report.report_upload_date+datetime.timedelta(hours=3)).strftime("%d.%m.%Y"): report})
+            if report.number_of_completed_transactions_based_on_orders:
+                context['warm_clients_success'] = context['warm_clients_success'] + float(report.number_of_completed_transactions_based_on_orders.replace(" ", "").replace(",", "."))
+            context['day_reports'].update({(report.report_upload_date + datetime.timedelta(hours=3)).strftime("%d.%m.%Y"): report})
 
         context['all_days'] = []
         context['form_day_report'] = []
-        for day in range(1, calendar.monthrange(now.year, now.month)[1]+1):
+        context['manager_cargo_for_every_days'] = []
+        for day in range(1, calendar.monthrange(now.year, now.month)[1] + 1):
             context['all_days'].append(now.replace(day=day).strftime("%d.%m.%Y"))
             if now.replace(day=day).strftime("%d.%m.%Y") in context['day_reports']:
                 context['form_day_report'].append({
@@ -173,14 +193,27 @@ class MonitoringManagerReportView(LoginRequiredMixin, DataMixin, ListView):
                     'f': RopReportForm(),
                     'report_id': '',
                 })
+            weight = 0
+            volume = 0
+            for cargo in context['manager_cargo_sent'].filter(time_from_china__day=day):
+                weight = weight + float(cargo.weight.replace(" ", "").replace(",", "."))
+                volume = volume + float(cargo.volume.replace(" ", "").replace(",", "."))
+            context['manager_cargo_for_every_days'].append({'day': now.replace(day=day).strftime("%d.%m.%Y"),
+                                                            'count_sent': context['manager_cargo_sent'].filter(time_from_china__day=day).count(),
+                                                            'count_issued': context['manager_cargo_issued'].filter(time_cargo_release__day=day).count(),
+                                                            'weight': weight,
+                                                            'volume': volume})
         try:
             context['manager_plan'] = context['manager'].managerplans_set.get(month=now.month, year=now.year)
             context['manager_plan_id'] = context['manager_plan'].pk
             context['manager_plan_edit_form'] = EditManagerPlanForm(instance=context['manager_plan'])
             context['manager_plan_value'] = context['manager_plan'].manager_monthly_net_profit_plan
-            print(context['manager_plan'])
         except:
             context['manager_plan_add_form'] = AddManagerPlanForm()
+
+        context['manager_cargo_sent_count'] = context['manager_cargo_sent'].count()
+        context['manager_cargo_issued_count'] = context['manager_cargo_issued'].count()
+
         context['month_int'] = now.month
         context['month'] = months[now.month]
         context['months'] = months
@@ -324,6 +357,8 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                 year = int(self.request.GET.get('year'))
                 now = now.replace(year=year)
         context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=month, report_upload_date__year=year)
+        context['monitoring_cargo'] = CargoArticle.objects.filter(time_from_china__month=month, time_from_china__year=year)
+
         context['month'] = months[now.month]
         context['months'] = months
         context['year'] = now.year
@@ -353,6 +388,17 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                 context['all_data'][f'{manager.pk}']['sum_calls'] = 0
                 context['all_data'][f'{manager.pk}']['sum_duration_calls'] = 0
 
+                context['all_data'][f'{manager.pk}']['weight'] = 0
+                context['all_data'][f'{manager.pk}']['volume'] = 0
+
+                for cargo in context['monitoring_cargo']:
+                    if cargo.responsible_manager == str(manager.pk):
+                        print(cargo.responsible_manager, manager.pk)
+                        if cargo.weight:
+                            context['all_data'][f'{manager.pk}']['weight'] = context['all_data'][f'{manager.pk}']['weight'] + float(cargo.weight.replace(" ", "").replace(",", "."))
+                        if cargo.volume:
+                            context['all_data'][f'{manager.pk}']['volume'] = context['all_data'][f'{manager.pk}']['volume'] + float(cargo.volume.replace(" ", "").replace(",", "."))
+
                 for report in context['monitoring_reports']:
                     if report.manager_id.pk == manager.pk:
                         if report.net_profit_to_the_company:
@@ -367,8 +413,9 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                             context['all_data'][f'{manager.pk}']['sum_CP'] = context['all_data'][f'{manager.pk}']['sum_CP'] + float(report.amount_of_issued_CP.replace(" ", "").replace(",", "."))
                         if report.number_of_incoming_quality_applications:
                             context['all_data'][f'{manager.pk}']['warm_clients'] = context['all_data'][f'{manager.pk}']['warm_clients'] + float(report.number_of_incoming_quality_applications.replace(" ", "").replace(",", "."))
-                        if report.number_of_completed_transactions_based_on_orders:
-                            context['all_data'][f'{manager.pk}']['warm_clients_success'] = context['all_data'][f'{manager.pk}']['warm_clients_success'] + float(report.number_of_completed_transactions_based_on_orders.replace(" ", "").replace(",", "."))
+                        # if report.number_of_completed_transactions_based_on_orders:
+                        #     context['all_data'][f'{manager.pk}']['warm_clients_success'] = context['all_data'][f'{manager.pk}']['warm_clients_success'] + float(
+                        #         report.number_of_completed_transactions_based_on_orders.replace(" ", "").replace(",", "."))
                         if report.number_of_calls:
                             context['all_data'][f'{manager.pk}']['sum_calls'] = context['all_data'][f'{manager.pk}']['sum_calls'] + float(report.number_of_calls.replace(" ", "").replace(",", "."))
                         if report.duration_of_calls:
@@ -383,10 +430,10 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                     context['all_data'][f'{manager.pk}']['paid_CP'] = context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] / context['all_data'][f'{manager.pk}']['sum_CP'] * 100
                 except ZeroDivisionError:
                     context['all_data'][f'{manager.pk}']['paid_CP'] = 0
-                try:
-                    context['all_data'][f'{manager.pk}']['conversion'] = context['all_data'][f'{manager.pk}']['warm_clients_success'] / context['all_data'][f'{manager.pk}']['warm_clients']
-                except ZeroDivisionError:
-                    context['all_data'][f'{manager.pk}']['conversion'] = 0
+                # try:
+                #     context['all_data'][f'{manager.pk}']['conversion'] = context['all_data'][f'{manager.pk}']['warm_clients_success'] / context['all_data'][f'{manager.pk}']['warm_clients']
+                # except ZeroDivisionError:
+                #     context['all_data'][f'{manager.pk}']['conversion'] = 0
                 try:
                     context['all_data'][f'{manager.pk}']['average_duration_calls'] = context['all_data'][f'{manager.pk}']['sum_duration_calls'] / context['all_data'][f'{manager.pk}']['sum_calls']
                 except ZeroDivisionError:
@@ -403,7 +450,8 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                         if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
                             context['all_data'][f'{manager.pk}']['calls_need'] = context['all_data'][f'{manager.pk}']['calls_need'] - float(report.number_of_calls.replace(" ", "").replace(",", "."))
                         if report.net_profit_to_the_company and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
-                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] - float(report.net_profit_to_the_company.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] = context['all_data'][f'{manager.pk}']['new_clients_net_profit_need'] - float(
+                                report.net_profit_to_the_company.replace(" ", "").replace(",", "."))
                         if report.number_of_new_clients_attracted and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
                             context['all_data'][f'{manager.pk}']['new_clients_need'] = context['all_data'][f'{manager.pk}']['new_clients_need'] + float(report.number_of_new_clients_attracted.replace(" ", "").replace(",", "."))
                         if report.number_of_calls and make_aware(datetime.datetime(2023, 10, 15)) >= report.report_upload_date >= make_aware(datetime.datetime(2023, 10, 9)):
@@ -486,7 +534,7 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Курсы валют")
-        return dict(list(context.items())+list(c_def.items()))
+        return dict(list(context.items()) + list(c_def.items()))
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -507,7 +555,7 @@ class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Сотрудники")
-        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+        return dict(list(super().get_context_data(**kwargs).items()) + list(c_def.items()))
 
     def get_queryset(self):
         if self.request.user.role == 'Супер Администратор':
@@ -576,7 +624,7 @@ class CardEmployeesView(LoginRequiredMixin, DataMixin, UpdateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Карточка сотрудника")
-        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+        return dict(list(super().get_context_data(**kwargs).items()) + list(c_def.items()))
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -616,7 +664,7 @@ class ClientsView(LoginRequiredMixin, DataMixin, ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Клиенты")
-        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+        return dict(list(super().get_context_data(**kwargs).items()) + list(c_def.items()))
 
     def get_queryset(self):
         if self.request.user.role == 'Менеджер':
@@ -685,7 +733,7 @@ class CardClientsView(LoginRequiredMixin, DataMixin, UpdateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Карточка клиента")
-        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+        return dict(list(super().get_context_data(**kwargs).items()) + list(c_def.items()))
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -768,7 +816,7 @@ class AddAppealsView(LoginRequiredMixin, DataMixin, CreateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Новая заявка")
-        return dict(list(super().get_context_data(**kwargs).items())+list(c_def.items()))
+        return dict(list(super().get_context_data(**kwargs).items()) + list(c_def.items()))
 
     def form_valid(self, form):
         new_data = form.save(commit=False)
@@ -829,7 +877,7 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
         for goods in context['all_goods']:
             if goods.price_rmb and goods.quantity:
                 context['goods_vycup'] = context['goods_vycup'] + \
-                                         float(goods.price_rmb.replace(' ', '').replace(',', '.'))*float(goods.quantity.replace(' ', '').replace(',', '.'))
+                                         float(goods.price_rmb.replace(' ', '').replace(',', '.')) * float(goods.quantity.replace(' ', '').replace(',', '.'))
             if goods.price_delivery:
                 context['goods_log'] = context['goods_log'] + float(goods.price_delivery.replace(' ', '').replace(',', '.'))
             context['goods_itog'] = float(context['goods_vycup']) + float(context['goods_log'])

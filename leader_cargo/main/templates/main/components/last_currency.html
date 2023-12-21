@@ -9,15 +9,19 @@
 {% else %}
 {% if 'leaderboard' in request.path %}
 <h3 class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >
-    ¥ <i class="fa-solid fa-credit-card"></i>{{ last_currency.yuan|default:"-" }}
-    | ¥ <i class="fa-solid fa-sack-dollar"></i> {{ last_currency.yuan_non_cash|default:"-" }}
-    | $ {{ last_currency.dollar|default:"-" }}
+    <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-money-bill-wave"></i> M {{ last_currency.yuan_cash_M|default:"-" }}
+    | <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-money-bill-wave"></i> K {{ last_currency.yuan_cash_K|default:"-" }}
+    | <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-credit-card" style=""></i>{{ last_currency.yuan|default:"-" }}
+    | <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-file-invoice"></i>{{ last_currency.yuan_non_cash|default:"-" }}
+    | <i class="fa-solid fa-dollar-sign"></i> {{ last_currency.dollar|default:"-" }}
 </h3>
 {% else %}
 <span class="d-inline-flex mt-2 mt-md-0 ms-md-auto link-body-emphasis text-decoration-none" >
-    ¥ <i class="fa-solid fa-credit-card"></i>{{ last_currency.yuan|default:"-" }}
-    | ¥ <i class="fa-solid fa-sack-dollar"></i> {{ last_currency.yuan_non_cash|default:"-" }}
-    | $ {{ last_currency.dollar|default:"-" }}
+    <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-money-bill-wave"></i> M {{ last_currency.yuan_cash_M|default:"-" }}
+    | <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-money-bill-wave"></i> K {{ last_currency.yuan_cash_K|default:"-" }}
+    | <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-credit-card" style=""></i>{{ last_currency.yuan|default:"-" }}
+    | <i class="fa-solid fa-yen-sign"></i> <i class="fa-solid fa-file-invoice"></i>{{ last_currency.yuan_non_cash|default:"-" }}
+    | <i class="fa-solid fa-dollar-sign"></i> {{ last_currency.dollar|default:"-" }}
 </span>
 {% endif %}
 {% endif %}
