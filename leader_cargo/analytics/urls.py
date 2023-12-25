@@ -16,11 +16,14 @@ urlpatterns = [
     path('carrier-files/', views.CarrierFilesView.as_view(), name='carrier'),
     path('carrier-files/update-article-status/<int:article_id>', views.change_article_status, name='update_article'),
     path('carrier-files/edit-article-manager/<int:article_id>', views.change_article_for_manager, name='edit_table_manager_article'),
+    path('carrier-files/edit-transport-tariff/<int:article_id>', views.EditTransportTariff.as_view(), name='edit_transport_tariff'),
     path('carrier-files/edit-article/<int:article_id>', views.EditTableArticleView.as_view(), name='edit_table_article'),
     path('carrier-files/delete-article/<int:article_id>', views.DeleteArticleView.as_view(), name='delete_table_article'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 htmx_patterns = [
+    path('carrier-files/amount-fund', views.amountOfFund, name='amount_fund'),
+    path('carrier-files/transportation-tariff-for-clients/<int:article_id>', views.edit_transportation_tariff_for_clients, name='edit_transportation_tariff_for_clients'),
     path('carrier-files/edit/<int:article_id>', views.edit_article_in_table, name='edit_article'),
     path('carrier-files/delete/<int:article_id>', views.delete_article_in_table, name='delete_article'),
 ]

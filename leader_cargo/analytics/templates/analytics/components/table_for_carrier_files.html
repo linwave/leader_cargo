@@ -21,9 +21,9 @@
 </div>
 <div style="overflow-y: hidden;overflow-x: hidden;height: 745px;">
     <table id="myTable" class="table table-sm table-hover table_border align-middle"
-           style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.79rem;{% else %}font-size: 0.9rem;{% endif %}">
+           style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.76rem;{% else %}font-size: 0.9rem;{% endif %}">
         <thead class="table-dark align-middle">
-        <tr>
+        <tr >
             <th scope="col" style="background-color: #111;">#</th>
             <th scope="col" width="200px" style="background-color: #111;">Артикул</th>
             <th scope="col" >Менеджер</th>
@@ -35,12 +35,13 @@
             <th scope="col">Вес, кг</th>
             <th scope="col">Объем, м3</th>
             <th scope="col">Тариф пере-возки</th>
+            <th scope="col">Тариф пере-возки кл-у</th>
             <th scope="col">Цена товара</th>
             <th scope="col">Цена стра-ховки</th>
             <th scope="col">Цена упа-ковки</th>
             <th scope="col">Дата отправки с Китая</th>
             <th scope="col">Итоговая стоимость перевозки</th>
-            <th scope="col">Адресная доставка</th>
+            <th scope="col">Адрес-я доставка</th>
             <th scope="col">ПРР</th>
             <th scope="col">Оплата ТАТ</th>
             <th scope="col">Оплачено клиентом</th>
@@ -120,6 +121,15 @@
             <td>{{ article.weight }}</td>
             <td>{{ article.volume|floatformat:"2g" }}</td>
             <td>{{ article.get_short_name_transportation_tariff }}</td>
+            {% if user.role == 'Логист' %}
+            <td style="background: #3dad32;">{{ article.transportation_tariff_for_clients|default:"" }}</td>
+            {% else %}
+            <td data-bs-toggle="modal" data-bs-target="#clients_tariff"
+                hx-get="{% url 'analytics:edit_transportation_tariff_for_clients' article.pk %}" hx-target="#hx-modal-edit-clients-tariff"
+                style="background: #3dad32;">
+                {{ article.transportation_tariff_for_clients|default:"" }}
+            </td>
+            {% endif %}
             <td>{{ article.cost_goods|floatformat:"2g"|default:"" }}</td>
             <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>
             <td>{{ article.packaging_cost|default:"" }}</td>

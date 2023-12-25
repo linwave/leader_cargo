@@ -33,6 +33,18 @@ class UpdateStatusArticleForm(ModelForm):
         fields = ["status"]
 
 
+class EditTransportationTariffForClients(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = CargoArticle
+        fields = ["transportation_tariff_for_clients"]
+
+
 class EditTableArticleForm(ModelForm):
 
     def __init__(self, *args, **kwargs):

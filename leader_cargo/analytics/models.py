@@ -66,6 +66,7 @@ class CargoArticle(models.Model):
     weight = models.CharField(max_length=50, verbose_name='Вес, кг')
     volume = models.CharField(max_length=50, verbose_name='Объем')
     transportation_tariff = models.CharField(max_length=50, verbose_name='Тариф перевозки')
+    transportation_tariff_for_clients = models.CharField(max_length=50, verbose_name='Тариф перевозки для клиента', blank=True, null=True)
     cost_goods = models.CharField(max_length=50, verbose_name='Стоимость товара', blank=True, null=True)
     insurance_cost = models.CharField(max_length=50, verbose_name='Стоимость страховки', blank=True, null=True)
     packaging_cost = models.CharField(max_length=50, verbose_name='Стоимость упаковки', blank=True, null=True)

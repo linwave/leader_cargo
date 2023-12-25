@@ -7,8 +7,12 @@
 {% block content %}
 
 <div class="container-fluid">
+    {% if user.role == 'Супер Администратор' or user.role == 'РОП' or user.role == 'Менеджер' %}
+    {% include "analytics/components/modal/modalEditClientsTariff.html"  %}
+    {% endif %}
     {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
     {% include "analytics/components/modal/modalInputCarrierFile.html"  %}
+    {% include "analytics/components/modal/modalAmountFund.html"  %}
     {% include "analytics/components/modal/modalEditArticleForLogist.html"  %}
     {% include "analytics/components/modal/modalDeleteArticleForLogist.html"  %}
     <div class="row g-2 justify-content-start">
@@ -51,11 +55,18 @@
             </button>
         </div>
         <div class="col-auto">
-
             <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse"
                     data-bs-target="#multiCollapsePathFormat" aria-expanded="false" aria-controls="multiCollapsePathFormat">
                 <i class="fa-solid fa-road-circle-xmark"></i>
                 С пустой дорогой: {{ count_empty_path_format }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-sm text-primary-emphasis bg-primary-subtle border border-primary-subtle"
+                    data-bs-toggle="modal" data-bs-target="#amount_fund"
+                    hx-get="{% url 'analytics:amount_fund' %}" hx-target="#hx-modal-amount-fund">
+                <i class="fa-solid fa-money-bill-trend-up"></i>
+                Сумма фонда
             </button>
         </div>
     </div>
@@ -71,6 +82,8 @@
     </div>
 </div>
 <script>
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 let maskOptions = {
         mask: Number,
         padFractionalZeros: false,  // if true, then pads zeros at end to the length of scale

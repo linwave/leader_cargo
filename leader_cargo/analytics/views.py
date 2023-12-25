@@ -7,7 +7,7 @@ from django.utils.timezone import make_aware
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
-from .forms import AddCarrierFilesForm, EditTableArticleForm
+from .forms import AddCarrierFilesForm, EditTableArticleForm, EditTransportationTariffForClients
 from .models import CargoFiles, CargoArticle, RequestsForLogisticsCalculations
 # FROM MAIN
 from main.models import CustomUser
@@ -653,6 +653,44 @@ class EditTableArticleView(LoginRequiredMixin, DataMixin, UpdateView):
             if request.user.role in self.role_have_perm:
                 return super().dispatch(request, *args, **kwargs)
             return self.handle_no_permission()
+
+
+class EditTransportTariff(LoginRequiredMixin, DataMixin, UpdateView):
+    model = CargoArticle
+    form_class = EditTransportationTariffForClients
+    pk_url_kwarg = 'article_id'
+    role_have_perm = ['Супер Администратор', 'РОП', 'Менеджер']
+    success_url = reverse_lazy('analytics:carrier')
+    login_url = reverse_lazy('main:login')
+
+    def form_valid(self, form):
+        file_carrier = form.save(commit=False)
+        file_carrier.save()
+        return redirect(self.request.META.get('HTTP_REFERER') + f'#article-{self.object.pk}')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.role_have_perm:
+                return super().dispatch(request, *args, **kwargs)
+            return self.handle_no_permission()
+
+
+def amountOfFund(request):
+    amount_of_fund = 0
+    articles = CargoArticle.objects.filter(total_cost_with_factor__isnull=False)
+    count_articles_with_factor = articles.count()
+    for art in articles:
+        amount_of_fund = amount_of_fund + (art.total_cost_with_factor - float(art.total_cost.replace(" ", "").replace(",", ".")))
+    return render(request, 'analytics/components/modal/htmxModalAmountFund.html', {'amount_of_fund': amount_of_fund,
+                                                                                   'count_articles_with_factor': count_articles_with_factor})
+
+
+def edit_transportation_tariff_for_clients(request, article_id):
+    article = CargoArticle.objects.get(pk=article_id)
+    form_article = EditTransportationTariffForClients(instance=article)
+    return render(request, 'analytics/components/modal/htmxModalEditClientsTariff.html', {'article': article, 'form_article': form_article})
 
 
 def edit_article_in_table(request, article_id):
