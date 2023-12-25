@@ -124,11 +124,15 @@
             {% if user.role == 'Логист' %}
             <td style="background: #3dad32;">{{ article.transportation_tariff_for_clients|default:"" }}</td>
             {% else %}
+            {% if user_pk_string == article.responsible_manager %}
             <td data-bs-toggle="modal" data-bs-target="#clients_tariff"
                 hx-get="{% url 'analytics:edit_transportation_tariff_for_clients' article.pk %}" hx-target="#hx-modal-edit-clients-tariff"
                 style="background: #3dad32;">
                 {{ article.transportation_tariff_for_clients|default:"" }}
             </td>
+            {% else %}
+            <td style="background: #3dad32;">{{ article.transportation_tariff_for_clients|default:"" }}</td>
+            {% endif %}
             {% endif %}
             <td>{{ article.cost_goods|floatformat:"2g"|default:"" }}</td>
             <td>{{ article.insurance_cost|floatformat:"2g"|default:"" }}</td>

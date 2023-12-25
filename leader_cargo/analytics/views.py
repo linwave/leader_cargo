@@ -123,6 +123,7 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['user_pk_string'] = str(self.request.user.pk)
         context['all_articles'] = CargoArticle.objects.all()
         if self.request.user.role == 'Логист' or self.request.user.role == 'Супер Администратор':
             context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
