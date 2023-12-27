@@ -1,12 +1,44 @@
 <div class="modal-content">
     <div class="modal-header">
-        <h5 class="modal-title" id="amount-fund-Label">Информация по сумме фонда (не зависит от уже поставленных фильтров)</h5>
+        <h5 class="modal-title" id="amount-fund-Label">
+            Информация по сумме фонда
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body">
-        Всего грузов с коэффициентом: {{ count_articles_with_factor }}
-        <br>
-        Сумма фонда: {{ amount_of_fund|floatformat:"2g" }} $
+        <div class="row mb-2">
+            <div class="col-auto">
+                <select id="select-month"
+                        name="month"
+                        class="form-select"
+                        hx-get="{% url 'analytics:amount_fund' %}"
+                        hx-target="#amountOfFundContent"
+                        hx-vals="js:{year: document.getElementById('select-year').value}">
+                    <option>Все месяца</option>
+                    {% for m in months %}
+                    <option value="{{m}}" {% if m == month %} selected {% endif %}>{{m}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select id="select-year"
+                        name="year"
+                        class="form-select"
+                        hx-get="{% url 'analytics:amount_fund' %}"
+                        hx-target="#amountOfFundContent"
+                        hx-vals="js:{month: document.getElementById('select-month').value}">
+                    <option>Все года</option>
+                    {% for y in years %}
+                    <option value="{{y}}" {% if y == year %} selected {% endif %}>{{y}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div id="amountOfFundContent">
+            Всего грузов с коэффициентом: {{ count_articles_with_factor }}
+            <br>
+            Сумма фонда: {{ amount_of_fund|floatformat:"2g" }} $
+        </div>
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>

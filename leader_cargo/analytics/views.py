@@ -138,7 +138,8 @@ class CarrierFilesView(LoginRequiredMixin, DataMixin, CreateView):
                 context['pb_count_empty_path_format'] = 100 - int(context['count_empty_path_format'] / context['all_articles'].count() * 100)
             context['all_article_with_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).values('article')
             context['all_article_with_empty_path_format'] = context['all_articles'].filter(path_format=None).values('article')
-            context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=11))).values('article', 'weight', 'time_from_china')
+            context['all_articles_without_insurance'] = context['all_articles'].filter(insurance_cost__in=[None, '']).filter(time_from_china__gte=make_aware(datetime.datetime.now() - datetime.timedelta(days=11))).values('article', 'weight',
+                                                                                                                                                                                                                            'time_from_china')
             context['new_all_articles_without_insurance'] = []
             for art in context['all_articles_without_insurance']:
                 if float(art['weight'].replace(" ", "").replace(",", ".")) > 10:
@@ -679,13 +680,48 @@ class EditTransportTariff(LoginRequiredMixin, DataMixin, UpdateView):
 
 
 def amountOfFund(request):
-    amount_of_fund = 0
+    months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
+    years = [2023, 2024, 2025, 2026, 2027, 2028]
+    now = datetime.datetime.now()
+    month = request.GET.get('month', months[now.month - 1])
+    year = request.GET.get('year', now.year)
     articles = CargoArticle.objects.filter(total_cost_with_factor__isnull=False)
+    if request.htmx:
+        if request.htmx.target == 'amountOfFundContent':
+            if month != 'Все месяца':
+                for index, m in enumerate(months):
+                    if m == month:
+                        month = index + 1
+                        break
+                articles = articles.filter(time_from_china__month=month)
+            if year != 'Все года':
+                articles = articles.filter(time_from_china__year=year)
+            amount_of_fund = 0
+            count_articles_with_factor = articles.count()
+            for art in articles:
+                amount_of_fund = amount_of_fund + (art.total_cost_with_factor - float(art.total_cost.replace(" ", "").replace(",", ".")))
+            return render(request, 'analytics/components/modal/htmxAmountFundResults.html', {'amount_of_fund': amount_of_fund,
+                                                                                             'count_articles_with_factor': count_articles_with_factor,
+                                                                                             'month': month,
+                                                                                             'year': year,
+                                                                                             'months': months,
+                                                                                             'years': years})
+    amount_of_fund = 0
+    month_number = 0
+    for index, m in enumerate(months):
+        if m == month:
+            month_number = index + 1
+            break
+    articles = articles.filter(time_from_china__month=month_number, time_from_china__year=year)
     count_articles_with_factor = articles.count()
     for art in articles:
         amount_of_fund = amount_of_fund + (art.total_cost_with_factor - float(art.total_cost.replace(" ", "").replace(",", ".")))
     return render(request, 'analytics/components/modal/htmxModalAmountFund.html', {'amount_of_fund': amount_of_fund,
-                                                                                   'count_articles_with_factor': count_articles_with_factor})
+                                                                                   'count_articles_with_factor': count_articles_with_factor,
+                                                                                   'month': month,
+                                                                                   'year': year,
+                                                                                   'months': months,
+                                                                                   'years': years})
 
 
 def edit_transportation_tariff_for_clients(request, article_id):

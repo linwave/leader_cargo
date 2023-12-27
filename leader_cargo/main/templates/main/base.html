@@ -53,10 +53,15 @@
              | {% include "main/components/client_wallet.html"  %}
             {% endif %}
             </span>
+
     </div>
+
     {% if user.is_authenticated %}
-    <hr class="bg-200 mb-2 mt-0">
+    <hr class="bg-200 mb-0 mt-0">
+<!--    <span class="loader htmx-indicator"></span>-->
     {% endif %}
+    <span id="content-spinner-loader" class="loader htmx-indicator"></span>
+<!--    <progress id="content-spinner-loader" class="htmx-indicator mt-0 mb-0" style="width: 100%;"></progress>-->
     <!--CONTENT-->
     {% block content %}{% endblock %}
     <!--PAGINATION-->
@@ -80,4 +85,5 @@ console.log(sidebarBtn);
 sidebarBtn.addEventListener("click", ()=>{
     sidebar.classList.toggle("close");
     });
+
 </script>

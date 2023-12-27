@@ -1,7 +1,8 @@
 <div class="row justify-content-start g-1">
     <div class="col-auto">
         <input id="article_search" class="form-control" type="text" name="q" placeholder="Поиск по артикулу" value="{{ q }}"
-               hx-get="{% url 'analytics:carrier' %}" hx-trigger="keyup changed delay:300ms" hx-target="#hx-table"/>
+               hx-get="{% url 'analytics:carrier' %}" hx-trigger="keyup changed delay:300ms" hx-target="#hx-table"
+               hx-indicator="#content-spinner-loader"/>
     </div>
     <div class="col-auto">
         <i class="fa-solid fa-truck"></i><span class="d-inline-flex ms-md-auto p-2">Грузов: {{ table_paginator.count }}</span>
@@ -21,7 +22,7 @@
 </div>
 <div style="overflow-y: hidden;overflow-x: hidden;height: 745px;">
     <table id="myTable" class="table table-sm table-hover table_border align-middle"
-           style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.76rem;{% else %}font-size: 0.9rem;{% endif %}">
+           style="width:100%;border-spacing: 0;{% if user.role == 'Логист' %}font-size: 0.74rem;{% else %}font-size: 0.9rem;{% endif %}">
         <thead class="table-dark align-middle">
         <tr >
             <th scope="col" style="background-color: #111;">#</th>
