@@ -169,7 +169,7 @@ function sortTable() {
       shouldSwitch = false;
       x = rows[i].getElementsByTagName("TD")[3];
       y = rows[i + 1].getElementsByTagName("TD")[3];
-      if (x.innerHTML < y.innerHTML) {
+      if (parseFloat(x.innerHTML.replaceAll('&nbsp;', '').replaceAll(',', '')) < parseFloat(y.innerHTML.replaceAll('&nbsp;', '').replaceAll(',', ''))) {
         shouldSwitch = true;
         break;
       }
