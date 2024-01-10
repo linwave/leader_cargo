@@ -15,6 +15,8 @@ menu = {
                            'category_name': categories[1], 'menu_role': 'sub'},
     'Калькулятор логистики': {'title': 'Калькулятор логистики', 'url_name': 'analytics:calculator', 'short_url': 'calculator', 'display': False,
                               'category_name': categories[1], 'menu_role': 'sub'},
+    'Перевозчики': {'title': 'Перевозчики', 'url_name': 'analytics:carriers_list', 'short_url': 'carriers_list', 'display': True,
+                    'category_name': categories[1], 'menu_role': 'sub'},
 
     'Курсы валют': {'title': 'Курсы валют', 'url_name': 'main:exchangerates', 'short_url': 'exchangerates', 'display': True,
                     'category_name': categories[0], 'menu_role': 'basic'},
@@ -51,7 +53,7 @@ menu_super_admin = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
-        'sub_menu': [menu['Запросы на просчет'], menu['Калькулятор логистики']]
+        'sub_menu': [menu['Запросы на просчет'], menu['Калькулятор логистики'], menu['Перевозчики']]
     },
     {
         'name': categories[2],
@@ -86,21 +88,21 @@ menu_rop = [
         'basic': menu['Мониторинг'],
         'sub_menu': [menu['Таблица результатов']]
     },
-    {
-        'name': categories[3],
-        'basic': menu['Сотрудники'],
-        'sub_menu': [menu['Регистрация сотрудника']]
-    },
-    {
-        'name': categories[4],
-        'basic': menu['Клиенты'],
-        'sub_menu': [menu['Создание клиента']]
-    },
-    {
-        'name': categories[5],
-        'basic': menu['Заявки'],
-        'sub_menu': [menu['Создание заявки']]
-    }
+    # {
+    #     'name': categories[3],
+    #     'basic': menu['Сотрудники'],
+    #     'sub_menu': [menu['Регистрация сотрудника']]
+    # },
+    # {
+    #     'name': categories[4],
+    #     'basic': menu['Клиенты'],
+    #     'sub_menu': [menu['Создание клиента']]
+    # },
+    # {
+    #     'name': categories[5],
+    #     'basic': menu['Заявки'],
+    #     'sub_menu': [menu['Создание заявки']]
+    # }
 ]
 menu_admin = [
     {
@@ -154,7 +156,7 @@ menu_logist = [
         'name': categories[1],
         'basic': menu['Учет грузов'],
         # 'sub_menu': [menu['Запросы на просчет']]
-        'sub_menu': []
+        # 'sub_menu': [menu['Перевозчики']]
     },
     {
         'name': categories[2],

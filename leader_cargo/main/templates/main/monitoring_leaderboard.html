@@ -46,6 +46,12 @@
                     {% endfor %}
                 </ul>
             </div>
+            <div class="col-auto m-2">
+                <h2>Общая прибыль </h2>
+            </div>
+            <div class="col-auto m-1">
+                <button class="btn btn-dark shadow fs-4">{{ all_net_profit|floatformat:"0g" }}</button>
+            </div>
         </div>
     </form>
 </div>

@@ -108,9 +108,9 @@ class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
 
     def get_queryset(self):
         if self.request.user.role == 'Супер Администратор':
-            return CustomUser.objects.filter(role='Менеджер')
+            return CustomUser.objects.filter(role__in=['Менеджер', 'РОП'])
         else:
-            return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
+            return CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], town=f'{self.request.user.town}').order_by('-status', '-role')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -365,10 +365,11 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
         context['years'] = years
 
         context['all_data'] = dict()
+        context['all_net_profit'] = 0
         if self.request.user.role == 'Супер Администратор':
-            context['managers'] = CustomUser.objects.filter(role='Менеджер')
+            context['managers'] = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'])
         else:
-            context['managers'] = CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}', status=True)
+            context['managers'] = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], town=f'{self.request.user.town}', status=True)
         for manager in context['managers']:
             if manager.pk != 18:
 
@@ -393,33 +394,33 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
 
                 for cargo in context['monitoring_cargo']:
                     if cargo.responsible_manager == str(manager.pk):
-                        print(cargo.responsible_manager, manager.pk)
                         if cargo.weight:
-                            context['all_data'][f'{manager.pk}']['weight'] = context['all_data'][f'{manager.pk}']['weight'] + float(cargo.weight.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['weight'] += float(cargo.weight.replace(" ", "").replace(",", "."))
                         if cargo.volume:
-                            context['all_data'][f'{manager.pk}']['volume'] = context['all_data'][f'{manager.pk}']['volume'] + float(cargo.volume.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['volume'] += float(cargo.volume.replace(" ", "").replace(",", "."))
 
                 for report in context['monitoring_reports']:
                     if report.manager_id.pk == manager.pk:
                         if report.net_profit_to_the_company:
-                            context['all_data'][f'{manager.pk}']['net_profit'] = context['all_data'][f'{manager.pk}']['net_profit'] + float(report.net_profit_to_the_company.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['net_profit'] += float(report.net_profit_to_the_company.replace(" ", "").replace(",", "."))
+                            context['all_net_profit'] += float(report.net_profit_to_the_company.replace(" ", "").replace(",", "."))
                         if report.raised_funds_to_the_company:
-                            context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] = context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] + float(report.raised_funds_to_the_company.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['amount_of_accepted_funds'] += float(report.raised_funds_to_the_company.replace(" ", "").replace(",", "."))
                         if report.number_of_applications_to_buyers:
-                            context['all_data'][f'{manager.pk}']['buyer_files'] = context['all_data'][f'{manager.pk}']['buyer_files'] + float(report.number_of_applications_to_buyers.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['buyer_files'] += float(report.number_of_applications_to_buyers.replace(" ", "").replace(",", "."))
                         if report.number_of_new_clients_attracted:
-                            context['all_data'][f'{manager.pk}']['new_clients'] = context['all_data'][f'{manager.pk}']['new_clients'] + float(report.number_of_new_clients_attracted.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['new_clients'] += float(report.number_of_new_clients_attracted.replace(" ", "").replace(",", "."))
                         if report.amount_of_issued_CP:
-                            context['all_data'][f'{manager.pk}']['sum_CP'] = context['all_data'][f'{manager.pk}']['sum_CP'] + float(report.amount_of_issued_CP.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['sum_CP'] += float(report.amount_of_issued_CP.replace(" ", "").replace(",", "."))
                         if report.number_of_incoming_quality_applications:
-                            context['all_data'][f'{manager.pk}']['warm_clients'] = context['all_data'][f'{manager.pk}']['warm_clients'] + float(report.number_of_incoming_quality_applications.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['warm_clients'] += float(report.number_of_incoming_quality_applications.replace(" ", "").replace(",", "."))
                         # if report.number_of_completed_transactions_based_on_orders:
                         #     context['all_data'][f'{manager.pk}']['warm_clients_success'] = context['all_data'][f'{manager.pk}']['warm_clients_success'] + float(
                         #         report.number_of_completed_transactions_based_on_orders.replace(" ", "").replace(",", "."))
                         if report.number_of_calls:
-                            context['all_data'][f'{manager.pk}']['sum_calls'] = context['all_data'][f'{manager.pk}']['sum_calls'] + float(report.number_of_calls.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['sum_calls'] += float(report.number_of_calls.replace(" ", "").replace(",", "."))
                         if report.duration_of_calls:
-                            context['all_data'][f'{manager.pk}']['sum_duration_calls'] = context['all_data'][f'{manager.pk}']['sum_duration_calls'] + float(report.duration_of_calls.replace(" ", "").replace(",", "."))
+                            context['all_data'][f'{manager.pk}']['sum_duration_calls'] += float(report.duration_of_calls.replace(" ", "").replace(",", "."))
 
                 context['all_data'][f'{manager.pk}']['procent_plan'] = context['all_data'][f'{manager.pk}']['net_profit'] / float(context['all_data'][f'{manager.pk}']['manager_monthly_net_profit_plan']) * 100
                 try:
