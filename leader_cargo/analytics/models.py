@@ -133,7 +133,7 @@ class CargoArticle(models.Model):
         if self.time_paid_by_the_client_status and self.time_cargo_release:
             day = (self.time_cargo_release - self.time_paid_by_the_client_status).days
             if day < 0:
-                return ''
+                return 0
             return day
         elif self.time_cargo_release:
             return (make_aware(datetime.datetime.now()) - self.time_cargo_release).days

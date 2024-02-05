@@ -74,7 +74,7 @@
                     {{ article.article }}
                 </td>
                 {% else %}
-                <td style="background: #dc3545;color: white;">
+                <td style="background: #dc3545;">
                     {{ article.article }}
                 </td>
                 {% endif %}
@@ -83,10 +83,22 @@
                     {{ article.article }}
                 </td>
                 {% endif %}
-                {% if article.get_number_of_days_without_payment >= 0 %}
+                {% if article.get_number_of_days_without_payment %}
+                {% if article.get_number_of_days_without_payment > 7 %}
                 <td bgcolor="#dc3545">
-                    <span style="color: white;">{{ article.get_number_of_days_without_payment }}</span>
+                    <span>{{ article.get_number_of_days_without_payment }}</span>
                 </td>
+                {% else %}
+                {% if article.paid_by_the_client_status == 'Оплачено полностью' %}
+                <td>
+                    {{ article.get_number_of_days_without_payment }}
+                </td>
+                {% else %}
+                <td bgcolor="#dc3545">
+                    <span>{{ article.get_number_of_days_without_payment }}</span>
+                </td>
+                {% endif %}
+                {% endif %}
                 {% else %}
                 <td>
                     {{ article.get_number_of_days_without_payment }}
