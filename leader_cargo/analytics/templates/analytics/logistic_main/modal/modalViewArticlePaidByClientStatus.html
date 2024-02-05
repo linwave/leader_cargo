@@ -1,0 +1,52 @@
+<div class="modal-content" id="hx-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Изменение статуса оплаты клиентом<br>
+            <span class="text-primary-emphasis">{{ article.article }}</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <div class="">
+            <div>
+                {% if article.file_payment_by_client.all %}
+                <div class="alert alert-light" role="alert">
+                    <div class="row">
+                        {% for doc in article.file_payment_by_client.all %}
+                        <div class="col-auto">
+                            <a class="a-clear" href="{{ doc.file_path.url }}" target="_blank"><i class="fa-solid fa-file"></i>{{ doc.name|truncatechars:12 }}</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-danger" role="alert">
+                        <span class="h5">Нет платежек</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <form>
+            <select name="paid_by_the_client_status" class="form-control" id="id_paid_by_the_client_status" disabled>
+                {% if article.paid_by_the_client_status == 'Оплачено полностью' %}
+                <option value="Оплачено полностью" selected>Оплачено полностью</option>
+                {% else %}
+                <option value="Оплачено полностью" >Оплачено полностью</option>
+                {% endif %}
+                {% if article.paid_by_the_client_status == 'Оплачено частично' %}
+                <option value="Оплачено частично" selected>Оплачено частично</option>
+                {% else %}
+                <option value="Оплачено частично">Оплачено частично</option>
+                {% endif %}
+                {% if article.paid_by_the_client_status == 'Не оплачено' %}
+                <option value="Не оплачено" selected>Не оплачено</option>
+                {% else %}
+                <option value="Не оплачено">Не оплачено</option>
+                {% endif %}
+            </select>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

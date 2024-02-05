@@ -1,4 +1,6 @@
 import datetime
+from django.shortcuts import redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .models import ExchangeRates
 
@@ -9,9 +11,9 @@ menu = {
 
     'Учет грузов': {'title': 'Учет грузов', 'url_name': 'analytics:carrier', 'short_url': 'carrier', 'display': True,
                     'category_name': categories[1], 'menu_role': 'sub'},
-    'Запрос логисту': {'title': 'Запрос логисту', 'url_name': 'analytics:logistic-requests', 'short_url': 'logistic-requests', 'display': False,
+    'Запрос логисту': {'title': 'Запрос логисту', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
                        'category_name': categories[1], 'menu_role': 'sub'},
-    'Запросы на просчет': {'title': 'Запросы на просчет', 'url_name': 'analytics:logistic-requests', 'short_url': 'logistic-requests', 'display': False,
+    'Запросы на просчет': {'title': 'Запросы на просчет', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
                            'category_name': categories[1], 'menu_role': 'sub'},
     'Калькулятор логистики': {'title': 'Калькулятор логистики', 'url_name': 'analytics:calculator', 'short_url': 'calculator', 'display': False,
                               'category_name': categories[1], 'menu_role': 'sub'},
@@ -128,7 +130,12 @@ menu_manager = [
         'name': categories[2],
         'basic': menu['Таблица результатов'],
         'sub_menu': []
-    }
+    },
+    # {
+    #     'name': categories[5],
+    #     'basic': menu['Заявки'],
+    #     'sub_menu': [menu['Создание заявки']]
+    # }
 ]
 menu_buyer = [
     {
@@ -156,7 +163,8 @@ menu_logist = [
         'name': categories[1],
         'basic': menu['Учет грузов'],
         # 'sub_menu': [menu['Запросы на просчет']]
-        # 'sub_menu': [menu['Перевозчики']]
+        # 'sub_menu': [menu['Запросы на просчет'], menu['Перевозчики']]
+        'sub_menu': []
     },
     {
         'name': categories[2],
@@ -216,3 +224,22 @@ class DataMixin:
             return curs
         except IndexError:
             return False
+
+
+class MyLoginMixin(LoginRequiredMixin):
+    role_have_perm = None
+
+    def get_role_have_perm(self):
+        return self.role_have_perm
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        else:
+            if request.user.role in self.get_role_have_perm():
+                return super().dispatch(request, *args, **kwargs)
+            return redirect(self.get_redirect_url_for_user(role=request.user.role))
+
+    @staticmethod
+    def get_redirect_url_for_user(role):
+        return initial_user_parameters[role]['login_url']

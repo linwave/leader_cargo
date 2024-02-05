@@ -1,0 +1,21 @@
+<div class="modal fade" id="modalInputCarrierFile" tabindex="-1" aria-labelledby="modalInputCarrierFile" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Загрузить файл перевозчика</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add_form" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.name_carrier }}<br>
+                    {{ form.file_path }}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button form="add_form" type="submit" class="btn btn-primary">Загрузить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>

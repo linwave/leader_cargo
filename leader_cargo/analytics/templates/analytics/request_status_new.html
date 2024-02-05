@@ -1,0 +1,16 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Отправить запрос к логисту?<br>
+            <span class="text-primary-emphasis">{{ my_request.name }}</span>
+        </h5>
+        <form method="post" id="request_to_new_form" action="{% url 'analytics:request_status_new' my_request.pk %}">
+            {% csrf_token %}
+        </form>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-footer">
+        <button form="request_to_new_form" type="submit" class="btn btn-primary">Отправить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

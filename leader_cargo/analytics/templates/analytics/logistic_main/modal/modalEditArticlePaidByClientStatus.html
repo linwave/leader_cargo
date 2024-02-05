@@ -1,0 +1,96 @@
+<div class="modal-content" id="hx-modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Изменение статуса оплаты клиентом<br>
+            <span class="text-primary-emphasis">{{ article.article }}</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <div class="mb-2">
+            <div id="modal-alert-message">
+                {% if message %}
+                <div class="alert alert-danger" role="alert">
+                    Пожалуйста приложите хотя бы одну платежку, для изменения статуса платежа
+                </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    Чтобы изменить статус платежа, нужно приложить минимум одну платежку
+                </div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <input type="file" id="file-upload" name="files" multiple hidden
+                       hx-post="{% url 'analytics:add_payment_file' article.pk %}"
+                       hx-encoding='multipart/form-data'
+                       hx-trigger="change"
+                       hx-target="#hx-modal-content">
+                <label for="file-upload" style="border: none;">
+                <span class="btn btn-success">
+                    <i class="fa-regular fa-image"></i> Добавить платежку
+                </span>
+                </label>
+            </div>
+            <div>
+                {% if article.file_payment_by_client.all %}
+                <div class="alert alert-light" role="alert">
+                    <div class="row">
+                        {% for doc in article.file_payment_by_client.all %}
+                        <div class="col-auto">
+                            <a class="a-clear" href="{{ doc.file_path.url }}" target="_blank">{{ doc.name|truncatechars:15 }}</a>
+                            <span
+                                    hx-get="{% url 'analytics:delete_payment_file' article.pk doc.id %}"
+                                    hx-target="#hx-modal-content">
+                                <i class="fa-solid fa-trash" style="font-size: 14px;color:red;cursor:pointer;"></i>
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <form id="modal-form-{{ article.pk }}"
+              hx-post="{% url 'analytics:edit_table_manager_article' article.pk %}"
+              hx-target="#td-paid-by-the-client-status-{{ article.pk }}">
+            <select name="paid_by_the_client_status" class="form-control" id="id_paid_by_the_client_status"
+                    hx-get="{% url 'analytics:edit_table_manager_article' article.pk %}"
+                    hx-trigget="change"
+                    hx-target="#modal-alert-message"
+                    hx-swap="outerHTML">
+                {% if article.paid_by_the_client_status == 'Оплачено полностью' %}
+                <option value="Оплачено полностью" selected>Оплачено полностью</option>
+                {% else %}
+                <option value="Оплачено полностью" >Оплачено полностью</option>
+                {% endif %}
+                {% if article.paid_by_the_client_status == 'Оплачено частично' %}
+                <option value="Оплачено частично" selected>Оплачено частично</option>
+                {% else %}
+                <option value="Оплачено частично">Оплачено частично</option>
+                {% endif %}
+                {% if article.paid_by_the_client_status == 'Не оплачено' %}
+                <option value="Не оплачено" selected>Не оплачено</option>
+                {% else %}
+                <option value="Не оплачено">Не оплачено</option>
+                {% endif %}
+            </select>
+        </form>
+    </div>
+    <div class="modal-footer">
+        {% if article.file_payment_by_client.all %}
+        <button form="modal-form-{{ article.pk }}" type="submit" class="btn btn-primary" data-bs-dismiss="modal">Изменить</button>
+        {% else %}
+        <button type="button" class="btn btn-primary"
+                hx-get="{% url 'analytics:edit_table_manager_article' article.pk %}"
+                hx-trigget="click"
+                hx-target="#modal-alert-message"
+                hx-swap="outerHTML">Изменить</button>
+        {% endif %}
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>
+<script>
+    document.body.addEventListener('htmx:configRequest', (event) => {
+    event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}'
+});
+</script>

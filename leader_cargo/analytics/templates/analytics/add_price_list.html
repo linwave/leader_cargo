@@ -1,0 +1,32 @@
+<tr>
+    <td scope="col">
+        {{ count }}
+    </td>
+    <td scope="col">
+        <input class="form-control" style="border: none;" type="text"
+               name="min_density"
+               hx-post="{% url 'analytics:edit_price_list' density.pk %}"
+               hx-trigger="keyup changed delay:0.5s"
+               hx-swap="none"
+               value="{{ density.min_density|default:'' }}"/>
+    </td>
+    <td scope="col">
+        <input class="form-control" style="border: none;" type="text"
+               name="max_density"
+               hx-post="{% url 'analytics:edit_price_list' density.pk %}"
+               hx-trigger="keyup changed delay:0.5s"
+               hx-swap="none"
+               value="{{ density.max_density|default:'' }}"/>
+    </td>
+    <td scope="col">
+        <input class="form-control" style="border: none;" type="text"
+               name="price"
+               hx-post="{% url 'analytics:edit_price_list' density.pk %}"
+               hx-trigger="keyup changed delay:0.5s"
+               hx-swap="none"
+               value="{{ density.price|default:'' }}"/>
+    </td>
+    <td scope="col">
+        <i class="fa-solid fa-trash" style="color: red;font-size: 18px;"></i>
+    </td>
+</tr>

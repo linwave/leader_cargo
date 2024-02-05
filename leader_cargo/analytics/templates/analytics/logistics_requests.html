@@ -5,68 +5,104 @@
 {% endblock %}
 
 {% block content %}
-
-
+<div class="modal fade" id="add_logistic_requests" tabindex="-1"
+     aria-labelledby="add-logistic-requests-Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-logistic-requests">
+        </div>
+    </div>
+</div>
 <div class="container-fluid">
-<div class="row g-2 mb-2 justify-content-left">
-    <div class="col-auto">
-        <a type="button" class="btn btn-sm btn-success" href="{% url 'analytics:add_logistic-requests' %}">
-            <i class="fa-solid fa-share"></i> Отправить запрос
-        </a>
-    </div>
-    <div class="col-auto">
-        <button type="button" class="btn btn-sm btn-secondary"
-                data-bs-toggle="collapse" data-bs-target="#collapseDraft" aria-expanded="false" aria-controls="collapseDraft"
-                hx-get="{% url 'analytics:logistic-requests' %}" hx-trigger="click" hx-target="#collapseDraft">
-            <i class="fa-solid fa-trash"></i> Черновики
-        </button>
+    <div class="row g-2 mb-2 justify-content-left">
+        <div class="col-auto">
+            <a type="button" class="btn btn-sm btn-success"
+               data-bs-toggle="modal"
+               data-bs-target="#add_logistic_requests"
+               hx-get="{% url 'analytics:add_logistic_requests' %}"
+               hx-target="#hx-modal-logistic-requests">
+                <i class="fa-solid fa-share"></i> Создание запроса
+            </a>
+        </div>
     </div>
 </div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-9">
+            <div class="table-responsive" style="border-radius: 4px;border: 1px solid #000;
+            overflow-y: hidden;overflow-x: hidden;height: 740px;">
+                <table class="table align-middle  table-hover g-1"
+                       style="font-size: 0.8rem;">
+                    <thead class="table-dark ">
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Название</th>
+                        <th scope="col">Статус</th>
+                        <th scope="col">Ставка</th>
+                        <th scope="col">Дата последнего обновления</th>
+                    </tr>
+                    </thead>
+                    <tbody class="table-light">
+                    {% for report in reports_work %}
+                    <tr>
+                        <th scope="row">
+                            <a href="{{ report.get_absolute_url_request }}"
+                               class="text-decoration-none" style="color: black;">
+                                {{ forloop.counter }}
+                            </a>
+                        </th>
+                        <td>
+                            <a href="{{ report.get_absolute_url_request }}"
+                               class="text-decoration-none" style="color: black;">
+                                {{ report.name }}
+                            </a>
+                        </td>
+                        <td>{{ report.status }}</td>
+                        <td>{{ report.bid|default:"" }}</td>
+                        <td>{{ report.time_update }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="table-responsive" style="border-radius: 4px;border: 1px solid #000;
+            overflow-y: hidden;overflow-x: hidden;height: 740px;">
+                <table class="table  align-middle  table-hover g-1"
+                       style="font-size: 0.8rem;">
+                    <thead class="table-dark" align="center">
+                    <tr>
+                        <th scope="col" colspan="2">Черновики</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for report in reports_draft %}
+                    <tr>
+                        <td align="center">
+                            <a href="{{ report.get_absolute_url_request }}"
+                               class="text-decoration-none" style="color: black;">
+                                {{ report.name }}
+                            </a>
+                        </td>
+                        <td align="center"><i class="fa-solid fa-trash" style="color: red;font-size: 14px;cursor: pointer;"></i></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!--            <div class="card text-bg-dark border-dark" style="width: 18rem;font-size: 0.8rem;">-->
+            <!--                <div class="card-header">-->
+            <!--                    <span class="fw-bold">Черновики</span>-->
+            <!--                </div>-->
+            <!--                <ul class="list-group list-group-flush">-->
+            <!--                    {% for report in reports %}-->
+            <!--                    <li class="list-group-item d-flex justify-content-between align-items-center">-->
+            <!--                        #{{ forloop.counter }} {{ report.name }}-->
+            <!--                    </li>-->
+            <!--                    {% endfor %}-->
+            <!--                </ul>-->
+            <!--            </div>-->
+        </div>
+    </div>
 </div>
-<div class="collapse" id="collapseDraft">
-</div>
-<div class="table-responsive">
-    <table class="table align-middle  table-hover g-1" style="font-size: 0.8rem;">
-        <thead>
-        <tr>
-            <th scope="col">#</th>
-            <th scope="col">Название</th>
-            <th scope="col">Менеджер</th>
-            <th scope="col">Статус</th>
-            <th scope="col">Перевозчики</th>
-            <th scope="col">Ставка</th>
-            <th scope="col">Дата последнего обновления</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for report in reports %}
-        <tr>
-            <th scope="row">{{ forloop.counter }}</th>
-            <td>{{ report.name }}</td>
-            <td>{{ report.manager }}</td>
-            <td>{{ report.status }}</td>
-            <td>{{ report.carriers }}</td>
-            <td>{{ report.bid }}</td>
-            <td>{{ report.time_update }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
-<!--<table id="myTable" class="table table-sm table-hover table_border align-middle" style="width:100%;border-spacing: 0;">-->
-<!--    <thead class="table-dark align-middle">-->
-<!--    <tr>-->
-<!--        <th scope="col" style="background-color: #111;">#</th>-->
-<!--        <th scope="col" width="200px" style="background-color: #111;">Артикул</th>-->
-<!--        <th scope="col" >Менеджер</th>-->
-<!--        <th scope="col" >Пере-возчик</th>-->
-<!--    </tr>-->
-<!--    </thead>-->
-<!--    <tbody style="text-align:center;">-->
-<!--    <tr>-->
-<!--        <th scope="row"></th>-->
-<!--        <td></td>-->
-<!--    </tr>-->
-<!--    </tbody>-->
-<!--</table>-->
 {% endblock %}

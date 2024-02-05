@@ -1,7 +1,8 @@
 import calendar
+import datetime
 import re
 
-from django.contrib.auth import logout, authenticate, login
+from django.contrib.auth import logout, authenticate, login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.db.models import Q
@@ -16,7 +17,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, T
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
     UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm
 from .models import *
-from .utils import DataMixin
+from .utils import DataMixin, MyLoginMixin
 
 from analytics.models import CargoArticle
 
@@ -74,7 +75,7 @@ class LoginUser(DataMixin, LoginView):
             return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
 
-class ProfileUser(LoginRequiredMixin, DataMixin, TemplateView):
+class ProfileUser(MyLoginMixin, DataMixin, TemplateView):
     template_name = 'main/profile.html'
     login_url = reverse_lazy('main:login')
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
@@ -84,16 +85,8 @@ class ProfileUser(LoginRequiredMixin, DataMixin, TemplateView):
         c_def = self.get_user_context(title="Профиль пользователя")
         return dict(list(context.items()) + list(c_def.items()))
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
+class MonitoringSystemView(MyLoginMixin, DataMixin, ListView):
     paginate_by = 8
     model = CustomUser
     template_name = 'main/monitoring_system.html'
@@ -112,16 +105,8 @@ class MonitoringSystemView(LoginRequiredMixin, DataMixin, ListView):
         else:
             return CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], town=f'{self.request.user.town}').order_by('-status', '-role')
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class MonitoringManagerReportView(LoginRequiredMixin, DataMixin, ListView):
+class MonitoringManagerReportView(MyLoginMixin, DataMixin, ListView):
     model = CustomUser
     template_name = 'main/monitoring_manager_report.html'
     context_object_name = 'manager'
@@ -228,16 +213,8 @@ class MonitoringManagerReportView(LoginRequiredMixin, DataMixin, ListView):
     def get(self, request, *args, **kwargs):
         return super(MonitoringManagerReportView, self).get(request, *args, **kwargs)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class MonitoringManagerAddReportView(LoginRequiredMixin, DataMixin, CreateView):
+class MonitoringManagerAddReportView(MyLoginMixin, DataMixin, CreateView):
     form_class = RopReportForm
     model = ManagersReports
     login_url = reverse_lazy('main:login')
@@ -250,16 +227,8 @@ class MonitoringManagerAddReportView(LoginRequiredMixin, DataMixin, CreateView):
         manager_report.save()
         return redirect(self.request.META.get('HTTP_REFERER'))
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class MonitoringManagerEditReportView(LoginRequiredMixin, DataMixin, UpdateView):
+class MonitoringManagerEditReportView(MyLoginMixin, DataMixin, UpdateView):
     form_class = EditRopReportForm
     model = ManagersReports
     pk_url_kwarg = 'report_id'
@@ -271,16 +240,8 @@ class MonitoringManagerEditReportView(LoginRequiredMixin, DataMixin, UpdateView)
         manager_report.save()
         return redirect(self.request.META.get('HTTP_REFERER'))
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class MonitoringManagerAddPlanView(LoginRequiredMixin, DataMixin, CreateView):
+class MonitoringManagerAddPlanView(MyLoginMixin, DataMixin, CreateView):
     form_class = AddManagerPlanForm
     model = ManagerPlans
     pk_url_kwarg = 'manager_id'
@@ -295,16 +256,8 @@ class MonitoringManagerAddPlanView(LoginRequiredMixin, DataMixin, CreateView):
         manager_plan.save()
         return redirect(self.request.META.get('HTTP_REFERER'))
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class MonitoringManagerEditPlanView(LoginRequiredMixin, DataMixin, UpdateView):
+class MonitoringManagerEditPlanView(MyLoginMixin, DataMixin, UpdateView):
     form_class = EditManagerPlanForm
     model = ManagerPlans
     pk_url_kwarg = 'plan_id'
@@ -322,16 +275,8 @@ class MonitoringManagerEditPlanView(LoginRequiredMixin, DataMixin, UpdateView):
         form.save()
         return redirect(self.request.META.get('HTTP_REFERER'))
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
+class MonitoringLeaderboardView(MyLoginMixin, DataMixin, ListView):
     model = CustomUser
     template_name = 'main/monitoring_leaderboard.html'
     context_object_name = 'managers_all'
@@ -464,6 +409,20 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
                     context['all_data'][f'{manager.pk}']['calls_duration_need'] = context['all_data'][f'{manager.pk}']['sum_duration_calls_need'] / context['all_data'][f'{manager.pk}']['sum_calls_need']
                 except ZeroDivisionError:
                     context['all_data'][f'{manager.pk}']['calls_duration_need'] = 0
+        context['prediction'] = context['all_net_profit']
+        if year == datetime.datetime.now().year and month == datetime.datetime.now().month:
+            all_days = calendar.monthcalendar(year, month)
+            all_work_days = 0
+            current_work_days = 0
+            for week in all_days:
+                print(week)
+                for item, day in enumerate(week):
+                    if item < 5 and day != 0:
+                        all_work_days += 1
+                    if day <= datetime.datetime.now().day and item < 5 and day != 0:
+                        current_work_days += 1
+            print(current_work_days, all_work_days)
+            context['prediction'] = context['prediction']/current_work_days * all_work_days
         c_def = self.get_user_context(title="Таблица результатов")
         return dict(list(context.items()) + list(c_def.items()))
 
@@ -473,16 +432,8 @@ class MonitoringLeaderboardView(LoginRequiredMixin, DataMixin, ListView):
         else:
             return CustomUser.objects.filter(role='Менеджер', town=f'{self.request.user.town}')
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class AddExchangeRatesView(LoginRequiredMixin, DataMixin, CreateView):
+class AddExchangeRatesView(MyLoginMixin, DataMixin, CreateView):
     form_class = AddExchangeRatesForm
     model = ExchangeRates
     template_name = 'main/create_exchangerates.html'
@@ -515,16 +466,8 @@ class AddExchangeRatesView(LoginRequiredMixin, DataMixin, CreateView):
         form.add_error(None, f'Ошибка добавления курса')
         return super(AddExchangeRatesView, self).form_invalid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
+class ExchangeRatesView(MyLoginMixin, DataMixin, ListView):
     paginate_by = 16
     model = ExchangeRates
     template_name = 'main/exchangerates.html'
@@ -537,16 +480,8 @@ class ExchangeRatesView(LoginRequiredMixin, DataMixin, ListView):
         c_def = self.get_user_context(title="Курсы валют")
         return dict(list(context.items()) + list(c_def.items()))
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
+class EmployeesView(MyLoginMixin, DataMixin, ListView):
     paginate_by = 8
     model = CustomUser
     template_name = 'main/employees.html'
@@ -564,16 +499,8 @@ class EmployeesView(LoginRequiredMixin, DataMixin, ListView):
         else:
             return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик'])
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class AddEmployeeView(LoginRequiredMixin, DataMixin, CreateView):
+class AddEmployeeView(MyLoginMixin, DataMixin, CreateView):
     form_class = AddEmployeesForm
     model = CustomUser
     template_name = 'main/create_employees.html'
@@ -605,16 +532,8 @@ class AddEmployeeView(LoginRequiredMixin, DataMixin, CreateView):
         self.object = None
         return self.form_invalid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class CardEmployeesView(LoginRequiredMixin, DataMixin, UpdateView):
+class CardEmployeesView(MyLoginMixin, DataMixin, UpdateView):
     model = CustomUser
     form_class = CardEmployeesForm
     template_name = 'main/card_employees.html'
@@ -640,22 +559,15 @@ class CardEmployeesView(LoginRequiredMixin, DataMixin, UpdateView):
         new_data.set_password(form.cleaned_data['password'])
         new_data.pass_no_sha = form.cleaned_data['password']
         new_data.save()
+        update_session_auth_hash(self.request, new_data)
         return redirect('main:employees')
 
     def form_invalid(self, form):
         form.add_error(None, f'Ошибка изменения данных сотрудника')
         return super(CardEmployeesView, self).form_invalid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class ClientsView(LoginRequiredMixin, DataMixin, ListView):
+class ClientsView(MyLoginMixin, DataMixin, ListView):
     paginate_by = 3
     model = CustomUser
     template_name = 'main/clients.html'
@@ -673,16 +585,8 @@ class ClientsView(LoginRequiredMixin, DataMixin, ListView):
         elif self.request.user.role == 'Супер Администратор':
             return CustomUser.objects.filter(role__in=['Клиент']).order_by('-time_create')
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class AddClientView(LoginRequiredMixin, DataMixin, CreateView):
+class AddClientView(MyLoginMixin, DataMixin, CreateView):
     form_class = AddClientsForm
     model = CustomUser
     template_name = 'main/create_client.html'
@@ -714,16 +618,8 @@ class AddClientView(LoginRequiredMixin, DataMixin, CreateView):
         self.object = None
         return self.form_invalid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class CardClientsView(LoginRequiredMixin, DataMixin, UpdateView):
+class CardClientsView(MyLoginMixin, DataMixin, UpdateView):
     model = CustomUser
     form_class = CardClientsForm
     template_name = 'main/card_client.html'
@@ -755,16 +651,8 @@ class CardClientsView(LoginRequiredMixin, DataMixin, UpdateView):
         form.add_error(None, f'Ошибка изменения данных клиента')
         return super(CardClientsView, self).form_invalid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class AppealsView(LoginRequiredMixin, DataMixin, ListView):
+class AppealsView(MyLoginMixin, DataMixin, ListView):
     paginate_by = 12
     model = Appeals
     template_name = 'main/appeals.html'
@@ -797,16 +685,8 @@ class AppealsView(LoginRequiredMixin, DataMixin, ListView):
         else:
             return Appeals.objects.all()
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class AddAppealsView(LoginRequiredMixin, DataMixin, CreateView):
+class AddAppealsView(MyLoginMixin, DataMixin, CreateView):
     form_class = AddAppealsForm
     model = Appeals
     template_name = 'main/create_appeal.html'
@@ -835,16 +715,8 @@ class AddAppealsView(LoginRequiredMixin, DataMixin, CreateView):
         form.add_error(None, f'Ошибка создания заявки')
         return super(AddAppealsView, self).form_invalid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
+class CardAppealsView(MyLoginMixin, DataMixin, UpdateView):
     paginate_by = 10
     pk_url_kwarg = 'appeal_id'
     model = Appeals
@@ -912,10 +784,8 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
             if self.request.POST.get('tag'):
                 new_data = self.form_manager(self.request.POST, instance=self.object)
                 if new_data.is_valid():
-                    print(self.object.client)
                     if not self.object.client:
                         new_data.client = current_client
-                        print(new_data.client)
                     new_data.save()
                 else:
                     new_data.add_error(None, new_data.errors)
@@ -929,16 +799,8 @@ class CardAppealsView(LoginRequiredMixin, DataMixin, UpdateView):
         new_data.save()
         return redirect('main:card_appeal', appeal_id=self.kwargs['appeal_id'])
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class AddGoodsView(LoginRequiredMixin, DataMixin, CreateView):
+class AddGoodsView(MyLoginMixin, DataMixin, CreateView):
     pk_url_kwarg = 'appeal_id'
     form_class = AddGoodsForm
     model = Goods
@@ -963,16 +825,8 @@ class AddGoodsView(LoginRequiredMixin, DataMixin, CreateView):
         form.add_error(None, f'Ошибка добавления товара')
         return super(AddGoodsView, self).form_invalid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class CardGoodsView(LoginRequiredMixin, DataMixin, UpdateView):
+class CardGoodsView(MyLoginMixin, DataMixin, UpdateView):
     model = Goods
     form_class = CardGoodsForm
     template_name = 'main/card_goods.html'
@@ -998,30 +852,14 @@ class CardGoodsView(LoginRequiredMixin, DataMixin, UpdateView):
         form.add_error(None, f'Ошибка изменения данных товара')
         return super(CardGoodsView, self).form_invalid(form)
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))
 
-
-class DeleteGoodsView(LoginRequiredMixin, DataMixin, DeleteView):
+class DeleteGoodsView(MyLoginMixin, DataMixin, DeleteView):
     model = Goods
     pk_url_kwarg = 'goods_id'
     role_have_perm = ['Супер Администратор', 'Закупщик', 'Менеджер', 'Клиент']
     success_url = reverse_lazy('main:card_appeal')
 
     def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.delete()
+        goods = self.get_object()
+        goods.delete()
         return redirect('main:card_appeal', appeal_id=self.kwargs['appeal_id'])
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        else:
-            if request.user.role in self.role_have_perm:
-                return super().dispatch(request, *args, **kwargs)
-            return redirect(self.get_redirect_url_for_user(role=self.request.user.role))

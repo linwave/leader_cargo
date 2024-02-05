@@ -1,0 +1,17 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Вы уверены, что хотите удалить файл?
+            <br>
+            {{ my_file.name }}
+        </h5>
+        <form id="delete_file" action="{% url 'analytics:delete_file_logistic_requests' my_file.request.pk my_file.pk %}" method="post">
+            {% csrf_token %}
+        </form>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-footer">
+        <button form="delete_file" type="submit" class="btn btn-danger">Удалить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

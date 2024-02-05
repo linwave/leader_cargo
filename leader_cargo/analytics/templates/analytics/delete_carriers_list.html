@@ -1,0 +1,16 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Вы уверены, что хотите удалить перевозчика?<br>
+            <span class="text-danger-emphasis">{{ carrier.name }}</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <form method="post" id="delete_carrier_form" action="{% url 'analytics:delete_carrier' carrier.pk %}">
+            {% csrf_token %}
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button form="delete_carrier_form" type="submit" class="btn btn-danger">Удалить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

@@ -1,0 +1,23 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Изменение сроков доставки<br>
+            <span class="text-primary-emphasis">{{ road.name }}: {{ roads_parameters.min_transportation_time }}-{{ roads_parameters.max_transportation_time }} дней</span> у перевозчика
+            <span class="text-danger-emphasis">{{ carrier.name }}</span>?
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body mb-2">
+        <form method="post" id="edit_road_to_carrier_form" action="{% url 'analytics:edit_road_to_carrier' carrier.pk road.pk %}">
+            {% csrf_token %}
+            {% for line in form %}
+            {{ line.label }}
+            {{ line }}
+            {% endfor %}
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button form="edit_road_to_carrier_form" type="submit" class="btn btn-primary">Изменить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

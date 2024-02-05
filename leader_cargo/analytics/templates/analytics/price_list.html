@@ -1,0 +1,67 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Добавление прайс листа<br>
+            <span class="text-primary-emphasis">{{ road.name }}: {{ roads_parameters.min_transportation_time }}-{{ roads_parameters.max_transportation_time }} дней</span> у перевозчика
+            <span class="text-danger-emphasis">{{ carrier.name }}</span>?
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body mb-2">
+        <div>
+            <table class="table table-white table-bordered border-dark align-middle" align="center">
+                <thead class="align-middle table-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Плотность МИН</th>
+                    <th scope="col">Плотность МАКС</th>
+                    <th scope="col">Цена</th>
+                    <th scope="col">Удалить</th>
+                </tr>
+                </thead>
+                <tbody align="center" id="hx-tbody">
+                {% for density in roads_parameters.density.all %}
+                <tr>
+                    <td scope="col">{{ forloop.counter }}</td>
+                    <td scope="col">
+                        <input class="form-control" style="border: none;" type="text"
+                               name="min_density"
+                               hx-post="{% url 'analytics:edit_price_list' density.pk %}"
+                               hx-trigger="keyup changed delay:0.5s"
+                               hx-swap="none"
+                               value="{{ density.min_density|default:'' }}"/>
+                    </td>
+                    <td scope="col">
+                        <input class="form-control" style="border: none;" type="text"
+                               name="max_density"
+                               hx-post="{% url 'analytics:edit_price_list' density.pk %}"
+                               hx-trigger="keyup changed delay:0.5s"
+                               hx-swap="none"
+                               value="{{ density.max_density|default:'' }}"/>
+                    </td>
+                    <td scope="col">
+                        <input class="form-control" style="border: none;" type="text"
+                               name="price"
+                               hx-post="{% url 'analytics:edit_price_list' density.pk %}"
+                               hx-trigger="keyup changed delay:0.5s"
+                               hx-swap="none"
+                               value="{{ density.price|default:'' }}"/>
+                    </td>
+                    <td scope="col"><i class="fa-solid fa-trash" style="color: red;font-size: 18px;"></i></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button type="button" class="btn btn-sm btn-success"
+                hx-get="{% url 'analytics:add_price_list' carrier.pk road.pk %}"
+                hx-target="#hx-tbody"
+                hx-swap="beforeend">
+            <i class="fa-solid fa-plus"></i> Добавить строку
+        </button>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

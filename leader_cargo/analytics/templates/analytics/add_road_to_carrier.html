@@ -1,12 +1,13 @@
 <div class="modal-content">
     <div class="modal-header">
-        <h5 class="modal-title" id="add-logistic-requests-Label">
-            Создание запроса на просчет
+        <h5 class="modal-title" id="modal-main-label">
+            Добавить дорогу к перевозчику<br>
+            <span class="text-danger-emphasis">{{ carrier.name }}</span>
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body mb-2">
-        <form method="post" id="add_logistic_requests_form" action="{% url 'analytics:add_logistic_requests' %}">
+        <form method="post" id="add_road_to_carrier_form" action="{% url 'analytics:add_road_to_carrier' carrier.pk %}">
             {% csrf_token %}
             {% for line in form %}
             {{ line.label }}
@@ -15,7 +16,7 @@
         </form>
     </div>
     <div class="modal-footer">
-        <button form="add_logistic_requests_form" type="submit" class="btn btn-success">Создать</button>
+        <button form="add_road_to_carrier_form" type="submit" class="btn btn-success">Добавить</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
     </div>
 </div>

@@ -1,0 +1,22 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Изменение тарифа перевозки для клиента<br>{{ article.article }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <form method="post" id="edit-transportation-tariff-for-clients-{{ article.pk }}"
+              action="{% url 'analytics:edit_transportation_tariff_for_clients' article.pk %}?{{ request.META.QUERY_STRING }}">
+            {% csrf_token %}
+            {% for line in form %}
+            {{ line.label }}
+            {{ line }}
+            {% endfor %}
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button form="edit-transportation-tariff-for-clients-{{ article.pk }}" type="submit" class="btn btn-primary">Изменить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

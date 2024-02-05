@@ -1,0 +1,192 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="modal-main" tabindex="-1" aria-labelledby="modal-main-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-main">
+        </div>
+    </div>
+</div>
+<div class="row g-2 justify-content-left m-3">
+    {% for carrier in carriers %}
+    <div class="col-auto">
+        <div class="card text-bg-dark border-dark" style="width: 25rem;">
+            <div class="card-header ">
+                {{ carrier.name }}
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for road in carrier.all_roads %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modal-main"
+                         hx-get="{% url 'analytics:edit_road_to_carrier' carrier.pk road.pk %}"
+                         hx-target="#hx-modal-main">
+                        {% if road.activity == True %}
+                        <i class="fa-solid fa-check" style="color: green;font-size: 18px;"></i>
+                        {% elif road.activity == False %}
+                        <i class="fa-solid fa-xmark" style="color: red;font-size: 18px;"></i>
+                        {% else %}
+                        <i class="fa-solid fa-question" style="color: gray;font-size: 18px;"></i>
+                        {% endif %}
+                        {{ road.name }}:
+                        {% for par in road.all_parameters %}
+                        {% if carrier.pk == par.carrier.pk %}
+                        {{ par.min_transportation_time|default:0 }}-{{ par.max_transportation_time|default:0 }} дней
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div>
+                        {% for par in road.all_parameters %}
+                        {% if carrier.pk == par.carrier.pk %}
+                        {% if par.density.all %}
+                        <span data-bs-toggle="modal" data-bs-target="#modal-main"
+                              hx-get="{% url 'analytics:price_list' carrier.pk road.pk %}"
+                              hx-target="#hx-modal-main">
+                            <i class="fa-solid fa-file-circle-check" style="color: green;font-size: 18px;cursor: pointer;"></i>
+                        </span>
+                        {% else %}
+                        <span data-bs-toggle="modal" data-bs-target="#modal-main"
+                              hx-get="{% url 'analytics:price_list' carrier.pk road.pk %}"
+                              hx-target="#hx-modal-main">
+                            <i class="fa-solid fa-file-circle-xmark" style="font-size: 18px;cursor: pointer;"></i>
+                        </span>
+                        {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                        <span data-bs-toggle="modal" data-bs-target="#modal-main"
+                              hx-get="{% url 'analytics:delete_road_to_carrier' carrier.pk road.pk %}"
+                              hx-target="#hx-modal-main">
+                            <i class="fa-solid fa-trash" style="color: red;font-size: 18px;cursor: pointer;"></i>
+                        </span>
+                    </div>
+                </li>
+                {% endfor %}
+                <li class="list-group-item">
+                    <button class="btn btn-sm btn-success"
+                            data-bs-toggle="modal" data-bs-target="#modal-main"
+                            hx-get="{% url 'analytics:add_road_to_carrier' carrier.pk %}"
+                            hx-target="#hx-modal-main">
+                        <i class="fa-solid fa-plus">
+                        </i>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<div class="row g-2 justify-content-left m-1">
+    <div class="col-auto">
+        <div class="table-responsive m-2">
+            <table class="table table-white table-bordered border-dark align-middle table-hover g-1" style="font-size: 0.8rem;text-align:center;" >
+                <thead class="table-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Название перевозчика</th>
+                    <th scope="col">Статус</th>
+                    <th scope="col" style="text-align:center;">Удалить</th>
+                </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                {% for carrier in carriers %}
+                {% if carrier.status %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <th data-bs-toggle="modal" data-bs-target="#modal-main"
+                        hx-get="{% url 'analytics:edit_carrier' carrier.pk %}" hx-target="#hx-modal-main">
+                        {{ carrier.name }}
+                    </th>
+                    <td data-bs-toggle="modal" data-bs-target="#modal-main"
+                        hx-get="{% url 'analytics:edit_carrier' carrier.pk %}" hx-target="#hx-modal-main">
+                        {% if carrier.activity == True %}
+                        <i class="fa-solid fa-check" style="color: green;font-size: 18px;"></i>
+                        {% elif carrier.activity == False %}
+                        <i class="fa-solid fa-xmark" style="color: red;font-size: 18px;"></i>
+                        {% else %}
+                        <i class="fa-solid fa-question" style="color: gray;font-size: 18px;"></i>
+                        {% endif %}
+                    </td>
+                    <td data-bs-toggle="modal" data-bs-target="#modal-main"
+                        hx-get="{% url 'analytics:delete_carrier' carrier.pk %}" hx-target="#hx-modal-main">
+                        <i class="fa-solid fa-trash" style="color: red;font-size: 18px;"></i>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+                <tr>
+                    <td colspan="4" align="center">
+                        <button class="btn btn-sm btn-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modal-main"
+                                hx-get="{% url 'analytics:add_carrier' %}"
+                                hx-target="#hx-modal-main">
+                            <i class="fa-solid fa-plus"></i> Добавить перевозчика
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="table-responsive m-2">
+            <table class="table table-white table-bordered border-dark align-middle table-hover g-1" style="font-size: 0.8rem;text-align:center;" >
+                <thead class="table-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Название дороги</th>
+                    <th scope="col">Статус</th>
+                    <th scope="col" style="text-align:center;">Удалить</th>
+                </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                {% for road in roads %}
+                {% if road.status %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <th data-bs-toggle="modal" data-bs-target="#modal-main"
+                        hx-get="{% url 'analytics:edit_road' road.pk %}" hx-target="#hx-modal-main">
+                        {{ road.name }}
+                    </th>
+                    <td data-bs-toggle="modal" data-bs-target="#modal-main"
+                        hx-get="{% url 'analytics:edit_road' road.pk %}" hx-target="#hx-modal-main">
+                        {% if road.activity == True %}
+                        <i class="fa-solid fa-check" style="color: green;font-size: 18px;"></i>
+                        {% elif road.activity == False %}
+                        <i class="fa-solid fa-xmark" style="color: red;font-size: 18px;"></i>
+                        {% else %}
+                        <i class="fa-solid fa-question" style="color: gray;font-size: 18px;"></i>
+                        {% endif %}
+                    </td>
+                    <td data-bs-toggle="modal" data-bs-target="#modal-main"
+                        hx-get="{% url 'analytics:delete_road' road.pk %}" hx-target="#hx-modal-main">
+                        <i class="fa-solid fa-trash" style="color: red;font-size: 18px;"></i>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+                <tr>
+                    <td colspan="5" align="center">
+                        <button class="btn btn-sm btn-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modal-main"
+                                hx-get="{% url 'analytics:add_road' %}"
+                                hx-target="#hx-modal-main">
+                            <i class="fa-solid fa-plus"></i> Добавить дорогу
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    document.body.addEventListener('htmx:configRequest', (event) => {
+    event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}'
+});
+</script>
+{% endblock %}

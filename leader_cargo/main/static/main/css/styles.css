@@ -81,12 +81,13 @@ body{
   position: absolute;
   display: block;
 }
-.login-box button span:nth-chlid(1){
+.login-box button span:nth-child(1){
   top: 0;
   left: -100px;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg,transparent,#03e9f4);
+  background: linear-gradient(90deg, transparent, #03e9f4);
+  animation: btn-anim1 1s linear infinite;
 }
 @keyframes btn-anim1{
   0%{
@@ -252,7 +253,7 @@ body{
 }
 .sidebar .nav-links li i{
     height: 50px;
-    min-width: 76px;
+    min-width: 73px;
     text-align: center;
     line-height: 50px;
     color: #fff;
@@ -558,12 +559,6 @@ div.dataTables_wrapper {
 .scrollable thead {
     position: sticky;
     top: 0;
-    border-top: 1px solid #CED4DA;
-    border-bottom: 1px solid #CED4DA;
-}
-.scrollable td {
-    border-right: 1px solid #CED4DA;
-    border-bottom: 1px solid #CED4DA;
 }
 
 .loader{
@@ -591,5 +586,139 @@ div.dataTables_wrapper {
       }
 
 
+.my_td {
+  position: relative;
+  width: 150px;
+}
+.image_for_request {
+  opacity: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: .5s ease;
+  backface-visibility: hidden;
+}
+.middle {
+  transition: .5s ease;
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  text-align: center;
+}
+.top-right {
+  transition: .5s ease;
+  opacity: 0;
+  position: absolute;
+  right: -5%;
+  top: 10%;
+  transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+}
+.my_td:hover .image_for_request {
+  opacity: 0.3;
+}
+.my_td:hover .middle {
+  opacity: 1;
+}
+.my_td:hover .top-right {
+  opacity: 1;
+}
+
+.log-table{
+    overflow-y: auto;
+    overflow-x: auto;
+    height: 695px;
+    position: relative;
+}
+
+.logistic-table{
+    width: 100%;
+    text-align: center;
+    vertical-align: middle;
+}
+.logistic-table table{
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.logistic-table thead{
+    color: white;
+    background: #212529;
+    height: 7em;
+    top: 1px;
+}
+.logistic-table thead th, td{
+    padding: 0.5em;
+}
+.logistic-table tbody{
+    background: #ffffff;
+}
 
 
+
+.logistic-table thead th{
+    outline: 1px solid #C0C0C0;
+}
+.logistic-table tbody tr th:nth-child(1){
+    outline: 1px solid #C0C0C0;
+}
+.logistic-table tbody tr td:nth-child(2){
+    outline: 1px solid #C0C0C0;
+}
+.logistic-table tbody tr td:nth-child(n+3){
+    border-right: 1px solid #C0C0C0;
+    border-bottom: 1px solid #C0C0C0;
+}
+
+
+
+.logistic-table-body{
+    z-index: 1;
+}
+
+.logistic-table-body thead tr th:nth-child(1){
+    position: sticky;
+    top: 0;
+    left: 0;
+    background-color: rgb(17, 17, 17);
+    z-index: 10;
+}
+.logistic-table-body thead tr th:nth-child(2){
+    position: sticky;
+    top: 0;
+    left: 1.6em;
+    background-color: rgb(17, 17, 17);
+    z-index: 10;
+}
+.logistic-table-body thead tr th:nth-child(n+3){
+    position: sticky;
+    top: 0;
+    background-color: #212529;
+    z-index: 5;
+}
+.logistic-table-body tbody tr th:nth-child(1){
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #ffffff;
+}
+.logistic-table-body tbody tr td:nth-child(2){
+    position: sticky;
+    left: 1.6em;
+    z-index: 1;
+    background: #ffffff;
+}
+
+.logistic-table tbody tr:hover{
+    background-color: #F0F0F0;
+}
+
+.a-clear{
+    color: #000000;
+    text-decoration: none;
+}
+.a-clear:hover{
+    color: #B0B0B0;
+}

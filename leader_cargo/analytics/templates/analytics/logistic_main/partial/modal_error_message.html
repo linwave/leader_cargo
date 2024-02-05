@@ -1,0 +1,11 @@
+<div id="modal-alert-message">
+    {% if message %}
+    <div class="alert alert-danger" role="alert">
+        Пожалуйста приложите хотя бы одну платежку, для изменения статуса платежа
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        Чтобы изменить статус платежа, нужно приложить минимум одну платежку
+    </div>
+    {% endif %}
+</div>

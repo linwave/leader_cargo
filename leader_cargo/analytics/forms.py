@@ -1,6 +1,214 @@
-from django.forms import ModelForm, TextInput, Select, FileInput
+from django.forms import ModelForm, TextInput, Select, FileInput, NumberInput
 
-from .models import CargoFiles, CargoArticle
+from .models import CargoFiles, CargoArticle, CarriersList, RoadsList, RequestsForLogisticsCalculations, RequestsForLogisticsGoods, CarriersRoadParameters
+
+
+class NewStatusRequestForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RequestsForLogisticsGoods
+        fields = []
+
+
+class AddGoodsRequestLogisticsForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RequestsForLogisticsGoods
+        fields = []
+
+
+class EditGoodsRequestLogisticsForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RequestsForLogisticsGoods
+        fields = []
+
+
+class AddRequestsForLogisticsCalculationsForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RequestsForLogisticsCalculations
+        fields = ["name"]
+        widgets = {
+            "name": TextInput(attrs={
+                'placeholder': 'Введите предварительное название запроса на просчет',
+            }),
+        }
+
+
+class EditRequestsForLogisticsCalculationsForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RequestsForLogisticsCalculations
+        fields = ["name"]
+        widgets = {
+            "name": TextInput(attrs={
+                'placeholder': 'Введите название запроса на просчет',
+            }),
+        }
+
+
+class AddRoadToCarriersForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['road'].empty_label = 'Дорога не выбрана'
+
+    class Meta:
+        model = CarriersRoadParameters
+        fields = ["road", "min_transportation_time", "max_transportation_time"]
+        widgets = {
+            "road": Select(attrs={
+                'empty_label': 'Дорога не выбрана',
+                'class': 'form-select',
+                'placeholder': 'Выберете дорогу',
+            }),
+            "min_transportation_time": NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Выберите минимальное время доставки в Днях',
+            }),
+            "max_transportation_time": NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Выберите максимальное время доставки в Днях',
+            }),
+        }
+
+
+class EditRoadToCarriersForm(ModelForm):
+
+    class Meta:
+        model = CarriersRoadParameters
+        fields = ["min_transportation_time", "max_transportation_time"]
+        widgets = {
+            "min_transportation_time": NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Выберите минимальное время доставки в Днях',
+            }),
+            "max_transportation_time": NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Выберите максимальное время доставки в Днях',
+            }),
+        }
+
+
+class DeleteRoadToCarriersForm(ModelForm):
+    class Meta:
+        model = CarriersRoadParameters
+        fields = []
+
+
+class AddRoadForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RoadsList
+        fields = ["name"]
+        widgets = {
+            "name": TextInput(attrs={
+                'placeholder': 'Введите название дороги',
+            })
+        }
+
+
+class EditRoadForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RoadsList
+        fields = ["name", "activity"]
+        widgets = {
+            "carrier_name": TextInput(attrs={
+                'placeholder': 'Введите название дороги',
+            }),
+        }
+
+
+class DeleteRoadForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = CarriersList
+        fields = []
+
+
+class AddCarriersListForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = CarriersList
+        fields = ["name"]
+        widgets = {
+            "name": TextInput(attrs={
+                'placeholder': 'Введите название перевозчика',
+            }),
+        }
+
+
+class EditCarriersListForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = CarriersList
+        fields = ["name", "activity"]
+        widgets = {
+            "carrier_name": TextInput(attrs={
+                'placeholder': 'Введите название перевозчика',
+            }),
+        }
+
+
+class DeleteCarriersListForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = CarriersList
+        fields = []
 
 
 class AddCarrierFilesForm(ModelForm):
@@ -94,6 +302,24 @@ class EditTableArticleForm(ModelForm):
 
 
 class EditTableManagerArticleForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        paid_by_the_client_statuses = [
+            ('Оплачено полностью', 'Оплачено полностью'),
+            ('Оплачено частично', 'Оплачено частично'),
+            ('Не оплачено', 'Не оплачено'),
+        ]
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+        self.fields["paid_by_the_client_status"].choices = paid_by_the_client_statuses
+
+    class Meta:
+        model = CargoArticle
+        fields = ["paid_by_the_client_status"]
+
+
+class EditPaidByTheClientArticleForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

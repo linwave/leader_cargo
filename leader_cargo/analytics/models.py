@@ -1,6 +1,9 @@
+import datetime
+from django.utils.timezone import make_aware
 from django.db import models
 
 from main.models import CustomUser
+from django.urls import reverse
 
 
 class CargoFiles(models.Model):
@@ -78,6 +81,7 @@ class CargoArticle(models.Model):
     tat_cost = models.CharField(max_length=50, verbose_name='Оплата ТАТ', blank=True, null=True)
     paid_by_the_client_status = models.CharField(max_length=50, default='Не оплачено',
                                                  choices=paid_by_the_client_statuses, verbose_name='Оплачено клиентом', blank=True, null=True)
+    time_paid_by_the_client_status = models.DateTimeField(verbose_name='Дата полной оплаты клиентом', blank=True, null=True)
     payment_to_the_carrier_status = models.CharField(max_length=50, default='Не оплачено',
                                                      choices=payment_to_the_carrier_statuses, verbose_name='Оплата перевозчику', blank=True, null=True)
     time_cargo_arrival_to_RF = models.DateTimeField(verbose_name='Дата прибытия груза в РФ', blank=True, null=True)
@@ -125,6 +129,17 @@ class CargoArticle(models.Model):
         else:
             return ''
 
+    def get_number_of_days_without_payment(self):
+        if self.time_paid_by_the_client_status and self.time_cargo_release:
+            day = (self.time_cargo_release - self.time_paid_by_the_client_status).days
+            if day < 0:
+                return ''
+            return day
+        elif self.time_cargo_release:
+            return (make_aware(datetime.datetime.now()) - self.time_cargo_release).days
+        else:
+            return ''
+
     def update_status_article(self):
         if self.status == 'Прибыл в РФ':
             self.status = 'В пути'
@@ -133,39 +148,84 @@ class CargoArticle(models.Model):
         self.save()
 
 
-class PriceListsOfCarriers(models.Model):
-    carriers = [
-        ('Ян', 'Ян'),
-        ('Валька', 'Валька'),
-        ('Мурад', 'Мурад'),
-        ('Гелик', 'Гелик')
-    ]
-    types_of_transportation = [
-        ('Авто', 'Авто'),
-        ('ЖД', 'ЖД'),
-    ]
-    types_of_product = [
-        ('ТНП', 'ТНП'),
-        ('Хозтовары', 'Хозтовары'),
-        ('Одежда', 'Одежда'),
-    ]
-    carrier = models.CharField(max_length=50, choices=carriers, verbose_name='Перевозчик')
-    type_of_transportation = models.CharField(max_length=50, choices=types_of_transportation, verbose_name='Тип перевозки')
-    type_of_product = models.CharField(max_length=50, choices=types_of_product, verbose_name='Вид товара')
-    min_transportation_time = models.IntegerField(verbose_name='Минимальный срок перевозки')
-    max_transportation_time = models.IntegerField(verbose_name='Максимальный срок перевозки')
-    min_density = models.IntegerField(verbose_name='Минимальная плотность')
-    max_density = models.IntegerField(verbose_name='Максимальная плотность')
+class PaymentDocumentsForArticles(models.Model):
+    article = models.ForeignKey(CargoArticle, verbose_name='Артикул', on_delete=models.CASCADE, related_name='file_payment_by_client')
+    name = models.CharField(verbose_name='Название файла', max_length=250, blank=True, null=True)
+    file_path = models.FileField(verbose_name='Платежки', upload_to='files/logistic/client_payments/%Y/%m/%d/', blank=True, null=True)
+    balance = models.FloatField(verbose_name='Деньги в платежки', blank=True, null=True)
 
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.carrier} {self.type_of_transportation} {self.type_of_product} {self.min_transportation_time}-{self.max_transportation_time}"
+        return f"Платежные документы - {self.article}"
+
+    class Meta:
+        verbose_name = 'Платежные документы'
+        verbose_name_plural = 'Платежные документы'
+
+
+class RoadsList(models.Model):
+    name = models.CharField(max_length=100, verbose_name='Название дороги')
+    activity = models.BooleanField(verbose_name='Статус активности дороги', default=True, blank=True, null=True)
+    status = models.BooleanField(verbose_name='Статус', default=True)
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name}"
+
+    class Meta:
+        verbose_name = 'Список дорог'
+        verbose_name_plural = 'Дорога'
+
+    def all_parameters(self):
+        return self.carriersroadparameters_set.all()
+
+
+class CarriersList(models.Model):
+    name = models.CharField(max_length=100, verbose_name='Название перевозчика')
+    roads = models.ManyToManyField(RoadsList, through="CarriersRoadParameters")
+    activity = models.BooleanField(verbose_name='Статус активности перевозчика', default=True, blank=True, null=True)
+
+    status = models.BooleanField(verbose_name='Статус', default=True)
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Перевозчик - {self.name}"
+
+    class Meta:
+        verbose_name = 'Список перевозчиков'
+        verbose_name_plural = 'Перевозчик'
+
+    def all_roads(self):
+        return self.roads.all()
+
+
+class CarriersRoadParameters(models.Model):
+    carrier = models.ForeignKey(CarriersList, verbose_name='Перевозчик', on_delete=models.CASCADE)
+    road = models.ForeignKey(RoadsList, verbose_name='Дорога', on_delete=models.CASCADE)
+    min_transportation_time = models.IntegerField(verbose_name='Минимальный срок доставки', blank=True, null=True)
+    max_transportation_time = models.IntegerField(verbose_name='Максимальный срок доставки', blank=True, null=True)
+
+
+class PriceListsOfCarriers(models.Model):
+    carrier_and_road = models.ForeignKey(CarriersRoadParameters, verbose_name='Перевозчик и дорога', on_delete=models.SET_NULL, null=True, related_name='density')
+    min_density = models.IntegerField(verbose_name='Минимальная плотность', blank=True, null=True)
+    max_density = models.IntegerField(verbose_name='Максимальная плотность', blank=True, null=True)
+    price = models.IntegerField(verbose_name='Цена', blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.carrier_and_road} {self.min_density}-{self.max_density}"
 
     class Meta:
         verbose_name = 'Прайс листы перевозчиков'
         verbose_name_plural = 'Прайс листы перевозчиков'
+        ordering = ['-min_density']
 
 
 class RequestsForLogisticsCalculations(models.Model):
@@ -180,14 +240,17 @@ class RequestsForLogisticsCalculations(models.Model):
         ('Перевозчик утвержден', 'Перевозчик утвержден'),
         ('Отклонено', 'Отклонено')
     ]
-    name = models.CharField(max_length=50, verbose_name='Название запроса')
-    manager = models.ForeignKey(CustomUser, on_delete=models.PROTECT)
-    status = models.CharField(max_length=50, verbose_name='Статус', blank=True, null=True)
-    carriers = models.CharField(max_length=50, verbose_name='Перевозчики', blank=True, null=True)
+    name = models.CharField(max_length=50, verbose_name='Название запроса на просчет')
+    initiator = models.ForeignKey(CustomUser, on_delete=models.PROTECT, verbose_name='Инициатор', related_name='initiator')
+    logist = models.ForeignKey(CustomUser, on_delete=models.PROTECT, verbose_name='Логист', related_name='logist', blank=True, null=True)
+    status = models.CharField(max_length=50, choices=statuses, verbose_name='Статус', blank=True, null=True)
     bid = models.CharField(max_length=50, verbose_name='Окончательная ставка', blank=True, null=True)
-    # file_path_requests = models.FileField(verbose_name='Файл запроса', upload_to='files/logistic/requests/%Y/%m/%d/', blank=True, null=True)
+    description = models.CharField(max_length=250, verbose_name='Приоритеты от менеджера', blank=True, null=True)
+
     time_new = models.DateTimeField(verbose_name='Дата статуса Новый', blank=True, null=True)
     time_in_work = models.DateTimeField(verbose_name='Дата статуса В работе', blank=True, null=True)
+    time_in_partially_work = models.DateTimeField(verbose_name='Дата статуса Частично обработано', blank=True, null=True)
+    time_completed = models.DateTimeField(verbose_name='Дата статуса Отработано', blank=True, null=True)
     time_to_close_yes = models.DateTimeField(verbose_name='Дата статуса Перевозчик утвержден', blank=True, null=True)
     time_to_close_no = models.DateTimeField(verbose_name='Дата статуса Отклонено', blank=True, null=True)
 
@@ -202,10 +265,63 @@ class RequestsForLogisticsCalculations(models.Model):
         verbose_name_plural = 'Запросы на логистику'
         ordering = ['-time_update']
 
+    def get_absolute_url_request(self):
+        return reverse('analytics:edit_logistic_requests', kwargs={'request_id': self.pk})
+
+
+class RequestsForLogisticFiles(models.Model):
+    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, verbose_name='Название файла', blank=True, null=True)
+    file_path_request = models.FileField(verbose_name='Файл по запросу',
+                                         upload_to='files/logistic/requests/%Y/%m/%d/', blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Файл по запросу {self.request}"
+
+    class Meta:
+        verbose_name = 'Файлы по запросу логисту'
+        verbose_name_plural = 'Файлы по запросу логисту'
+
+
+class RequestsForLogisticsRate(models.Model):
+    statuses = [
+        ('Новый', 'Новый'),
+        ('В работе', 'В работе'),
+        ('Обработано', 'Обработано'),
+        ('Запрос снижения тарифа', 'Запрос снижения тарифа'),
+        ('Снижение невозможно', 'Снижение невозможно'),
+        ('Тариф снижен', 'Тариф снижен'),
+    ]
+    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE)
+    carrier = models.ForeignKey(CarriersList, verbose_name='Название перевозчика', on_delete=models.PROTECT)
+    road = models.ForeignKey(RoadsList, verbose_name='Название дороги', on_delete=models.PROTECT)
+    bid = models.CharField(max_length=50, verbose_name='Ставка')
+    status = models.CharField(max_length=50, choices=statuses, verbose_name='Статус', blank=True, null=True)
+
+    active = models.BooleanField(default=False, verbose_name='Выбранная ставка', blank=True, null=True)
+
+    time_in_work = models.DateTimeField(verbose_name='Дата статуса В работе', blank=True, null=True)
+    time_completed = models.DateTimeField(verbose_name='Дата статуса Обработано', blank=True, null=True)
+    time_to_tariff_reduction = models.DateTimeField(verbose_name='Дата статуса Запрос снижения тарифа', blank=True, null=True)
+    time_to_tariff_reduction_no = models.DateTimeField(verbose_name='Дата статуса Снижение невозможно', blank=True, null=True)
+    time_to_tariff_reduction_yes = models.DateTimeField(verbose_name='Дата статуса Тариф снижен', blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Ставка {self.bid} по запросу {self.request}"
+
+    class Meta:
+        verbose_name = 'Ставки на запрос в логистику'
+        verbose_name_plural = 'Ставки на запрос в логистику'
+
 
 class RequestsForLogisticsGoods(models.Model):
-    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.PROTECT)
-    photo_path_logistic_goods = models.ImageField(verbose_name='Фото товара', upload_to='photo/logistic/goods/%Y/%m/%d/', blank=True, null=True)
+    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE)
+    photo_path_logistic_goods = models.ImageField(verbose_name='Фото товара', upload_to='photos/logistic/goods/%Y/%m/%d/', blank=True, null=True)
     description = models.CharField(max_length=50, verbose_name='Описание товара', blank=True, null=True)
     material = models.CharField(max_length=50, verbose_name='Материал', blank=True, null=True)
     number_of_packages = models.CharField(max_length=50, verbose_name='Количество упаковок/мест', blank=True, null=True)
@@ -221,31 +337,8 @@ class RequestsForLogisticsGoods(models.Model):
     time_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Товар {self.pk} запроса {self.request}"
+        return f"Товар {self.pk} запроса {self.request.name}"
 
     class Meta:
         verbose_name = 'Товары на запрос в логистику'
         verbose_name_plural = 'Товары на запрос в логистику'
-
-
-class RequestsForLogisticsRate(models.Model):
-    carriers = [
-        ('Ян', 'Ян'),
-        ('Валька', 'Валька'),
-        ('Мурад', 'Мурад'),
-        ('Гелик', 'Гелик')
-    ]
-    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.PROTECT)
-    road_name = models.CharField(max_length=50, verbose_name='Название дороги')
-    carrier_name = models.CharField(max_length=50, verbose_name='Название перевозчика', choices=carriers)
-    bid = models.CharField(max_length=50, verbose_name='Ставка')
-
-    time_create = models.DateTimeField(auto_now_add=True)
-    time_update = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Ставка {self.bid} по запросу {self.request}"
-
-    class Meta:
-        verbose_name = 'Ставки на запрос в логистику'
-        verbose_name_plural = 'Ставки на запрос в логистику'

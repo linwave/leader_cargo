@@ -1,0 +1,117 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="modal-main" tabindex="-1" aria-labelledby="modal-main-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-main">
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
+    {% include "analytics/components/modal/modalInputCarrierFile.html"  %}
+    {% include "analytics/components/modal/modalEditArticleForLogist.html"  %}
+    {% include "analytics/components/modal/modalDeleteArticleForLogist.html"  %}
+    <div class="row g-2 justify-content-start">
+        <div class="col-auto">
+
+            <button type="button" class="btn btn-sm btn-success"
+                    data-bs-toggle="modal" data-bs-target="#modalInputCarrierFile">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
+                Загрузить файл перевозчика
+            </button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-sm btn-dark">
+                <i class="fa-solid fa-file-export"></i>
+                Выгрузка отчета по грузам
+            </button>
+        </div>
+        <div class="col-auto">
+
+            <button class="btn btn-sm btn-primary" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseWithoutInsuranceArticles"
+                    aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >
+                <i class="fa-solid fa-car-burst"></i>
+                Груза без страховки: {{ count_articles_without_insurance }}
+            </button>
+        </div>
+        <div class="col-auto">
+
+            <button class="btn btn-sm btn-danger" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseNotIssuedArticles"
+                    aria-expanded="false" aria-controls="collapseNotIssuedArticles" >
+                <i class="fa-solid fa-house-lock"></i>
+                Не выданные: {{ count_all_articles_not_issued }}
+            </button>
+        </div>
+        <div class="col-auto">
+
+            <button class="btn btn-sm btn-secondary" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#multiCollapseResponsibleManager"
+                    aria-expanded="false" aria-controls="multiCollapseResponsibleManager">
+                <i class="fa-solid fa-users-slash"></i>
+                С пустым менеджером: {{ count_empty_responsible_manager }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-sm btn-secondary" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#multiCollapsePathFormat"
+                    aria-expanded="false" aria-controls="multiCollapsePathFormat">
+                <i class="fa-solid fa-road-circle-xmark"></i>
+                С пустой дорогой: {{ count_empty_path_format }}
+            </button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-sm text-primary-emphasis bg-primary-subtle border border-primary-subtle"
+                    data-bs-toggle="modal" data-bs-target="#modal-main"
+                    hx-get="{% url 'analytics:amount_fund' %}" hx-target="#hx-modal-main">
+                <i class="fa-solid fa-money-bill-trend-up"></i>
+                Сумма фонда
+            </button>
+        </div>
+    </div>
+    {% include "analytics/components/collapse/collapseNotIssuedArticles.html"  %}
+    {% include "analytics/components/collapse/collapseWithoutInsuranceArticles.html"  %}
+    {% include "analytics/components/collapse/collapseEmptyPathAndResponsibleManager.html"  %}
+    {% include "analytics/components/messagesError.html"  %}
+    {% endif %}
+    {% include "analytics/components/filters.html"  %}
+
+    <div id="hx-table">
+        {% include "analytics/logistic_main/table.html"  %}
+    </div>
+</div>
+<script>
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+let maskOptions = {
+        mask: Number,
+        padFractionalZeros: false,  // if true, then pads zeros at end to the length of scale
+        normalizeZeros: true,  // appends or removes zeros at ends
+        radix: ',',  // fractional delimiter
+        mapToRadix: ['.'],
+        min: 0,
+        max: 10000000000,
+        thousandsSeparator: ' '
+};
+var myModal = document.getElementById('edit')
+myModal.addEventListener('shown.bs.modal', function () {
+  let element = document.querySelectorAll('input[id="id_prr"]');
+for (let i = 0; i < element.length; i++){
+        let mask = IMask(element[i], maskOptions);
+}
+let element2 = document.querySelectorAll('input[id="id_tat_cost"]');
+for (let i = 0; i < element2.length; i++){
+        let mask = IMask(element2[i], maskOptions);
+}
+})
+document.body.addEventListener('htmx:configRequest', (event) => {
+    event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}'
+});
+</script>
+{% endblock %}
