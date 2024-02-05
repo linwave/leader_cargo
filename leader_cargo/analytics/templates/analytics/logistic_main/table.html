@@ -83,7 +83,7 @@
                     {{ article.article }}
                 </td>
                 {% endif %}
-                {% if article.get_number_of_days_without_payment > 0 %}
+                {% if article.get_number_of_days_without_payment >= 0 %}
                 <td bgcolor="#dc3545">
                     <span style="color: white;">{{ article.get_number_of_days_without_payment }}</span>
                 </td>
