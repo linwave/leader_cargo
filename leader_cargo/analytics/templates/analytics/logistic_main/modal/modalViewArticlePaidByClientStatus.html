@@ -14,7 +14,7 @@
                     <div class="row">
                         {% for doc in article.file_payment_by_client.all %}
                         <div class="col-auto">
-                            <a class="a-clear" href="{{ doc.file_path.url }}" target="_blank"><i class="fa-solid fa-file"></i>{{ doc.name|truncatechars:12 }}</a>
+                            <a class="a-clear" href="{% url 'analytics:download_client_payment' doc.pk %}" target="_blank"><i class="fa-solid fa-file"></i>{{ doc.name|truncatechars:12 }}</a>
                         </div>
                         {% endfor %}
                     </div>

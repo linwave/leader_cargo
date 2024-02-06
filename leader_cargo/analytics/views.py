@@ -3,6 +3,7 @@ import os
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.http import HttpResponse, Http404, FileResponse
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
@@ -18,6 +19,13 @@ from main.utils import DataMixin, MyLoginMixin
 # EXTERNAL LIBRARIES
 import openpyxl
 import xlrd
+
+
+def download(request, file_id):
+    obj = PaymentDocumentsForArticles.objects.get(pk=file_id)
+    if obj:
+        return FileResponse(obj.file_path)
+    raise Http404
 
 
 class LogisticRequestsView(MyLoginMixin, DataMixin, TemplateView):
