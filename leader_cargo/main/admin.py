@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import CustomUser, Appeals, Goods, ManagersReports
-from analytics.models import CargoFiles, CargoArticle
+from analytics.models import CargoFiles, CargoArticle, PaymentDocumentsForArticles
 
 
 class CustomUserAdmin(admin.ModelAdmin):
@@ -20,6 +20,7 @@ class CustomCargoArticleAdmin(admin.ModelAdmin):
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(CargoFiles)
 admin.site.register(CargoArticle, CustomCargoArticleAdmin)
+admin.site.register(PaymentDocumentsForArticles)
 admin.site.register(ManagersReports)
 admin.site.register(Appeals)
 admin.site.register(Goods)
