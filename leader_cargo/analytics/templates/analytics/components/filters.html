@@ -5,6 +5,7 @@
     <input type="hidden" name="paid_by_the_client" value="{{ paid_by_the_client_current }}">
     <input type="hidden" name="paid_to_the_carrier" value="{{ paid_to_the_carrier_current }}">
     <input type="hidden" name="filter_date" value="{{ filter_date_now }}">
+    <input type="hidden" name="day_without_payment" value="{{ day_without_payment_now }}">
     <div class="row g-2 justify-content-start">
         <!--        <div class="col-auto">-->
         <!--            <input id="article_search" class="form-control" type="text" name="q" placeholder="Поиск по артикулу"-->
@@ -83,6 +84,17 @@
             </ul>
         </div>
         {% endif %}
+        <div class="col-auto" align="center">
+            <button id="day_without_payment" class="btn btn-danger btn-sm dropdown-toggle"
+                    data-bs-toggle="dropdown" aria-expanded="false" type="button" >
+                {{ day_without_payment_now }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><input class="dropdown-item" value="Просроченная оплата" name="day_without_payment" type="submit"/></li>
+                <li><input class="dropdown-item" value="1 день и больше" name="day_without_payment" type="submit"/></li>
+                <li><input class="dropdown-item" value="7 дней и больше" name="day_without_payment" type="submit"/></li>
+            </ul>
+        </div>
         <div class="col-auto">
             <button id="filter_date" class="btn btn-dark btn-sm dropdown-toggle"
                     data-bs-toggle="dropdown" aria-expanded="false" type="button" >
@@ -92,9 +104,6 @@
                 <li><button class="dropdown-item" value="Дата отправки с Китая" type="submit" name="filter_date">Дата отправки с Китая</button></li>
                 <li><button class="dropdown-item" value="Дата прибытия груза в РФ" type="submit" name="filter_date">Дата прибытия груза в РФ</button></li>
                 <li><button class="dropdown-item" value="Дата выдачи груза" type="submit" name="filter_date">Дата выдачи груза</button></li>
-<!--                <li><input class="dropdown-item" value="Дата отправки с Китая" name="filter_date" type="submit"/></li>-->
-<!--                <li><input class="dropdown-item" value="Дата прибытия груза в РФ" name="filter_date" type="submit"/></li>-->
-<!--                <li><input class="dropdown-item" value="Дата выдачи груза" name="filter_date" type="submit"/></li>-->
             </ul>
         </div>
         <div class="col-auto">

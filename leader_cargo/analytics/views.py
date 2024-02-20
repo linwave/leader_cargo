@@ -3,6 +3,7 @@ import os
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.db.models import F, Q
 from django.http import HttpResponse, Http404, FileResponse
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect, render
@@ -601,6 +602,19 @@ class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
                 context['all_articles'] = context['all_articles'].filter(time_cargo_arrival_to_RF__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
             elif filter_for_date == 2:
                 context['all_articles'] = context['all_articles'].filter(time_cargo_release__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+
+        if self.request.GET.get('day_without_payment') and self.request.GET.get('day_without_payment') != 'Просроченная оплата':
+            context["day_without_payment_now"] = self.request.GET.get('day_without_payment')
+            if context["day_without_payment_now"] == '1 день и больше':
+                context['all_articles'] = context['all_articles'].exclude(time_cargo_release=None).annotate(day_without=F('time_paid_by_the_client_status') - F('time_cargo_release'))
+                context['all_articles'] = context['all_articles'].exclude(time_cargo_release=None).annotate(day_without_today=make_aware(datetime.datetime.today()) - F('time_cargo_release'))
+                context['all_articles'] = context['all_articles'].filter((Q(day_without=None) & Q(day_without_today__gte=datetime.timedelta(days=1))) | (Q(day_without__gte=datetime.timedelta(days=1))))
+            elif context["day_without_payment_now"] == '7 дней и больше':
+                context['all_articles'] = context['all_articles'].exclude(time_cargo_release=None).annotate(day_without=F('time_paid_by_the_client_status') - F('time_cargo_release'))
+                context['all_articles'] = context['all_articles'].exclude(time_cargo_release=None).annotate(day_without_today=make_aware(datetime.datetime.today()) - F('time_cargo_release'))
+                context['all_articles'] = context['all_articles'].filter((Q(day_without=None) & Q(day_without_today__gte=datetime.timedelta(days=7))) | (Q(day_without__gte=datetime.timedelta(days=7))))
+        else:
+            context["day_without_payment_now"] = "Просроченная оплата"
 
         if self.request.GET.get('paid_by_the_client') and self.request.GET.get('paid_by_the_client') != 'Оплата клиентом':
             context['paid_by_the_client_current'] = self.request.GET.get('paid_by_the_client')
