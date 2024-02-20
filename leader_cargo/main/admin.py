@@ -11,16 +11,23 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 
 class CustomCargoArticleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'article', 'responsible_manager', 'total_cost', 'weight', 'volume', 'cargo_id', 'time_create')
+    list_display = ('id', 'article', 'responsible_manager', 'status', 'total_cost', 'weight', 'volume', 'cargo_id', 'time_create')
     list_display_links = ('id', 'article')
     search_fields = ('article', 'responsible_manager')
-    list_editable = ('responsible_manager',)
+    list_editable = ('responsible_manager', 'status', )
+
+
+class CustomPaymentDocumentsForArticles(admin.ModelAdmin):
+    list_display = ('id', 'article', 'file_path', 'balance', 'time_create')
+    list_display_links = ('id', )
+    search_fields = ('article', 'time_create')
+    list_editable = ('balance',)
 
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(CargoFiles)
 admin.site.register(CargoArticle, CustomCargoArticleAdmin)
-admin.site.register(PaymentDocumentsForArticles)
+admin.site.register(PaymentDocumentsForArticles, CustomPaymentDocumentsForArticles)
 admin.site.register(ManagersReports)
 admin.site.register(Appeals)
 admin.site.register(Goods)

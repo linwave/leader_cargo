@@ -559,19 +559,48 @@ class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
         else:
             context['responsible_manager_current'] = 'Все менеджеры'
 
+        if self.request.GET.get('filter_date'):
+            context["filter_date_now"] = self.request.GET.get('filter_date')
+        else:
+            context["filter_date_now"] = "Дата отправки с Китая"
+
+        filter_for_date = 0
+
+        if context["filter_date_now"] == 'Дата отправки с Китая':
+            filter_for_date = 0
+        elif context["filter_date_now"] == "Дата прибытия груза в РФ":
+            filter_for_date = 1
+        elif context["filter_date_now"] == "Дата выдачи груза":
+            filter_for_date = 2
+
         if self.request.GET.get('date'):
             context['date_current'] = self.request.GET.get('date')
-            context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
+            if filter_for_date == 0:
+                context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
+            elif filter_for_date == 1:
+                context['all_articles'] = context['all_articles'].filter(time_cargo_arrival_to_RF__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
+            elif filter_for_date == 2:
+                context['all_articles'] = context['all_articles'].filter(time_cargo_release__gte=make_aware(datetime.datetime.strptime(context['date_current'], '%Y-%m-%d')))
         else:
             if not self.request.htmx:
                 if self.request.user.role == 'Логист':
                     first_day = (datetime.datetime.now() - datetime.timedelta(days=28)).replace(day=1)
                     context['date_current'] = first_day.strftime('%Y-%m-%d')
-                    context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(first_day))
+                    if filter_for_date == 0:
+                        context['all_articles'] = context['all_articles'].filter(time_from_china__gte=make_aware(first_day))
+                    elif filter_for_date == 1:
+                        context['all_articles'] = context['all_articles'].filter(time_cargo_arrival_to_RF__gte=make_aware(first_day))
+                    elif filter_for_date == 2:
+                        context['all_articles'] = context['all_articles'].filter(time_cargo_release__gte=make_aware(first_day))
 
         if self.request.GET.get('end_date'):
             context['end_date_current'] = self.request.GET.get('end_date')
-            context['all_articles'] = context['all_articles'].filter(time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+            if filter_for_date == 0:
+                context['all_articles'] = context['all_articles'].filter(time_from_china__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+            elif filter_for_date == 1:
+                context['all_articles'] = context['all_articles'].filter(time_cargo_arrival_to_RF__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
+            elif filter_for_date == 2:
+                context['all_articles'] = context['all_articles'].filter(time_cargo_release__lte=make_aware(datetime.datetime.strptime(context['end_date_current'], '%Y-%m-%d')))
 
         if self.request.GET.get('paid_by_the_client') and self.request.GET.get('paid_by_the_client') != 'Оплата клиентом':
             context['paid_by_the_client_current'] = self.request.GET.get('paid_by_the_client')

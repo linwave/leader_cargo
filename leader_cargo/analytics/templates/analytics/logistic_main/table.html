@@ -132,16 +132,16 @@
                 <td>
                     {% if article.status == 'В пути' %}
                     <span class="btn btn-primary btn-sm" onclick="location.href='{% url 'analytics:update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">
-                {{ article.status }}
-            </span>
+                        {{ article.status }}
+                    </span>
                     {% elif article.status == 'Прибыл в РФ' %}
                     <span class="btn btn-danger btn-sm" onclick="location.href='{% url 'analytics:update_article' article.pk %}?{{ request.META.QUERY_STRING }}'">
-                {{ article.status }}
-            </span>
+                        {{ article.status }}
+                    </span>
                     {% elif article.status == 'Выдан' %}
                     <span class="btn btn-success btn-sm">
-                {{ article.status }}
-            </span>
+                        {{ article.status }}
+                    </span>
                     {% endif %}
                 </td>
                 {% else %}
@@ -245,33 +245,33 @@
                     hx-get="{% url 'analytics:edit_table_manager_article' article.pk %}"
                     hx-target="#hx-modal-main"
                     id="td-paid-by-the-client-status-{{ article.pk }}">
-<!--                <td>-->
+                    <!--                <td>-->
                     {% if user.role == 'Менеджер' or user.role == 'РОП' or user.role == 'Супер Администратор'%}
                     {% if article.paid_by_the_client_status == 'Не оплачено'  %}
                     <button type="button" class="btn btn-secondary btn-sm">
-                    {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
-                    <button type="button" class="btn btn-primary btn-sm">
-                    {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
-                    <button type="button" class="btn btn-success btn-sm">
-                    {% endif %}
-                        {{ article.paid_by_the_client_status }}
-                    </button>
-                    {% endif %}
+                        {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
+                        <button type="button" class="btn btn-primary btn-sm">
+                            {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
+                            <button type="button" class="btn btn-success btn-sm">
+                                {% endif %}
+                                {{ article.paid_by_the_client_status }}
+                            </button>
+                            {% endif %}
                 </td>
                 {% else %}
                 <td id="td-paid-by-the-client-status-{{ article.pk }}">
-<!--                <td>-->
+                    <!--                <td>-->
                     {% if user.role == 'Менеджер' or user.role == 'РОП' or user.role == 'Супер Администратор'%}
                     {% if article.paid_by_the_client_status == 'Не оплачено'  %}
                     <button type="button" class="btn btn-secondary btn-sm">
-                    {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
-                    <button type="button" class="btn btn-primary btn-sm">
-                    {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
-                    <button type="button" class="btn btn-success btn-sm">
-                    {% endif %}
-                        {{ article.paid_by_the_client_status }}
-                    </button>
-                    {% endif %}
+                        {% elif article.paid_by_the_client_status == 'Оплачено частично'  %}
+                        <button type="button" class="btn btn-primary btn-sm">
+                            {% elif article.paid_by_the_client_status == 'Оплачено полностью'  %}
+                            <button type="button" class="btn btn-success btn-sm">
+                                {% endif %}
+                                {{ article.paid_by_the_client_status }}
+                            </button>
+                            {% endif %}
                 </td>
                 {% endif %}
                 <td>

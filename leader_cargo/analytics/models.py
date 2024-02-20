@@ -131,7 +131,7 @@ class CargoArticle(models.Model):
 
     def get_number_of_days_without_payment(self):
         if self.time_paid_by_the_client_status and self.time_cargo_release:
-            day = (self.time_cargo_release - self.time_paid_by_the_client_status).days
+            day = (self.time_paid_by_the_client_status - self.time_cargo_release).days
             if day < 0:
                 return 0
             return day
