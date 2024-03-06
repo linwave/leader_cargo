@@ -3,6 +3,30 @@ from django.forms import ModelForm, TextInput, Select, FileInput, NumberInput
 from .models import CargoFiles, CargoArticle, CarriersList, RoadsList, RequestsForLogisticsCalculations, RequestsForLogisticsGoods, CarriersRoadParameters
 
 
+class AddBidRequestLogisticsForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RequestsForLogisticsGoods
+        fields = []
+
+
+class UpdateRequestForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = RequestsForLogisticsCalculations
+        fields = []
+
+
 class NewStatusRequestForm(ModelForm):
 
     def __init__(self, *args, **kwargs):

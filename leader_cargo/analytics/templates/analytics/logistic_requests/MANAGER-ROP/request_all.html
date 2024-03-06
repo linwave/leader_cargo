@@ -1,0 +1,133 @@
+<div class="container-fluid">
+    <div class="input-group mb-2" style="width: 300px">
+        <span class="input-group-text">Создал:</span>
+        <input type="text" class="form-control" value="{{ my_request.initiator.get_FI }}" disabled>
+    </div>
+    <div class="input-group mb-2" style="width: 300px">
+        <span class="input-group-text">Статус:</span>
+        <input type="text" class="form-control" value="{{ my_request.status }}" disabled>
+    </div>
+    <div class="input-group mb-2" style="width: 600px">
+        <span class="input-group-text">Наименование запроса:</span>
+        <input type="text" class="form-control" value="{{ my_request.name }}" disabled>
+    </div>
+    {% for bid in my_request_description_roads %}
+    <div class="input-group mb-2" style="width: 600px">
+        <button class="btn btn-primary">{{bid.road.name}}</button>
+        {% if bid.bid == my_request.bid %}
+        <input style="border-color: red;" type="text" class="form-control" value="{{ bid.bid|default:'Ставки нет' }}" disabled >
+        {% else %}
+        <input type="text" class="form-control" value="{{ bid.bid|default:'Ставки нет' }}" disabled >
+        {% endif %}
+    </div>
+    {% endfor %}
+    <div class="input-group mb-2" style="width: 600px">
+        <span class="input-group-text">Комментарий:</span>
+        <textarea class="form-control" name="comments_initiator" id="comments_initiator" rows="2" wrap="hard" disabled>{{my_request.comments_initiator|default:''}}</textarea>
+    </div>
+    <div class="input-group mb-2" style="width: 600px">
+        <span class="input-group-text">Комментарий логиста:</span>
+        <textarea class="form-control" name="comments_logist" id="comments_logist" rows="2" wrap="hard" disabled>{{my_request.comments_logist|default:''}}</textarea>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row mb-2 g-2 justify-content-left">
+        {% if my_request.file_path_request %}
+        <div class="col-auto">
+            <a class="btn btn-sm btn-success"
+               href="{{ my_request.file_path_request.url }}" download>
+                <i class="fa-solid fa-file"></i> Скачать текущий файл товаров
+            </a>
+        </div>
+        {% endif %}
+        {% if all_documents %}
+        {% for doc in all_documents %}
+        <div class="col-auto">
+            <a class="btn btn-sm btn-success"
+               href="{{ doc.file_path_request.url }}" target="_blank">
+                <i class="fa-solid fa-file"></i> {{ doc.name|truncatechars:15 }}
+            </a>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row mb-2 g-2 justify-content-left">
+        <div class="col-auto">
+            <a type="button" class="btn btn-sm btn-dark" href="{% url 'analytics:logistic_requests' %}">
+                <i class="fa-solid fa-arrow-rotate-left"></i> К запросам
+            </a>
+        </div>
+        {% if user.pk == my_request.initiator.pk and my_request.status != 'Закрыт' %}
+        <div class="col-auto">
+            <button class="btn btn-sm btn-warning"
+                    data-bs-toggle="modal"
+                    data-bs-target="#for_approve_request"
+                    hx-get="{% url 'analytics:request_status_for_edit' my_request.pk %}"
+                    hx-target="#hx-modal-for-approve-request">
+                <i class="fa-solid fa-circle-exclamation"></i> Запрос на изменение
+            </button>
+        </div>
+        {% if my_request.status == 'Обработано' or my_request.status == 'Частично обработано' %}
+        <div class="col-auto">
+            <a class="btn btn-sm btn-danger"
+               data-bs-toggle="modal"
+               data-bs-target="#for_approve_request"
+               hx-get="{% url 'analytics:request_status_in_close' my_request.pk %}"
+               hx-target="#hx-modal-for-approve-request">
+                <i class="fa-solid fa-circle-xmark" ></i> Закрыть заявку
+            </a>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% if goods %}
+<div class="container-fluid">
+    <div class="table-responsive" style="">
+        <table class="table table-sm table-bordered  align-middle g-1" align="center"
+               style="font-size: 1rem;align-items: center;border-radius: 4px;border: 1px solid #000;overflow-x: auto;">
+            <thead class="align-middle table-dark">
+            <tr align="center">
+                <th scope="col">#</th>
+                <th scope="col">Фото товара <br> 图片</th>
+                <th scope="col">Описание товара <br> 品名</th>
+                <th scope="col">Материал <br> 材</th>
+                <th scope="col">Количество упаковок/мест <br> 箱数</th>
+                <th scope="col">Количество в каждой упаковке (шт) <br> 每箱里面的数量</th>
+                <th scope="col">Объём/размер упаковки (м3) <br> 箱子尺寸</th>
+                <th scope="col">Вес брутто упаковки (кг) <br> 重量</th>
+                <th scope="col">Общий объём (м3) <br> 总体积 </th>
+                <th scope="col">Общий вес брутто (кг) <br> 总重量</th>
+                <th scope="col">Общее кол-во (шт) <br> 数量</th>
+                <th scope="col">Торговая марка <br> 商标</th>
+                <th scope="col">Дата добавления <br> </th>
+            </tr>
+            </thead>
+            <tbody align="center" id="hx-tbody">
+            {% for good in goods %}
+            <tr>
+                <th scope="row">{{ forloop.counter }}</th>
+                <td height="150" class="my_td">
+                    <img src="{% if good.photo_path_logistic_goods %}{{ good.photo_path_logistic_goods.url }}{% else %}{% endif %}"
+                         id="image-preview_{{good.pk}}" class="image_for_request" style="">
+                </td>
+                <td>{{ good.description|default:'' }}</td>
+                <td>{{ good.material|default:'' }}</td>
+                <td>{{ good.number_of_packages|default:'' }}</td>
+                <td>{{ good.quantity_in_each_package|default:'' }}</td>
+                <td>{{ good.size_of_packaging|default:'' }}</td>
+                <td>{{ good.gross_weight_of_packaging|default:'' }}</td>
+                <td>{{ good.total_volume|default:'' }}</td>
+                <td>{{ good.total_gross_weight|default:'' }}</td>
+                <td>{{ good.total_quantity|default:'' }}</td>
+                <td>{{ good.trademark|default:'' }}</td>
+                <td>{{ good.time_create }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}

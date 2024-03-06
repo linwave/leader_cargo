@@ -8,14 +8,24 @@ app_name = 'analytics'
 
 urlpatterns = [
     path('logistic-requests/', views.LogisticRequestsView.as_view(), name='logistic_requests'),
+    path('logistic-requests/htmx-auto-update', views.LogisticRequestsViewAutoUpdate, name='logistic_requests_auto_update'),
     path('logistic-requests/add', views.LogisticRequestsAddView.as_view(), name='add_logistic_requests'),
     path('logistic-requests/edit/<int:request_id>', views.LogisticRequestsEditView.as_view(), name='edit_logistic_requests'),
+    path('logistic-requests/edit/htmx/<int:request_id>', views.editLogisticRequest, name='edit_htmx_logistic_requests'),
     path('logistic-requests/status-new/<int:request_id>', views.NewStatusRequest.as_view(), name='request_status_new'),
+    path('logistic-requests/status-new-to-draft/<int:request_id>', views.LogisticRequestsBackToManagerView.as_view(), name='request_status_new_to_draft'),
+    path('logistic-requests/status-for-edit/<int:request_id>', views.LogisticRequestsForEditView.as_view(), name='request_status_for_edit'),
+    path('logistic-requests/status-in-work/<int:request_id>', views.work_status_request, name='request_status_in_work'),
+    path('logistic-requests/status-in-calculation/<int:request_id>', views.calculation_status_request, name='request_status_in_calculation'),
+    path('logistic-requests/status-in-progress/<int:request_id>', views.progress_status_request, name='request_status_in_progress'),
+    path('logistic-requests/status-close/<int:request_id>', views.LogisticRequestsCloseStatusView.as_view(), name='request_status_in_close'),
     path('logistic-requests/edit/<int:request_id>/delete-file/<int:file_id>', views.DeleteFileInRequest.as_view(), name='delete_file_logistic_requests'),
     path('logistic-requests/delete/<int:request_id>', views.DeleteLogisticRequestsView.as_view(), name='delete_logistic_requests'),
     path('logistic-requests/edit/<int:request_id>/add-goods', views.AddGoodsLogisticRequestsView.as_view(), name='add_goods_logistic_requests'),
     path('logistic-requests/edit-goods/<int:goods_id>', views.editGoodsLogisticRequests, name='edit_goods_logistic_requests'),
     path('logistic-requests/edit/<int:request_id>/delete-goods/<int:goods_id>', views.DeleteGoodsLogisticRequestsView.as_view(), name='delete_goods_logistic_requests'),
+    path('logistic-requests/edit/<int:bid_id>/add-bid', views.editBidLogisticRequestsView, name='add_bid'),
+
 
     path('calculator/', views.LogisticCalculatorView.as_view(), name='calculator'),
 

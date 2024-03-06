@@ -1,5 +1,8 @@
 import datetime
 import os
+import uuid
+
+from PIL import Image
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
@@ -11,8 +14,9 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView, ListView
 from .forms import AddCarrierFilesForm, EditTableArticleForm, EditTransportationTariffForClients, AddCarriersListForm, EditCarriersListForm, DeleteCarriersListForm, AddRoadForm, EditRoadForm, DeleteRoadForm, AddRoadToCarriersForm, \
     DeleteRoadToCarriersForm, AddRequestsForLogisticsCalculationsForm, EditRequestsForLogisticsCalculationsForm, AddGoodsRequestLogisticsForm, NewStatusRequestForm, EditGoodsRequestLogisticsForm, EditRoadToCarriersForm, \
-    EditPaidByTheClientArticleForm
-from .models import CargoFiles, CargoArticle, RequestsForLogisticsCalculations, CarriersList, RoadsList, RequestsForLogisticsGoods, RequestsForLogisticFiles, CarriersRoadParameters, PriceListsOfCarriers, PaymentDocumentsForArticles
+    EditPaidByTheClientArticleForm, AddBidRequestLogisticsForm, UpdateRequestForm
+from .models import CargoFiles, CargoArticle, RequestsForLogisticsCalculations, CarriersList, RoadsList, RequestsForLogisticsGoods, RequestsForLogisticFiles, CarriersRoadParameters, PriceListsOfCarriers, PaymentDocumentsForArticles, \
+    RequestsForLogisticsRate
 from django.shortcuts import get_object_or_404
 # FROM MAIN
 from main.models import CustomUser
@@ -20,6 +24,7 @@ from main.utils import DataMixin, MyLoginMixin
 # EXTERNAL LIBRARIES
 import openpyxl
 import xlrd
+import xlsxwriter as xlsxwriter
 
 
 def download(request, file_id):
@@ -31,30 +36,49 @@ def download(request, file_id):
 
 class LogisticRequestsView(MyLoginMixin, DataMixin, TemplateView):
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
-    template_name = 'analytics/logistics_requests.html'
+    template_name = 'analytics/logistic_requests/logistics_requests.html'
     login_url = reverse_lazy('main:login')
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['reports'] = RequestsForLogisticsCalculations.objects.filter(initiator=self.request.user.pk)
-        context['reports_work'] = context['reports'].exclude(status='Черновик')
-        context['reports_draft'] = context['reports'].filter(status='Черновик')
-        context['table_paginator'] = Paginator(context['reports_work'], 20)
-        page_number = self.request.GET.get('page')
+        if self.request.user.role == 'Супер Администратор' or self.request.user.role == 'Логист' or self.request.user.role == 'РОП':
+            context['reports'] = RequestsForLogisticsCalculations.objects.all()
+        else:
+            context['reports'] = RequestsForLogisticsCalculations.objects.filter(initiator=self.request.user.pk)
+
+        if self.request.user.role == 'РОП':
+            context['reports_work'] = context['reports'].exclude(status='Черновик').filter(initiator__town=self.request.user.town)
+        else:
+            context['reports_work'] = context['reports'].exclude(status='Черновик')
+
+        if self.request.user.role != 'Логист':
+            if self.request.user.role == 'РОП':
+                context['reports_draft'] = context['reports'].filter(status='Черновик').filter(initiator=self.request.user.pk)
+            else:
+                context['reports_draft'] = context['reports'].filter(status='Черновик')
+
+        context['table_paginator'] = Paginator(context['reports_work'], 50)
+        page_number = self.request.GET.get('page', 1)
         context['table_paginator_obj'] = context['table_paginator'].get_page(page_number)
         context['reports'] = context['table_paginator_obj']
 
         if self.request.user.role == 'Логист':
-            c_def = self.get_user_context(title="Запросы логисту")
+            c_def = self.get_user_context(title="Обработка запросов")
         else:
-            c_def = self.get_user_context(title="Запросы на просчет")
+            c_def = self.get_user_context(title="Запрос ставки")
         return dict(list(context.items()) + list(c_def.items()))
+
+
+def LogisticRequestsViewAutoUpdate(request):
+    template_name = 'analytics/logistic_requests/partial/logistic_requests_auto_update.html'
+    reports = RequestsForLogisticsCalculations.objects.exclude(status='Черновик')
+    return render(request, template_name, {'reports_work': reports})
 
 
 class LogisticRequestsAddView(MyLoginMixin, DataMixin, CreateView):
     model = RequestsForLogisticsCalculations
     form_class = AddRequestsForLogisticsCalculationsForm
-    template_name = 'analytics/logistics_requests_add.html'
+    template_name = 'analytics/logistic_requests/logistics_requests_add.html'
     login_url = reverse_lazy('main:login')
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
 
@@ -75,7 +99,7 @@ class LogisticRequestsEditView(MyLoginMixin, DataMixin, UpdateView):
     model = RequestsForLogisticsCalculations
     form_class = EditRequestsForLogisticsCalculationsForm
     pk_url_kwarg = 'request_id'
-    template_name = 'analytics/logistics_requests_edit.html'
+    template_name = 'analytics/logistic_requests/logistics_requests_edit.html'
     login_url = reverse_lazy('main:login')
     success_url = reverse_lazy('analytics:logistic_requests')
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
@@ -83,32 +107,121 @@ class LogisticRequestsEditView(MyLoginMixin, DataMixin, UpdateView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context['my_request'] = self.get_object()
-        context['carriers'] = CarriersList.objects.all()
-        context['roads'] = RoadsList.objects.all()
-        context['goods'] = RequestsForLogisticsGoods.objects.filter(request=context['my_request'])
-        if context['my_request'].description:
-            context['my_request_description'] = context['my_request'].description
-            context['my_request_description_carriers'] = context['my_request_description'].split('\n')[0]
-            context['my_request_description_roads'] = context['my_request_description'].split('\n')[1]
-        context['all_documents'] = context['my_request'].requestsforlogisticfiles_set.values("id", "name")
+        if context['my_request'].notification and self.request.user.role != 'Логист':
+            context['my_request'].notification = False
+            context['my_request'].save()
+        if context['my_request'].status == 'Черновик':
+            context['roads'] = RoadsList.objects.all()
+            context['my_request_description_roads'] = context['my_request'].roads.all().values_list('name', flat=True)
+        else:
+            context['my_request_description_roads'] = context['my_request'].rate.all()
+        context['all_documents'] = context['my_request'].requestsforlogisticfiles_set.all()
+        context['goods'] = context['my_request'].goods.all()
         c_def = self.get_user_context(title="Редактирование запроса на просчет")
         return dict(list(context.items()) + list(c_def.items()))
 
     def form_valid(self, form):
         new_data = form.save(commit=False)
         if new_data.status == 'Черновик':
-            carriers = ''
-            roads = ''
             for req in self.request.POST:
                 if 'road' in req:
-                    roads += ' ' + req.split('-')[1]
-                elif 'carrier' in req:
-                    carriers += ' ' + req.split('-')[1]
-            new_data.description = carriers + '\n' + roads
-            new_data.save()
+                    road_pk = req.split('-')[1]
+                    road = RoadsList.objects.get(pk=road_pk)
+                    new_data.roads.add(road)
+                elif 'comments_initiator' in req:
+                    new_data.comments_initiator = self.request.POST.get('comments_initiator')
             for f in self.request.FILES.getlist('files_for_request'):
                 new_data.requestsforlogisticfiles_set.create(name=f, file_path_request=f)
+            new_data.save()
+            if new_data.goods.all():
+                if not new_data.file_path_request:
+                    filename = "%s.%s" % (uuid.uuid4(), '.xlsx')
+                    new_data.file_path_request = os.path.join(f'files/logistic/requests/{datetime.datetime.now().strftime("%Y/%m/%d/")}', filename)
+                    new_data.save()
+                if settings.DEBUG:
+                    name_for_excel = str(os.getcwd()) + new_data.file_path_request.url
+                    os.makedirs(f'media/files/logistic/requests/{datetime.datetime.now().strftime("%Y/%m/%d/")}', exist_ok=True)
+                else:
+                    name_for_excel = str(os.getcwd()) + '/leader_cargo' + new_data.file_path_request.url
+                    os.makedirs(f'leader_cargo/media/files/logistic/requests/{datetime.datetime.now().strftime("%Y/%m/%d/")}', exist_ok=True)
+                workbook = xlsxwriter.Workbook(f'{name_for_excel}')
+                worksheet = workbook.add_worksheet(name='Packing list')
+                worksheet.set_row(0, 60)
+                worksheet.set_column(0, 0, 60)
+                worksheet.set_column(1, 2, 40)
+                worksheet.set_column(3, 10, 33)
+                titles = workbook.add_format({'bold': True, 'bg_color': '#FFFACD', 'border': 1})
+                titles.set_align('center')
+                titles.set_align('vcenter')
+                titles.set_font_size(14)
+                titles.set_font_name('Times New Roman')
+                titles.set_text_wrap()
+                worksheet.write('A1', 'фото\n图片', titles)
+                worksheet.write('B1', 'описание\n品名', titles)
+                worksheet.write('C1', 'материал\n材', titles)
+                worksheet.write('D1', 'количество упаковок/мест\n箱数', titles)
+                worksheet.write('E1', 'количество в каждой упаковке (шт)\n每箱里面的数量', titles)
+                worksheet.write('F1', 'объём/размер упаковки (м3)\n箱子尺寸', titles)
+                worksheet.write('G1', 'вес брутто упаковки (кг)\n重量', titles)
+                worksheet.write('H1', 'общий объём (м3)\n总体积 ', titles)
+                worksheet.write('I1', 'общий вес брутто (кг)\n总重量', titles)
+                worksheet.write('J1', 'общее кол-во (шт)\n数量', titles)
+                worksheet.write('K1', 'торговая марка\n商标', titles)
+                all_goods = new_data.goods.all()
+                cell_format = workbook.add_format()
+                cell_format.set_align('center')
+                cell_format.set_align('vcenter')
+                cell_format.set_font_size(12)
+                cell_format.set_font_name('Times New Roman')
+                cell_format.set_border()
+                cell_format.set_text_wrap()
+                for row, good in enumerate(all_goods, start=2):
+                    if good.photo_path_logistic_goods:
+                        if settings.DEBUG:
+                            path_photo = str(os.getcwd()) + good.photo_path_logistic_goods.url
+                        else:
+                            path_photo = str(os.getcwd()) + '/leader_cargo' + good.photo_path_logistic_goods.url
+                        # worksheet.insert_image(f'A{row}', path_photo, {'object_position': 1, 'x_offset': 20, 'y_offset': 5})
+                        worksheet.write(f'A{row}', '', cell_format)
+                        worksheet.insert_image(f'A{row}', path_photo, {'object_position': 1})
+                    worksheet.set_row(row - 1, 318)
+                    if good.description:
+                        worksheet.write(f'B{row}', good.description.strip(), cell_format)
+                    else:
+                        worksheet.write(f'B{row}', '', cell_format)
+                    if good.material:
+                        worksheet.write(f'C{row}', good.material.strip(), cell_format)
+                    else:
+                        worksheet.write(f'C{row}', '', cell_format)
+                    worksheet.write(f'D{row}', good.number_of_packages, cell_format)
+                    worksheet.write(f'E{row}', good.quantity_in_each_package, cell_format)
+                    worksheet.write(f'F{row}', good.size_of_packaging, cell_format)
+                    worksheet.write(f'G{row}', good.gross_weight_of_packaging, cell_format)
+                    worksheet.write(f'H{row}', good.total_volume, cell_format)
+                    worksheet.write(f'I{row}', good.total_gross_weight, cell_format)
+                    worksheet.write(f'J{row}', good.total_quantity, cell_format)
+                    worksheet.write(f'K{row}', good.trademark, cell_format)
+                worksheet.autofit()
+                workbook.close()
         return redirect('analytics:edit_logistic_requests', new_data.pk)
+
+    def get(self, request, *args, **kwargs):
+        if self.get_object().status == 'Черновик' and self.request.user.role == 'Логист':
+            return redirect('analytics:logistic_requests')
+        return super(LogisticRequestsEditView, self).get(request, *args, **kwargs)
+
+
+def editLogisticRequest(request, request_id):
+    my_request = RequestsForLogisticsCalculations.objects.get(pk=request_id)
+    # if request.FILES:
+    #     for file in request.FILES["files_for_request"]:
+    #         my_request.requestsforlogisticfiles_set.create(name=file, file_path_request=file)
+    if request.POST:
+        if 'comments_logist' in request.POST:
+            my_request.comments_logist = request.POST['comments_logist']
+            my_request.notification = True
+        my_request.save()
+    return render(request, 'analytics/logistic_requests/partial/edit_goods_for_requests_logistic.html')
 
 
 class NewStatusRequest(MyLoginMixin, DataMixin, UpdateView):
@@ -116,7 +229,7 @@ class NewStatusRequest(MyLoginMixin, DataMixin, UpdateView):
     form_class = NewStatusRequestForm
     pk_url_kwarg = 'request_id'
     context_object_name = 'my_request'
-    template_name = 'analytics/request_status_new.html'
+    template_name = 'analytics/logistic_requests/modal/request_status_new.html'
     login_url = reverse_lazy('main:login')
     success_url = reverse_lazy('analytics:logistic_requests')
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
@@ -130,8 +243,213 @@ class NewStatusRequest(MyLoginMixin, DataMixin, UpdateView):
         new_data = form.save(commit=False)
         if new_data.status == 'Черновик':
             new_data.status = 'Новый'
+            new_data.notification = False
+            if new_data.goods.all():
+                if not new_data.file_path_request:
+                    filename = "%s.%s" % (uuid.uuid4(), '.xlsx')
+                    new_data.file_path_request = os.path.join(f'files/logistic/requests/{datetime.datetime.now().strftime("%Y/%m/%d/")}', filename)
+                new_data.save()
+                if settings.DEBUG:
+                    name_for_excel = str(os.getcwd()) + new_data.file_path_request.url
+                    os.makedirs(f'media/files/logistic/requests/{datetime.datetime.now().strftime("%Y/%m/%d/")}', exist_ok=True)
+                else:
+                    name_for_excel = str(os.getcwd()) + '/leader_cargo' + new_data.file_path_request.url
+                    os.makedirs(f'leader_cargo/media/files/logistic/requests/{datetime.datetime.now().strftime("%Y/%m/%d/")}', exist_ok=True)
+                workbook = xlsxwriter.Workbook(f'{name_for_excel}')
+                worksheet = workbook.add_worksheet(name='Packing list')
+                worksheet.set_row(0, 60)
+                worksheet.set_column(0, 0, 60)
+                worksheet.set_column(1, 2, 40)
+                worksheet.set_column(3, 10, 33)
+                titles = workbook.add_format({'bold': True, 'bg_color': '#FFFACD', 'border': 1})
+                titles.set_align('center')
+                titles.set_align('vcenter')
+                titles.set_font_size(14)
+                titles.set_font_name('Times New Roman')
+                titles.set_text_wrap()
+                worksheet.write('A1', 'фото\n图片', titles)
+                worksheet.write('B1', 'описание\n品名', titles)
+                worksheet.write('C1', 'материал\n材', titles)
+                worksheet.write('D1', 'количество упаковок/мест\n箱数', titles)
+                worksheet.write('E1', 'количество в каждой упаковке (шт)\n每箱里面的数量', titles)
+                worksheet.write('F1', 'объём/размер упаковки (м3)\n箱子尺寸', titles)
+                worksheet.write('G1', 'вес брутто упаковки (кг)\n重量', titles)
+                worksheet.write('H1', 'общий объём (м3)\n总体积 ', titles)
+                worksheet.write('I1', 'общий вес брутто (кг)\n总重量', titles)
+                worksheet.write('J1', 'общее кол-во (шт)\n数量', titles)
+                worksheet.write('K1', 'торговая марка\n商标', titles)
+                all_goods = new_data.goods.all()
+                cell_format = workbook.add_format()
+                cell_format.set_align('center')
+                cell_format.set_align('vcenter')
+                cell_format.set_font_size(12)
+                cell_format.set_font_name('Times New Roman')
+                cell_format.set_border()
+                cell_format.set_text_wrap()
+                for row, good in enumerate(all_goods, start=2):
+                    if good.photo_path_logistic_goods:
+                        if settings.DEBUG:
+                            path_photo = str(os.getcwd()) + good.photo_path_logistic_goods.url
+                        else:
+                            path_photo = str(os.getcwd()) + '/leader_cargo' + good.photo_path_logistic_goods.url
+                        worksheet.write(f'A{row}', '', cell_format)
+                        worksheet.insert_image(f'A{row}', path_photo, {'object_position': 1})
+                    worksheet.set_row(row - 1, 318)
+                    if good.description:
+                        worksheet.write(f'B{row}', good.description.strip(), cell_format)
+                    else:
+                        worksheet.write(f'B{row}', '', cell_format)
+                    if good.material:
+                        worksheet.write(f'C{row}', good.material.strip(), cell_format)
+                    else:
+                        worksheet.write(f'C{row}', '', cell_format)
+                    worksheet.write(f'D{row}', good.number_of_packages, cell_format)
+                    worksheet.write(f'E{row}', good.quantity_in_each_package, cell_format)
+                    worksheet.write(f'F{row}', good.size_of_packaging, cell_format)
+                    worksheet.write(f'G{row}', good.gross_weight_of_packaging, cell_format)
+                    worksheet.write(f'H{row}', good.total_volume, cell_format)
+                    worksheet.write(f'I{row}', good.total_gross_weight, cell_format)
+                    worksheet.write(f'J{row}', good.total_quantity, cell_format)
+                    worksheet.write(f'K{row}', good.trademark, cell_format)
+                worksheet.autofit()
+                workbook.close()
+                return redirect('analytics:logistic_requests')
+            else:
+                new_data.save()
+                return redirect('analytics:edit_logistic_requests', new_data.pk)
+        return redirect('analytics:edit_logistic_requests', new_data.pk)
+
+
+class LogisticRequestsBackToManagerView(MyLoginMixin, DataMixin, UpdateView):
+    model = RequestsForLogisticsCalculations
+    form_class = UpdateRequestForm
+    pk_url_kwarg = 'request_id'
+    context_object_name = 'my_request'
+    template_name = 'analytics/logistic_requests/modal/new_to_draft.html'
+    login_url = reverse_lazy('main:login')
+    success_url = reverse_lazy('analytics:logistic_requests')
+    role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Отправление запроса обратно менеджеру")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def form_valid(self, form):
+        new_data = form.save(commit=False)
+        if new_data.status == 'Новый' or new_data.status == 'В работе' or new_data.status == 'Запрос на изменение':
+            new_data.status = 'Черновик'
+            bids = new_data.rate.all()
+            for bid in bids:
+                bid.bid = ''
+                bid.save()
             new_data.save()
             return redirect('analytics:logistic_requests')
+        return redirect('analytics:edit_logistic_requests', new_data.pk)
+
+
+class LogisticRequestsForEditView(MyLoginMixin, DataMixin, UpdateView):
+    model = RequestsForLogisticsCalculations
+    form_class = UpdateRequestForm
+    pk_url_kwarg = 'request_id'
+    context_object_name = 'my_request'
+    template_name = 'analytics/logistic_requests/modal/all_to_for_edit.html'
+    login_url = reverse_lazy('main:login')
+    success_url = reverse_lazy('analytics:logistic_requests')
+    role_have_perm = ['Супер Администратор', 'РОП', 'Менеджер']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Замена статуса на Запрос на изменение")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def form_valid(self, form):
+        new_data = form.save(commit=False)
+        new_data.status = 'Запрос на изменение'
+        new_data.save()
+        return redirect('analytics:edit_logistic_requests', new_data.pk)
+
+
+def work_status_request(request, request_id):
+    role_have_perm = ['Супер Администратор', 'Логист']
+    my_request = RequestsForLogisticsCalculations.objects.get(pk=request_id)
+    if request.user.role in role_have_perm:
+        if my_request.status == 'Новый':
+            my_request.status = 'В работе'
+        my_request.save()
+    return redirect('analytics:edit_logistic_requests', my_request.pk)
+
+
+def calculation_status_request(request, request_id):
+    role_have_perm = ['Супер Администратор', 'Логист']
+    my_request = RequestsForLogisticsCalculations.objects.get(pk=request_id)
+    if request.user.role in role_have_perm:
+        if my_request.status == 'В работе':
+            my_request.status = 'На просчете'
+        my_request.save()
+    return redirect('analytics:edit_logistic_requests', my_request.pk)
+
+
+def progress_status_request(request, request_id):
+    role_have_perm = ['Супер Администратор', 'Логист']
+    my_request = RequestsForLogisticsCalculations.objects.get(pk=request_id)
+    if request.user.role in role_have_perm:
+        if my_request.status == 'На просчете' or my_request.status == 'Частично обработано':
+            my_request.status = 'Обработано'
+        my_request.save()
+    return redirect('analytics:edit_logistic_requests', my_request.pk)
+
+
+class LogisticRequestsCloseStatusView(MyLoginMixin, DataMixin, UpdateView):
+    model = RequestsForLogisticsCalculations
+    form_class = UpdateRequestForm
+    pk_url_kwarg = 'request_id'
+    context_object_name = 'my_request'
+    template_name = 'analytics/logistic_requests/modal/close_request.html'
+    login_url = reverse_lazy('main:login')
+    success_url = reverse_lazy('analytics:logistic_requests')
+    role_have_perm = ['Супер Администратор', 'РОП', 'Менеджер']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['my_request'] = self.get_object()
+        context['my_select'] = 0
+        context['reasons'] = {
+            "1": "Клиент отказался",
+            "2": "Слишком долго делали просчет",
+            "3": "Клиента не устроила цена выкупа",
+            "4": "Дорогая логистика",
+            "5": "Другое",
+            "6": "Ставка выбрана",
+        }
+        if self.request.GET:
+            context['my_select'] = self.request.GET["reason"]
+            if context['my_select'] == '6':
+                context['bids'] = context['my_request'].rate.all()
+        c_def = self.get_user_context(title="Закрытие запроса")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def form_valid(self, form):
+        print(self.request.GET, self.request.POST)
+        new_data = form.save(commit=False)
+        if new_data.status == 'Частично обработано' or new_data.status == 'Обработано':
+            new_data.status = 'Закрыт'
+            if self.request.POST.get('final_bid', ''):
+                new_data.bid = self.request.POST.get('final_bid', '')
+        if self.request.POST:
+            reasons = {
+                "1": "Клиент отказался",
+                "2": "Слишком долго делали просчет",
+                "3": "Клиента не устроила цена выкупа",
+                "4": "Дорогая логистика",
+                "5": "Другое",
+                "6": "Ставка выбрана",
+            }
+            for key, value in reasons.items():
+                if key == self.request.POST.get('reason', 5):
+                    new_data.reason_for_close = value
+                    break
+        new_data.save()
         return redirect('analytics:edit_logistic_requests', new_data.pk)
 
 
@@ -139,7 +457,7 @@ class AddGoodsLogisticRequestsView(MyLoginMixin, DataMixin, CreateView):
     model = RequestsForLogisticsGoods
     form_class = AddGoodsRequestLogisticsForm
     pk_url_kwarg = 'request_id'
-    template_name = 'analytics/add_goods_for_requests_logistic.html'
+    template_name = 'analytics/logistic_requests/partial/add_goods_for_requests_logistic.html'
     login_url = reverse_lazy('main:login')
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
 
@@ -153,7 +471,7 @@ class AddGoodsLogisticRequestsView(MyLoginMixin, DataMixin, CreateView):
 
     def get(self, request, *args, **kwargs):
         my_request = get_object_or_404(RequestsForLogisticsCalculations, pk=self.kwargs['request_id'])
-        my_request.requestsforlogisticsgoods_set.create()
+        my_request.goods.create()
         return super().get(request, *args, **kwargs)
 
 
@@ -162,36 +480,43 @@ def editGoodsLogisticRequests(request, goods_id):
     if request.FILES:
         good.photo_path_logistic_goods = request.FILES["photo_path_logistic_goods"]
         good.save()
+        if settings.DEBUG:
+            path_photo = str(os.getcwd()) + good.photo_path_logistic_goods.url
+        else:
+            path_photo = str(os.getcwd()) + '/leader_cargo' + good.photo_path_logistic_goods.url
+        with Image.open(path_photo) as img:
+            img.thumbnail(size=(426, 424))
+            img.save(path_photo)
     elif request.POST:
-        if request.htmx.trigger == 'description':
-            good.description = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'material':
-            good.material = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'number_of_packages':
-            good.number_of_packages = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'quantity_in_each_package':
-            good.quantity_in_each_package = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'size_of_packaging':
-            good.size_of_packaging = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'gross_weight_of_packaging':
-            good.gross_weight_of_packaging = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'total_volume':
-            good.total_volume = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'total_gross_weight':
-            good.total_gross_weight = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'total_quantity':
-            good.total_quantity = request.POST[request.htmx.trigger]
-        elif request.htmx.trigger == 'trademark':
-            good.trademark = request.POST[request.htmx.trigger]
+        if 'description' in request.POST:
+            good.description = request.POST['description']
+        elif 'material' in request.POST:
+            good.material = request.POST['material']
+        elif 'number_of_packages' in request.POST:
+            good.number_of_packages = request.POST['number_of_packages']
+        elif 'quantity_in_each_package' in request.POST:
+            good.quantity_in_each_package = request.POST['quantity_in_each_package']
+        elif 'size_of_packaging' in request.POST:
+            good.size_of_packaging = request.POST['size_of_packaging']
+        elif 'gross_weight_of_packaging' in request.POST:
+            good.gross_weight_of_packaging = request.POST['gross_weight_of_packaging']
+        elif 'total_volume' in request.POST:
+            good.total_volume = request.POST['total_volume']
+        elif 'total_gross_weight' in request.POST:
+            good.total_gross_weight = request.POST['total_gross_weight']
+        elif 'total_quantity' in request.POST:
+            good.total_quantity = request.POST['total_quantity']
+        elif 'trademark' in request.POST:
+            good.trademark = request.POST['trademark']
         good.save()
-    return render(request, 'analytics/edit_goods_for_requests_logistic.html',
+    return render(request, 'analytics/logistic_requests/partial/edit_goods_for_requests_logistic.html',
                   {'good': good})
 
 
 class DeleteGoodsLogisticRequestsView(MyLoginMixin, DataMixin, DeleteView):
     model = RequestsForLogisticsGoods
     pk_url_kwarg = 'goods_id'
-    template_name = 'analytics/delete_goods_for_requests_logistic.html'
+    template_name = 'analytics/logistic_requests/partial/delete_goods_for_requests_logistic.html'
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
     login_url = reverse_lazy('main:login')
 
@@ -203,11 +528,34 @@ class DeleteGoodsLogisticRequestsView(MyLoginMixin, DataMixin, DeleteView):
         return render(request, self.template_name, {'goods': goods, 'my_request': my_request})
 
 
+def editBidLogisticRequestsView(request, bid_id):
+    bid = RequestsForLogisticsRate.objects.get(pk=bid_id)
+    my_request = bid.request
+    if request.POST:
+        if 'rate' in request.POST:
+            bid.bid = request.POST['rate']
+        bid.save()
+        my_request.notification = True
+        my_request.status = 'Обработано'
+        rate_count = my_request.rate.count()
+        count = 0
+        for rate in my_request.rate.all():
+            if not rate.bid:
+                count += 1
+        if count != rate_count and count != 0:
+            my_request.status = 'Частично обработано'
+        elif count == rate_count:
+            my_request.status = 'На просчете'
+        my_request.save()
+    template_name = 'analytics/logistic_requests/modal/add_bid.html'
+    return render(request, template_name, {'my_request': my_request})
+
+
 class DeleteFileInRequest(MyLoginMixin, DataMixin, DeleteView):
     model = RequestsForLogisticFiles
     pk_url_kwarg = 'file_id'
     context_object_name = 'my_file'
-    template_name = 'analytics/delete_file_in_request.html'
+    template_name = 'analytics/logistic_requests/modal/delete_file_in_request.html'
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
     success_url = reverse_lazy('analytics:edit_logistic_requests')
     login_url = reverse_lazy('main:login')
@@ -227,21 +575,26 @@ class DeleteLogisticRequestsView(MyLoginMixin, DataMixin, DeleteView):
     model = RequestsForLogisticsCalculations
     pk_url_kwarg = 'request_id'
     context_object_name = 'my_request'
-    template_name = 'analytics/delete_request.html'
-    role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
+    template_name = 'analytics/logistic_requests/modal/delete_request.html'
+    role_have_perm = ['Супер Администратор', 'РОП', 'Менеджер']
     success_url = reverse_lazy('analytics:logistic_requests')
     login_url = reverse_lazy('main:login')
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Удаление файла к запросу")
+        c_def = self.get_user_context(title="Удаление запроса")
         return dict(list(context.items()) + list(c_def.items()))
+
+    def post(self, request, *args, **kwargs):
+        if self.get_object().initiator.pk == self.request.user.pk:
+            return super().post(request, *args, **kwargs)
+        return redirect('analytics:logistic_requests')
 
 
 class LogisticCarriersList(MyLoginMixin, DataMixin, ListView):
     model = CarriersList
     context_object_name = 'carriers'
-    template_name = 'analytics/carriers_list.html'
+    template_name = 'analytics/logistic_carriers_list/carriers_list.html'
     login_url = reverse_lazy('main:login')
     role_have_perm = ['Супер Администратор', 'Логист']
 
@@ -255,7 +608,7 @@ class LogisticCarriersList(MyLoginMixin, DataMixin, ListView):
 class AddLogisticCarriersList(MyLoginMixin, DataMixin, CreateView):
     model = CarriersList
     form_class = AddCarriersListForm
-    template_name = 'analytics/create_carriers_list.html'
+    template_name = 'analytics/logistic_carriers_list/create_carriers_list.html'
     login_url = reverse_lazy('main:login')
     success_url = reverse_lazy('analytics:carriers_list')
     role_have_perm = ['Супер Администратор', 'Логист']
@@ -270,7 +623,7 @@ class EditLogisticCarriersList(MyLoginMixin, DataMixin, UpdateView):
     model = CarriersList
     form_class = EditCarriersListForm
     pk_url_kwarg = 'carrier_id'
-    template_name = 'analytics/edit_carriers_list.html'
+    template_name = 'analytics/logistic_carriers_list/edit_carriers_list.html'
     login_url = reverse_lazy('main:login')
     success_url = reverse_lazy('analytics:carriers_list')
     role_have_perm = ['Супер Администратор', 'Логист']
@@ -285,7 +638,7 @@ class EditLogisticCarriersList(MyLoginMixin, DataMixin, UpdateView):
 class DeleteLogisticCarriersList(MyLoginMixin, DataMixin, UpdateView):
     model = CarriersList
     form_class = DeleteCarriersListForm
-    template_name = 'analytics/delete_carriers_list.html'
+    template_name = 'analytics/logistic_carriers_list/delete_carriers_list.html'
     pk_url_kwarg = 'carrier_id'
     login_url = reverse_lazy('main:login')
     success_url = reverse_lazy('analytics:carriers_list')
@@ -308,7 +661,7 @@ class DeleteLogisticCarriersList(MyLoginMixin, DataMixin, UpdateView):
 class AddRoad(MyLoginMixin, DataMixin, CreateView):
     model = RoadsList
     form_class = AddRoadForm
-    template_name = 'analytics/create_road.html'
+    template_name = 'analytics/logistic_carriers_list/create_road.html'
     login_url = reverse_lazy('main:login')
     success_url = reverse_lazy('analytics:carriers_list')
     role_have_perm = ['Супер Администратор', 'Логист']
@@ -323,7 +676,7 @@ class EditRoad(MyLoginMixin, DataMixin, UpdateView):
     model = RoadsList
     form_class = EditRoadForm
     pk_url_kwarg = 'road_id'
-    template_name = 'analytics/edit_road.html'
+    template_name = 'analytics/logistic_carriers_list/edit_road.html'
     login_url = reverse_lazy('main:login')
     success_url = reverse_lazy('analytics:carriers_list')
     role_have_perm = ['Супер Администратор', 'Логист']
@@ -338,7 +691,7 @@ class EditRoad(MyLoginMixin, DataMixin, UpdateView):
 class DeleteRoad(MyLoginMixin, DataMixin, UpdateView):
     model = RoadsList
     form_class = DeleteRoadForm
-    template_name = 'analytics/delete_road.html'
+    template_name = 'analytics/logistic_carriers_list/delete_road.html'
     pk_url_kwarg = 'road_id'
     login_url = reverse_lazy('main:login')
     success_url = reverse_lazy('analytics:carriers_list')
@@ -361,7 +714,7 @@ class DeleteRoad(MyLoginMixin, DataMixin, UpdateView):
 def addRoadToCarriers(request, carrier_id):
     carrier = CarriersList.objects.get(pk=carrier_id)
     form = AddRoadToCarriersForm
-    template_name = 'analytics/add_road_to_carrier.html'
+    template_name = 'analytics/logistic_carriers_list/add_road_to_carrier.html'
     success_url = reverse_lazy('analytics:carriers_list')
     if request.POST:
         road = RoadsList.objects.get(pk=request.POST['road'])
@@ -384,7 +737,7 @@ def editRoadToCarriers(request, carrier_id, road_id):
     road = RoadsList.objects.get(pk=road_id)
     roads_parameters = CarriersRoadParameters.objects.get(carrier=carrier, road=road)
     form = EditRoadToCarriersForm(instance=roads_parameters)
-    template_name = 'analytics/edit_road_to_carrier.html'
+    template_name = 'analytics/logistic_carriers_list/edit_road_to_carrier.html'
     success_url = reverse_lazy('analytics:carriers_list')
     if request.POST:
         form = EditRoadToCarriersForm(request.POST)
@@ -410,7 +763,7 @@ def deleteRoadToCarriers(request, carrier_id, road_id):
     road = RoadsList.objects.get(pk=road_id)
     roads_parameters = CarriersRoadParameters.objects.get(carrier=carrier, road=road)
     form = DeleteRoadToCarriersForm
-    template_name = 'analytics/delete_road_to_carrier.html'
+    template_name = 'analytics/logistic_carriers_list/delete_road_to_carrier.html'
     success_url = reverse_lazy('analytics:carriers_list')
     if request.POST:
         carrier.roads.remove(road)
@@ -426,7 +779,7 @@ def priceListToCarrierRoad(request, carrier_id, road_id):
     road = RoadsList.objects.get(pk=road_id)
     roads_parameters = CarriersRoadParameters.objects.get(carrier=carrier, road=road)
     form = DeleteRoadToCarriersForm
-    template_name = 'analytics/price_list.html'
+    template_name = 'analytics/logistic_carriers_list/price_list.html'
     return render(request, template_name, {'carrier': carrier,
                                            'road': road,
                                            'form': form,
@@ -434,7 +787,7 @@ def priceListToCarrierRoad(request, carrier_id, road_id):
 
 
 def addPriceListToCarrierRoad(request, carrier_id, road_id):
-    template_name = 'analytics/add_price_list.html'
+    template_name = 'analytics/logistic_carriers_list/add_price_list.html'
     carrier = CarriersList.objects.get(pk=carrier_id)
     road = RoadsList.objects.get(pk=road_id)
     roads_parameters = CarriersRoadParameters.objects.get(carrier=carrier, road=road)
@@ -457,7 +810,7 @@ def editPriceListToCarrierRoad(request, density_id):
         elif request.POST.get('price'):
             density.price = request.POST.get('price')
         density.save()
-    return render(request, 'analytics/edit_price_list.html',
+    return render(request, 'analytics/logistic_carriers_list/edit_price_list.html',
                   {'density': density})
 
 

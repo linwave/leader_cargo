@@ -1,5 +1,6 @@
+{% for good in goods %}
 <tr>
-    <th scope="row">{{ count_goods }}</th>
+    <th scope="row">{{ forloop.counter }}</th>
     <td height="150" class="my_td">
         <input type="file" id="image-upload_{{good.pk}}" hidden
                name="photo_path_logistic_goods"
@@ -30,27 +31,23 @@
                     </script>
     </td>
     <td>
-        <textarea class="form-control" style="border: none;"
+        <textarea class="form-control" style="border: none;height: 150px;overflow-y: hidden;"
                               name="description"
                               id="description"
                               hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                               hx-trigger="keyup changed delay:0.5s"
-                              hx-swap="none"
-                              oninput="auto_grow(this)">
-                        {{ good.description|default:'' }}
-                    </textarea>
+                              hx-swap="none">{{ good.description|default:'' }}</textarea>
+    </td>
+    <td>
+        <textarea class="form-control" style="border: none;height: 150px;overflow-y: hidden;"
+                              name="material"
+                              id="material"
+                              hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
+                              hx-trigger="keyup changed delay:0.5s"
+                              hx-swap="none">{{ good.material|default:'' }}</textarea>
     </td>
     <td>
         <input class="form-control" style="border: none;" type="text"
-               name="material"
-               id="material"
-               hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
-               hx-trigger="keyup changed delay:0.5s"
-               hx-swap="none"
-               value="{{ good.material|default:'' }}"/>
-    </td>
-    <td>
-        <input class="form-control" style="border: none;"type="text"
                name="number_of_packages"
                id="number_of_packages"
                hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
@@ -129,3 +126,4 @@
         <i class="fa-solid fa-trash" style="color: red;cursor: pointer;"></i>
     </td>
 </tr>
+{% endfor %}

@@ -1,0 +1,5 @@
+{% if my_request.status == 'Черновик' %}
+{% include "analytics/logistic_requests/MANAGER-ROP/request_draft.html"  %}
+{% else %}
+{% include "analytics/logistic_requests/MANAGER-ROP/request_all.html"  %}
+{% endif %}

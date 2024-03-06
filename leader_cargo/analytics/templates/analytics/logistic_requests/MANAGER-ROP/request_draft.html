@@ -1,34 +1,8 @@
-{% extends 'main/base.html' %}
-{% load static %}
-{% block title %}
-{{ title }}
-{% endblock %}
-
-{% block content %}
-<div class="modal fade" id="delete_file_in_request" tabindex="-1"
-     aria-labelledby="delete-file-in-request-Label" aria-hidden="true">
-    <div class="modal-dialog">
-        <div id="hx-modal-delete-file-in-request">
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="delete_request" tabindex="-1"
-     aria-labelledby="delete-request-Label" aria-hidden="true">
-    <div class="modal-dialog">
-        <div id="hx-modal-delete-request">
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="request_to_new" tabindex="-1"
-     aria-labelledby="request-to-new-Label" aria-hidden="true">
-    <div class="modal-dialog">
-        <div id="hx-modal-request-to-new">
-        </div>
-    </div>
-</div>
-
-{% if my_request.status == 'Черновик' %}
 <div class="container-fluid">
+    <div class="input-group mb-2" style="width: 300px">
+        <span class="input-group-text">Создал:</span>
+        <input type="text" class="form-control" value="{{ my_request.initiator.get_FI }}" disabled>
+    </div>
     <div class="input-group mb-2" style="width: 300px">
         <span class="input-group-text">Статус:</span>
         <input type="text" class="form-control" value="{{ my_request.status }}" disabled>
@@ -37,52 +11,27 @@
         {% csrf_token %}
         {% for line in form %}
         <div class="input-group mb-2" style="width: 600px">
-            <span class="input-group-text" id="{{ line.label }}" >{{ line.label }}:</span>
+            <span class="input-group-text" id="{{ line.label }}" >Название запроса:</span>
             {{ line }}
         </div>
         {% endfor %}
-        <div class="input-group mb-2">
-            <span class="input-group-text">Приоритет перевозчикам:</span>
-            {% if carriers %}
-            {% for carrier in carriers %}
-            {% if carrier.activity %}
-            {% if carrier.name in my_request_description_carriers %}
-            <input name="carrier-{{carrier.name}}" type="checkbox" class="btn-check" id="{{carrier.name}}" autocomplete="off" checked>
-            <label class="btn btn-outline-danger" for="{{carrier.name}}">{{carrier.name}}</label>
-            {% else %}
-            <input name="carrier-{{carrier.name}}" type="checkbox" class="btn-check" id="{{carrier.name}}" autocomplete="off">
-            <label class="btn btn-outline-danger" for="{{carrier.name}}">{{carrier.name}}</label>
-            {% endif %}
-            {% else %}
-            <span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-placement="top"
-                  data-bs-trigger="hover focus" data-bs-content="Перевозчик не доступен">
-                <input type="checkbox" class="btn-check" id="{{carrier.name}} dis" autocomplete="off" disabled>
-                <label class="btn btn-outline-danger" for="{{carrier.name}} dis" style="border-radius: 0px;">{{carrier.name}}</label>
-            </span>
-            {% endif %}
-            {% endfor %}
-            {% else %}
-            Перевозчики отсутствуют
-            {% endif %}
-        </div>
         <div class="input-group mb-2">
             <span class="input-group-text">Приоритет дорогам:</span>
             {% if roads %}
             {% for road in roads %}
             {% if road.activity %}
             {% if road.name in my_request_description_roads %}
-            <input name="road-{{road.name}}" type="checkbox" class="btn-check" id="{{road.name}}" autocomplete="off" checked>
-            <label class="btn btn-outline-primary" for="{{road.name}}">{{road.name}}</label>
+            <input name="road-{{road.pk}}" type="checkbox" class="btn-check" id="{{road.name}}" autocomplete="off" checked>
             {% else %}
-            <input name="road-{{road.name}}" type="checkbox" class="btn-check" id="{{road.name}}" autocomplete="off">
-            <label class="btn btn-outline-primary" for="{{road.name}}">{{road.name}}</label>
+            <input name="road-{{road.pk}}" type="checkbox" class="btn-check" id="{{road.name}}" autocomplete="off">
             {% endif %}
+            <label class="btn btn-outline-primary" for="{{road.name}}">{{road.name}}</label>
             {% else %}
             <span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-placement="top"
                   data-bs-trigger="hover focus" data-bs-content="Дорога не доступна">
-                <input type="checkbox" class="btn-check" id="{{road.name}} dis" autocomplete="off" disabled>
-                <label class="btn btn-outline-primary" for="{{road.name}} dis" style="border-radius: 0px;">{{road.name}}</label>
-            </span>
+                    <input type="checkbox" class="btn-check" id="{{road.name}} dis" autocomplete="off" disabled>
+                    <label class="btn btn-outline-primary" for="{{road.name}} dis" style="border-radius: 0px;">{{road.name}}</label>
+                </span>
             {% endif %}
             {% endfor %}
             {% else %}
@@ -90,11 +39,31 @@
             {% endif %}
         </div>
         <div class="input-group mb-2" style="width: 600px">
+            <span class="input-group-text">Комментарий:</span>
+            <textarea class="form-control" name="comments_initiator" id="comments_initiator" rows="2" wrap="hard">{{my_request.comments_initiator|default:''}}</textarea>
+        </div>
+        {% if my_request.comments_logist %}
+        <div class="input-group mb-2" style="width: 600px">
+            <span class="input-group-text">Комментарий логиста:</span>
+            <textarea class="form-control" name="comments_logist" id="comments_logist" rows="2" wrap="hard" disabled>{{my_request.comments_logist|default:''}}</textarea>
+        </div>
+        {% endif %}
+        <div class="input-group mb-2" style="width: 600px">
             <input name="files_for_request" type="file" id="files_for_request_input" class="form-control" multiple>
         </div>
     </form>
-    {% if all_documents %}
+</div>
+<div class="container-fluid">
     <div class="row mb-2 g-2 justify-content-left">
+        {% if my_request.file_path_request %}
+        <div class="col-auto">
+            <a class="btn btn-sm btn-success"
+               href="{{ my_request.file_path_request.url }}" download>
+                <i class="fa-solid fa-file"></i> Скачать текущий файл товаров
+            </a>
+        </div>
+        {% endif %}
+        {% if all_documents %}
         {% for doc in all_documents %}
         <div class="col-auto">
             <button type="button" class="btn btn-sm btn-success"
@@ -106,8 +75,11 @@
             </button>
         </div>
         {% endfor %}
+        {% endif %}
     </div>
-    {% endif %}
+</div>
+
+<div class="container-fluid">
     <div class="row mb-2 g-2 justify-content-left">
         <div class="col-auto">
             <a type="button" class="btn btn-sm btn-dark" href="{% url 'analytics:logistic_requests' %}">
@@ -123,13 +95,12 @@
                 <i class="fa-solid fa-share"></i> Отправить запрос
             </button>
         </div>
-
         <div class="col-auto">
             <button form="edit_logistics_requests_form" type="submit" class="btn btn-sm btn-secondary">
                 <i class="fa-solid fa-file-pen"></i> Сохранить
             </button>
         </div>
-
+        {% if user.pk == my_request.initiator.pk %}
         <div class="col-auto">
             <button type="button" class="btn btn-sm btn-danger"
                     data-bs-toggle="modal"
@@ -139,77 +110,9 @@
                 <i class="fa-solid fa-trash" style="font-size: 14px;"></i> Удалить запрос
             </button>
         </div>
-    </div>
-</div>
-{% elif my_request.status == 'Новый' %}
-<div class="container-fluid">
-    <div class="input-group mb-2" style="width: 300px">
-        <span class="input-group-text">Статус:</span>
-        <input type="text" class="form-control" value="{{ my_request.status }}" disabled>
-    </div>
-    <div class="input-group mb-2" style="width: 600px">
-        <span class="input-group-text">Наименование запроса:</span>
-        <input type="text" class="form-control" value="{{ my_request.name }}" disabled>
-    </div>
-    <div class="input-group mb-2">
-        <span class="input-group-text">Приоритет перевозчикам:</span>
-        {% if carriers %}
-        {% for carrier in carriers %}
-        {% if carrier.activity %}
-        {% if carrier.name in my_request_description_carriers %}
-        <input name="carrier-{{carrier.name}}" type="checkbox" class="btn-check" id="{{carrier.name}}" autocomplete="off" checked>
-        <label class="btn btn-outline-danger" for="{{carrier.name}}">{{carrier.name}}</label>
-        {% else %}
-        <input name="carrier-{{carrier.name}}" type="checkbox" class="btn-check" id="{{carrier.name}}" autocomplete="off">
-        <label class="btn btn-outline-danger" for="{{carrier.name}}">{{carrier.name}}</label>
-        {% endif %}
-        {% else %}
-        <span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-placement="top"
-              data-bs-trigger="hover focus" data-bs-content="Перевозчик не доступен">
-                <input type="checkbox" class="btn-check" id="{{carrier.name}} dis" autocomplete="off" disabled>
-                <label class="btn btn-outline-danger" for="{{carrier.name}} dis" style="border-radius: 0px;">{{carrier.name}}</label>
-            </span>
-        {% endif %}
-        {% endfor %}
-        {% else %}
-        Перевозчики отсутствуют
-        {% endif %}
-    </div>
-    <div class="input-group mb-2">
-        <span class="input-group-text">Приоритет дорогам:</span>
-        {% if roads %}
-        {% for road in roads %}
-        {% if road.activity %}
-        {% if road.name in my_request_description_roads %}
-        <input name="road-{{road.name}}" type="checkbox" class="btn-check" id="{{road.name}}" autocomplete="off" checked>
-        <label class="btn btn-outline-primary" for="{{road.name}}">{{road.name}}</label>
-        {% else %}
-        <input name="road-{{road.name}}" type="checkbox" class="btn-check" id="{{road.name}}" autocomplete="off">
-        <label class="btn btn-outline-primary" for="{{road.name}}">{{road.name}}</label>
-        {% endif %}
-        {% else %}
-        <span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-placement="top"
-              data-bs-trigger="hover focus" data-bs-content="Дорога не доступна">
-                <input type="checkbox" class="btn-check" id="{{road.name}} dis" autocomplete="off" disabled>
-                <label class="btn btn-outline-primary" for="{{road.name}} dis" style="border-radius: 0px;">{{road.name}}</label>
-            </span>
-        {% endif %}
-        {% endfor %}
-        {% else %}
-        Дороги отсутствуют
         {% endif %}
     </div>
 </div>
-<div class="container-fluid">
-    <div class="row mb-2 g-2 justify-content-left">
-        <div class="col-auto">
-            <a type="button" class="btn btn-sm btn-dark" href="{% url 'analytics:logistic_requests' %}">
-                <i class="fa-solid fa-arrow-rotate-left"></i> К запросам
-            </a>
-        </div>
-    </div>
-</div>
-{% endif %}
 <div class="container-fluid">
     <div class="table-responsive" style="">
         <table class="table table-sm table-bordered  align-middle g-1" align="center"
@@ -268,27 +171,20 @@
                 <td>
                     <textarea class="form-control" style="border: none;height: 150px;overflow-y: hidden;"
                               name="description"
-                              id="description"
                               hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                               hx-trigger="keyup changed delay:0.5s"
-                              hx-swap="none">
-                        {{ good.description|default:'' }}
-                    </textarea>
+                              hx-swap="none">{{ good.description|default:'' }}</textarea>
                 </td>
                 <td>
                     <textarea class="form-control" style="border: none;height: 150px;overflow-y: hidden;"
                               name="material"
-                              id="material"
                               hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                               hx-trigger="keyup changed delay:0.5s"
-                              hx-swap="none">
-                        {{ good.material|default:'' }}
-                    </textarea>
+                              hx-swap="none">{{ good.material|default:'' }}</textarea>
                 </td>
                 <td>
                     <input class="form-control" style="border: none;" type="text"
                            name="number_of_packages"
-                           id="number_of_packages"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
                            hx-swap="none"
@@ -297,7 +193,6 @@
                 <td>
                     <input class="form-control" style="border: none;" type="text"
                            name="quantity_in_each_package"
-                           id="quantity_in_each_package"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
                            hx-swap="none"
@@ -306,7 +201,6 @@
                 <td>
                     <input class="form-control" style="border: none;" type="text"
                            name="size_of_packaging"
-                           id="size_of_packaging"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
                            hx-swap="none"
@@ -315,7 +209,6 @@
                 <td>
                     <input class="form-control" style="border: none;" type="text"
                            name="gross_weight_of_packaging"
-                           id="gross_weight_of_packaging"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
                            hx-swap="none"
@@ -324,7 +217,6 @@
                 <td>
                     <input class="form-control" style="border: none;" type="text"
                            name="total_volume"
-                           id="total_volume"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
                            hx-swap="none"
@@ -333,7 +225,6 @@
                 <td>
                     <input class="form-control" style="border: none;" type="text"
                            name="total_gross_weight"
-                           id="total_gross_weight"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
                            hx-swap="none"
@@ -342,7 +233,6 @@
                 <td>
                     <input class="form-control" style="border: none;" type="text"
                            name="total_quantity"
-                           id="total_quantity"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
                            hx-swap="none"
@@ -351,7 +241,6 @@
                 <td>
                     <input class="form-control" style="border: none;"  type="text"
                            name="trademark"
-                           id="trademark"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
                            hx-swap="none"
@@ -376,11 +265,3 @@
         <i class="fa-solid fa-plus"></i> Добавить товар
     </button>
 </div>
-<script>
-const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
-const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
-document.body.addEventListener('htmx:configRequest', (event) => {
-    event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}'
-});
-</script>
-{% endblock %}

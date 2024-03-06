@@ -4,6 +4,14 @@ from django.db import models
 
 from main.models import CustomUser
 from django.urls import reverse
+import os
+import uuid
+
+
+def get_file_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = "%s.%s" % (uuid.uuid4(), ext)
+    return os.path.join(instance.directory_string_var, filename)
 
 
 class CargoFiles(models.Model):
@@ -177,7 +185,7 @@ class RoadsList(models.Model):
 
     class Meta:
         verbose_name = 'Список дорог'
-        verbose_name_plural = 'Дорога'
+        verbose_name_plural = 'Дороги'
 
     def all_parameters(self):
         return self.carriersroadparameters_set.all()
@@ -197,7 +205,7 @@ class CarriersList(models.Model):
 
     class Meta:
         verbose_name = 'Список перевозчиков'
-        verbose_name_plural = 'Перевозчик'
+        verbose_name_plural = 'Перевозчики'
 
     def all_roads(self):
         return self.roads.all()
@@ -233,19 +241,31 @@ class RequestsForLogisticsCalculations(models.Model):
         ('Черновик', 'Черновик'),
         ('Новый', 'Новый'),
         ('В работе', 'В работе'),
+        ('На просчете', 'На просчете'),
         ('Частично обработано', 'Частично обработано'),
         ('Обработано', 'Обработано'),
         ('Запрос снижения тарифа', 'Запрос снижения тарифа'),
         ('Снижение невозможно', 'Снижение невозможно'),
         ('Перевозчик утвержден', 'Перевозчик утвержден'),
-        ('Отклонено', 'Отклонено')
+        ('Отклонено', 'Отклонено'),
+        ('Запрос на изменение', 'Запрос на изменение'),
+        ('Закрыт', 'Закрыт')
     ]
     name = models.CharField(max_length=50, verbose_name='Название запроса на просчет')
     initiator = models.ForeignKey(CustomUser, on_delete=models.PROTECT, verbose_name='Инициатор', related_name='initiator')
     logist = models.ForeignKey(CustomUser, on_delete=models.PROTECT, verbose_name='Логист', related_name='logist', blank=True, null=True)
     status = models.CharField(max_length=50, choices=statuses, verbose_name='Статус', blank=True, null=True)
+
     bid = models.CharField(max_length=50, verbose_name='Окончательная ставка', blank=True, null=True)
-    description = models.CharField(max_length=250, verbose_name='Приоритеты от менеджера', blank=True, null=True)
+    reason_for_close = models.CharField(max_length=100, verbose_name='Причина закрытия', blank=True, null=True)
+    roads = models.ManyToManyField(RoadsList, through="RequestsForLogisticsRate")
+
+    comments_initiator = models.CharField(max_length=250, verbose_name='Комментарии от инициатора', blank=True, null=True)
+    comments_logist = models.CharField(max_length=250, verbose_name='Комментарии от логиста', blank=True, null=True)
+    notification = models.BooleanField(verbose_name='Уведомление по заявке', default=False)
+
+    file_path_request = models.FileField(verbose_name='Excel файл товаров по запросу',
+                                         upload_to='files/logistic/requests/%Y/%m/%d/', blank=True, null=True)
 
     time_new = models.DateTimeField(verbose_name='Дата статуса Новый', blank=True, null=True)
     time_in_work = models.DateTimeField(verbose_name='Дата статуса В работе', blank=True, null=True)
@@ -261,8 +281,8 @@ class RequestsForLogisticsCalculations(models.Model):
         return f"{self.name}"
 
     class Meta:
-        verbose_name = 'Запросы на логистику'
-        verbose_name_plural = 'Запросы на логистику'
+        verbose_name = 'Запросы ставок'
+        verbose_name_plural = 'Запросы ставок'
         ordering = ['-time_update']
 
     def get_absolute_url_request(self):
@@ -270,10 +290,11 @@ class RequestsForLogisticsCalculations(models.Model):
 
 
 class RequestsForLogisticFiles(models.Model):
+    directory_string_var = f'files/logistic/requests/{datetime.datetime.now().strftime("%Y/%m/%d/")}'
     request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, verbose_name='Название файла', blank=True, null=True)
     file_path_request = models.FileField(verbose_name='Файл по запросу',
-                                         upload_to='files/logistic/requests/%Y/%m/%d/', blank=True, null=True)
+                                         upload_to=get_file_path, blank=True, null=True)
 
     time_create = models.DateTimeField(auto_now_add=True)
 
@@ -286,33 +307,34 @@ class RequestsForLogisticFiles(models.Model):
 
 
 class RequestsForLogisticsRate(models.Model):
-    statuses = [
-        ('Новый', 'Новый'),
-        ('В работе', 'В работе'),
-        ('Обработано', 'Обработано'),
-        ('Запрос снижения тарифа', 'Запрос снижения тарифа'),
-        ('Снижение невозможно', 'Снижение невозможно'),
-        ('Тариф снижен', 'Тариф снижен'),
-    ]
-    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE)
-    carrier = models.ForeignKey(CarriersList, verbose_name='Название перевозчика', on_delete=models.PROTECT)
-    road = models.ForeignKey(RoadsList, verbose_name='Название дороги', on_delete=models.PROTECT)
-    bid = models.CharField(max_length=50, verbose_name='Ставка')
-    status = models.CharField(max_length=50, choices=statuses, verbose_name='Статус', blank=True, null=True)
+    # statuses = [
+    #     ('Новый', 'Новый'),
+    #     ('В работе', 'В работе'),
+    #     ('Обработано', 'Обработано'),
+    #     ('Запрос снижения тарифа', 'Запрос снижения тарифа'),
+    #     ('Снижение невозможно', 'Снижение невозможно'),
+    #     ('Тариф снижен', 'Тариф снижен'),
+    # ]
+    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE, related_name='rate')
+    # carrier = models.ForeignKey(CarriersList, verbose_name='Название перевозчика', on_delete=models.PROTECT)
+    road = models.ForeignKey(RoadsList, on_delete=models.CASCADE, verbose_name='Название дороги')
+
+    bid = models.CharField(max_length=50, verbose_name='Ставка', blank=True, null=True)
+    # status = models.CharField(max_length=50, choices=statuses, verbose_name='Статус', blank=True, null=True)
 
     active = models.BooleanField(default=False, verbose_name='Выбранная ставка', blank=True, null=True)
 
-    time_in_work = models.DateTimeField(verbose_name='Дата статуса В работе', blank=True, null=True)
-    time_completed = models.DateTimeField(verbose_name='Дата статуса Обработано', blank=True, null=True)
-    time_to_tariff_reduction = models.DateTimeField(verbose_name='Дата статуса Запрос снижения тарифа', blank=True, null=True)
-    time_to_tariff_reduction_no = models.DateTimeField(verbose_name='Дата статуса Снижение невозможно', blank=True, null=True)
-    time_to_tariff_reduction_yes = models.DateTimeField(verbose_name='Дата статуса Тариф снижен', blank=True, null=True)
+    # time_in_work = models.DateTimeField(verbose_name='Дата статуса В работе', blank=True, null=True)
+    # time_completed = models.DateTimeField(verbose_name='Дата статуса Обработано', blank=True, null=True)
+    # time_to_tariff_reduction = models.DateTimeField(verbose_name='Дата статуса Запрос снижения тарифа', blank=True, null=True)
+    # time_to_tariff_reduction_no = models.DateTimeField(verbose_name='Дата статуса Снижение невозможно', blank=True, null=True)
+    # time_to_tariff_reduction_yes = models.DateTimeField(verbose_name='Дата статуса Тариф снижен', blank=True, null=True)
 
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Ставка {self.bid} по запросу {self.request}"
+        return f"Ставка {self.bid} по запросу {self.request} дороги {self.road}"
 
     class Meta:
         verbose_name = 'Ставки на запрос в логистику'
@@ -320,8 +342,10 @@ class RequestsForLogisticsRate(models.Model):
 
 
 class RequestsForLogisticsGoods(models.Model):
-    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE)
-    photo_path_logistic_goods = models.ImageField(verbose_name='Фото товара', upload_to='photos/logistic/goods/%Y/%m/%d/', blank=True, null=True)
+    directory_string_var = f'photos/logistic/goods/{datetime.datetime.now().strftime("%Y/%m/%d/")}'
+
+    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE, related_name='goods')
+    photo_path_logistic_goods = models.ImageField(verbose_name='Фото товара', upload_to=get_file_path, blank=True, null=True)
     description = models.CharField(max_length=50, verbose_name='Описание товара', blank=True, null=True)
     material = models.CharField(max_length=50, verbose_name='Материал', blank=True, null=True)
     number_of_packages = models.CharField(max_length=50, verbose_name='Количество упаковок/мест', blank=True, null=True)

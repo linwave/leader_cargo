@@ -1,0 +1,72 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="delete_file_in_request" tabindex="-1"
+     aria-labelledby="delete-file-in-request-Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-delete-file-in-request">
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="delete_request" tabindex="-1"
+     aria-labelledby="delete-request-Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-delete-request">
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="request_to_new" tabindex="-1"
+     aria-labelledby="request-to-new-Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-request-to-new">
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="for_approve_request" tabindex="-1"
+     aria-labelledby="request-to-new-Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-for-approve-request">
+        </div>
+    </div>
+</div>
+{% if user.role == "Логист" or user.role == 'Супер Администратор' %}
+{% include "analytics/logistic_requests/LOGIST/request.html"  %}
+{% elif user.role == "РОП" or user.role == "Менеджер" %}
+{% include "analytics/logistic_requests/MANAGER-ROP/request.html"  %}
+{% endif %}
+<script>
+const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+document.body.addEventListener('htmx:configRequest', (event) => {
+    event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}'
+});
+function integer_mask(MyName){
+let element = document.querySelectorAll('input[name='+MyName+']');
+var integer_options = {
+    mask: Number,
+    padFractionalZeros: false,
+    normalizeZeros: true,
+    radix: ',',
+    mapToRadix: ['.'],
+    scale: 3,
+    min: 0,
+    max: 10000000000,
+    thousandsSeparator: ''
+};
+for (let i = 0; i < element.length; i++){
+        let mask = IMask(element[i], integer_options);
+    }
+}
+integer_mask("number_of_packages");
+integer_mask("quantity_in_each_package");
+integer_mask("size_of_packaging");
+integer_mask("gross_weight_of_packaging");
+integer_mask("total_volume");
+integer_mask("total_gross_weight");
+integer_mask("total_quantity");
+</script>
+{% endblock %}

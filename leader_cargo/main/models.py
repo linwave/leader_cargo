@@ -43,7 +43,7 @@ class CustomUser(AbstractUser):
         ordering = ['-status', 'town', 'role', '-time_create']
 
     def __str__(self):
-        return f"{self.last_name} {self.first_name} - {self.phone}"
+        return f"{self.last_name} {self.first_name} - {self.phone} - {self.town}"
 
     def get_absolute_url_client(self):
         return reverse('main:card_client', kwargs={'client_id': self.pk})

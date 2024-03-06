@@ -11,9 +11,9 @@ menu = {
 
     'Учет грузов': {'title': 'Учет грузов', 'url_name': 'analytics:carrier', 'short_url': 'carrier', 'display': True,
                     'category_name': categories[1], 'menu_role': 'sub'},
-    'Запрос логисту': {'title': 'Запрос логисту', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
+    'Запрос логисту': {'title': 'Запрос ставки', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
                        'category_name': categories[1], 'menu_role': 'sub'},
-    'Запросы на просчет': {'title': 'Запросы на просчет', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
+    'Запросы на просчет': {'title': 'Обработка запросов', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
                            'category_name': categories[1], 'menu_role': 'sub'},
     'Калькулятор логистики': {'title': 'Калькулятор логистики', 'url_name': 'analytics:calculator', 'short_url': 'calculator', 'display': False,
                               'category_name': categories[1], 'menu_role': 'sub'},

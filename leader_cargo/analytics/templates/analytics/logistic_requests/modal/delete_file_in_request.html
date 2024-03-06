@@ -3,7 +3,7 @@
         <h5 class="modal-title" id="modal-main-label">
             Вы уверены, что хотите удалить файл?
             <br>
-            {{ my_file.name }}
+            {{ my_file.name|truncatechars:45 }}
         </h5>
         <form id="delete_file" action="{% url 'analytics:delete_file_logistic_requests' my_file.request.pk my_file.pk %}" method="post">
             {% csrf_token %}

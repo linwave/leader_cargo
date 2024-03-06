@@ -1,0 +1,47 @@
+<div class="container-fluid"
+     hx-get="{% url 'analytics:logistic_requests_auto_update' %}"
+     hx-trigger="every 5s"
+     hx-swap="outerHTML">
+    <div class="row">
+        <div class="col-12">
+            <div class="table-responsive" style="border-radius: 4px;border: 1px solid #000;
+            overflow-y: hidden;overflow-x: hidden;height: 740px;">
+                <table class="table align-middle  table-hover g-1"
+                       style="font-size: 0.8rem;">
+                    <thead class="table-dark ">
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Название</th>
+                        <th scope="col">Инициатор</th>
+                        <th scope="col">Статус</th>
+                        <th scope="col">Ставка</th>
+                        <th scope="col">Дата последнего обновления</th>
+                    </tr>
+                    </thead>
+                    <tbody class="table-light">
+                    {% for report in reports_work %}
+                    <tr>
+                        <th scope="row">
+                            <a href="{{ report.get_absolute_url_request }}"
+                               class="text-decoration-none" style="color: black;">
+                                {{ forloop.counter }}
+                            </a>
+                        </th>
+                        <td>
+                            <a href="{{ report.get_absolute_url_request }}"
+                               class="text-decoration-none" style="color: black;">
+                                {{ report.name }}
+                            </a>
+                        </td>
+                        <td>{{ report.initiator.get_FI }}</td>
+                        <td>{{ report.status }}</td>
+                        <td>{{ report.bid|default:"" }}</td>
+                        <td>{{ report.time_update }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
