@@ -82,8 +82,7 @@ menu_rop = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
-        # 'sub_menu': [menu['Запрос логисту']]
-        'sub_menu': []
+        'sub_menu': [menu['Запрос логисту']]
     },
     {
         'name': categories[2],
@@ -123,8 +122,7 @@ menu_manager = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
-        # 'sub_menu': [menu['Запрос логисту']]
-        'sub_menu': []
+        'sub_menu': [menu['Запрос логисту']]
     },
     {
         'name': categories[2],
@@ -163,8 +161,7 @@ menu_logist = [
         'name': categories[1],
         'basic': menu['Учет грузов'],
         # 'sub_menu': [menu['Запросы на просчет']]
-        # 'sub_menu': [menu['Запросы на просчет'], menu['Перевозчики']]
-        'sub_menu': []
+        'sub_menu': [menu['Запросы на просчет'], menu['Перевозчики']]
     },
     {
         'name': categories[2],

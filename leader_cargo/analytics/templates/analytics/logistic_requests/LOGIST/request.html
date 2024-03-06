@@ -23,7 +23,11 @@
                value="{{ bid.bid|default:'' }}">
         {% else %}
         {% if bid.bid == my_request.bid %}
+        {% if my_request.bid %}
         <input style="border-color: red;" type="text" class="form-control" value="{{ bid.bid|default:'Ставки нет' }}" disabled >
+        {% else %}
+        <input type="text" class="form-control" value="{{ bid.bid|default:'Ставки нет' }}" disabled >
+        {% endif %}
         {% else %}
         <input type="text" class="form-control" value="{{ bid.bid|default:'Ставки нет' }}" disabled >
         {% endif %}
