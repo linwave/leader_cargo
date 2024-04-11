@@ -261,6 +261,16 @@ body{
     cursor: pointer;
     transition: all 0.3s ease;
 }
+.sidebar.close .nav-links li .badge-in-icon{
+    font-size: 9px;
+    position: absolute;
+    top: 20%;
+    left: 50%
+}
+.sidebar .nav-links li .sub-menu .badge-in-sub{
+    font-size: 9px;
+}
+
 .sidebar .nav-links li.showMenu i.arrow{
     transform: rotate(-180deg);
 }

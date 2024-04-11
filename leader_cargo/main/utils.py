@@ -1,7 +1,7 @@
 import datetime
 from django.shortcuts import redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from analytics.models import RequestsForLogisticsCalculations
 from .models import ExchangeRates
 
 categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки']
@@ -186,6 +186,8 @@ class DataMixin:
         context = kwargs
         if self.request.user.is_authenticated:
             context['menu'] = initial_user_parameters[self.request.user.role]['menu']
+            if self.request.user.role == 'Логист':
+                context['badge_reports'] = RequestsForLogisticsCalculations.objects.filter(status='Новый').count()
         context['last_currency'] = self.get_last_currency_dollar_and_yuan()
         context['today'] = datetime.datetime.date(datetime.datetime.now()).strftime("%d.%m.%y")
         return context

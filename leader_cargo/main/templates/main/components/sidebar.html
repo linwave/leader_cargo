@@ -6,7 +6,6 @@
     </div>
     <ul class="nav-links">
         {% for cat in menu %}
-
         {% if cat.sub_menu %}
         <li>
             <div class="icon-link">
@@ -25,6 +24,9 @@
                     <i class="fa-solid fa-clipboard-list"></i>
                     {% endif %}
                     <span class="link_name">{{cat.name}}</span>
+                    {% if cat.name == 'Логистика' %}
+                    <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_reports}}</span>
+                    {% endif %}
                 </a>
                 <i class="fa-solid fa-chevron-down arrow"></i>
             </div>
@@ -36,7 +38,15 @@
                 {% endif %}
 
                 {% for sub in cat.sub_menu %}
-                <li><a href="{% url sub.url_name %}">{{sub.title}}</a></li>
+                <li>
+                    <a href="{% url sub.url_name %}">{{sub.title}}
+                    {% if sub.title == 'Обработка запросов' %}
+                    <span class="badge badge-in-sub rounded-pill bg-danger">{{badge_reports}}</span>
+                    {% endif %}
+                    </a>
+
+                </li>
+
                 {% endfor %}
 
             </ul>

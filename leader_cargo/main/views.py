@@ -415,13 +415,11 @@ class MonitoringLeaderboardView(MyLoginMixin, DataMixin, ListView):
             all_work_days = 0
             current_work_days = 0
             for week in all_days:
-                print(week)
                 for item, day in enumerate(week):
                     if item < 5 and day != 0:
                         all_work_days += 1
                     if day <= datetime.datetime.now().day and item < 5 and day != 0:
                         current_work_days += 1
-            print(current_work_days, all_work_days)
             context['prediction'] = context['prediction']/current_work_days * all_work_days
         c_def = self.get_user_context(title="Таблица результатов")
         return dict(list(context.items()) + list(c_def.items()))

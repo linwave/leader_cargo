@@ -1,4 +1,5 @@
-from django.forms import ModelForm, TextInput, Select, FileInput, NumberInput
+import django.forms
+from django.forms import ModelForm, TextInput, Select, FileInput, NumberInput, DateInput
 
 from .models import CargoFiles, CargoArticle, CarriersList, RoadsList, RequestsForLogisticsCalculations, RequestsForLogisticsGoods, CarriersRoadParameters
 
@@ -233,6 +234,38 @@ class DeleteCarriersListForm(ModelForm):
     class Meta:
         model = CarriersList
         fields = []
+
+
+class AddCargo(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            if field == 'time_from_china':
+                continue
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            if field == 'weight':
+                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+            elif field == 'volume':
+                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+            elif field == 'number_of_seats':
+                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+            elif field == 'cost_goods':
+                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+            elif field == 'insurance_cost':
+                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+            elif field == 'packaging_cost':
+                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+
+    class Meta:
+        model = CargoArticle
+        fields = ["article", "responsible_manager", "carrier", "path_format", "status", "name_goods", "number_of_seats", "weight", "volume", "transportation_tariff", "cost_goods", "insurance_cost", "packaging_cost", "time_from_china", "total_cost"]
+        widgets = {
+            "time_from_china": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+        }
 
 
 class AddCarrierFilesForm(ModelForm):

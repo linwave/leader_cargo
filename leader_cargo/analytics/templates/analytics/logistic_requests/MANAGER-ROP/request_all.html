@@ -11,20 +11,35 @@
         <span class="input-group-text">Наименование запроса:</span>
         <input type="text" class="form-control" value="{{ my_request.name }}" disabled>
     </div>
-    {% for bid in my_request_description_roads %}
-    <div class="input-group mb-2" style="width: 600px">
-        <button class="btn btn-primary">{{bid.road.name}}</button>
-        {% if bid.bid == my_request.bid %}
-        {% if my_request.bid %}
-        <input style="border-color: red;" type="text" class="form-control" value="{{ bid.bid|default:'Ставки нет' }}" disabled >
-        {% else %}
-        <input type="text" class="form-control" value="{{ bid.bid|default:'Ставки нет' }}" disabled >
-        {% endif %}
-        {% else %}
-        <input type="text" class="form-control" value="{{ bid.bid|default:'Ставки нет' }}" disabled >
-        {% endif %}
+    <div class="table-responsive" style="">
+        <table class="table table-sm table-bordered align-middle g-1" align="center"
+               style="width:600px;font-size: 1rem;align-items: center;border-radius: 4px;border: 1px solid #000;overflow-x: auto;">
+            <thead class="align-middle table-dark">
+            <tr align="center">
+                <th scope="col" style="background-color: #CED4DA;color: black;"><i class="fa-solid fa-road"></i>/<i class="fa-solid fa-cubes-stacked"></i></th>
+                {% for carrier in all_carriers %}
+                <th scope="col">{{carrier.name}}</th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody align="center">
+            {% for road in my_request.roads.all %}
+            <tr>
+                <th style="background-color: #0d6efd;color: #fff;"><span>{{road.name}}</span></th>
+                {% for bid in all_bids %}
+                {% if bid.road.pk == road.pk %}
+                {% if bid.active %}
+                <td style="background-color: #198754;color: #fff;">{{bid.bid|default:'Ожидание'}}</td>
+                {% else %}
+                <td>{{bid.bid|default:'Ожидание'}}</td>
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
-    {% endfor %}
     <div class="input-group mb-2" style="width: 600px">
         <span class="input-group-text">Комментарий:</span>
         <textarea class="form-control" name="comments_initiator" id="comments_initiator" rows="2" wrap="hard" disabled>{{my_request.comments_initiator|default:''}}</textarea>

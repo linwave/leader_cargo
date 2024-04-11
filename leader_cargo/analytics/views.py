@@ -14,7 +14,7 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView, ListView
 from .forms import AddCarrierFilesForm, EditTableArticleForm, EditTransportationTariffForClients, AddCarriersListForm, EditCarriersListForm, DeleteCarriersListForm, AddRoadForm, EditRoadForm, DeleteRoadForm, AddRoadToCarriersForm, \
     DeleteRoadToCarriersForm, AddRequestsForLogisticsCalculationsForm, EditRequestsForLogisticsCalculationsForm, AddGoodsRequestLogisticsForm, NewStatusRequestForm, EditGoodsRequestLogisticsForm, EditRoadToCarriersForm, \
-    EditPaidByTheClientArticleForm, AddBidRequestLogisticsForm, UpdateRequestForm
+    EditPaidByTheClientArticleForm, AddBidRequestLogisticsForm, UpdateRequestForm, AddCargo
 from .models import CargoFiles, CargoArticle, RequestsForLogisticsCalculations, CarriersList, RoadsList, RequestsForLogisticsGoods, RequestsForLogisticFiles, CarriersRoadParameters, PriceListsOfCarriers, PaymentDocumentsForArticles, \
     RequestsForLogisticsRate
 from django.shortcuts import get_object_or_404
@@ -107,14 +107,15 @@ class LogisticRequestsEditView(MyLoginMixin, DataMixin, UpdateView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context['my_request'] = self.get_object()
-        if context['my_request'].notification and self.request.user.role != 'Логист':
+        if context['my_request'].notification and self.request.user.pk == context['my_request'].initiator.pk:
             context['my_request'].notification = False
             context['my_request'].save()
         if context['my_request'].status == 'Черновик':
             context['roads'] = RoadsList.objects.all()
             context['my_request_description_roads'] = context['my_request'].roads.all().values_list('name', flat=True)
         else:
-            context['my_request_description_roads'] = context['my_request'].rate.all()
+            context['all_carriers'] = CarriersList.objects.all()
+            context['all_bids'] = context['my_request'].rate.all().order_by("road")
         context['all_documents'] = context['my_request'].requestsforlogisticfiles_set.all()
         context['goods'] = context['my_request'].goods.all()
         c_def = self.get_user_context(title="Редактирование запроса на просчет")
@@ -244,6 +245,10 @@ class NewStatusRequest(MyLoginMixin, DataMixin, UpdateView):
         if new_data.status == 'Черновик':
             new_data.status = 'Новый'
             new_data.notification = False
+            for road in new_data.roads.all():
+                carriers = CarriersList.objects.all()
+                for carrier in carriers:
+                    new_data.rate.create(road=road, carrier=carrier)
             if new_data.goods.all():
                 if not new_data.file_path_request:
                     filename = "%s.%s" % (uuid.uuid4(), '.xlsx')
@@ -313,7 +318,7 @@ class NewStatusRequest(MyLoginMixin, DataMixin, UpdateView):
                     worksheet.write(f'K{row}', good.trademark, cell_format)
                 worksheet.autofit()
                 workbook.close()
-                return redirect('analytics:logistic_requests')
+                return redirect('analytics:edit_logistic_requests', new_data.pk)
             else:
                 new_data.save()
                 return redirect('analytics:edit_logistic_requests', new_data.pk)
@@ -339,10 +344,7 @@ class LogisticRequestsBackToManagerView(MyLoginMixin, DataMixin, UpdateView):
         new_data = form.save(commit=False)
         if new_data.status == 'Новый' or new_data.status == 'В работе' or new_data.status == 'Запрос на изменение':
             new_data.status = 'Черновик'
-            bids = new_data.rate.all()
-            for bid in bids:
-                bid.bid = ''
-                bid.save()
+            new_data.rate.delete()
             new_data.save()
             return redirect('analytics:logistic_requests')
         return redirect('analytics:edit_logistic_requests', new_data.pk)
@@ -430,12 +432,14 @@ class LogisticRequestsCloseStatusView(MyLoginMixin, DataMixin, UpdateView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def form_valid(self, form):
-        print(self.request.GET, self.request.POST)
         new_data = form.save(commit=False)
         if new_data.status == 'Частично обработано' or new_data.status == 'Обработано':
             new_data.status = 'Закрыт'
             if self.request.POST.get('final_bid', ''):
-                new_data.bid = self.request.POST.get('final_bid', '')
+                bid = new_data.rate.get(pk=self.request.POST.get('final_bid'))
+                bid.active = True
+                new_data.bid = bid.bid
+                bid.save()
         if self.request.POST:
             reasons = {
                 "1": "Клиент отказался",
@@ -825,6 +829,29 @@ class LogisticCalculatorView(MyLoginMixin, DataMixin, TemplateView):
         return dict(list(context.items()) + list(c_def.items()))
 
 
+class AddCargoView(MyLoginMixin, DataMixin, CreateView):
+    model = CargoArticle
+    form_class = AddCargo
+    template_name = 'analytics/logistic_main/logistic_main.html'
+    login_url = reverse_lazy('main:login')
+    role_have_perm = ['Супер Администратор', 'Логист']
+    success_url = reverse_lazy('analytics:carrier')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Ручное добавление груза")
+        return dict(list(context.items()) + list(c_def.items()))
+
+    # def form_valid(self, form):
+    #     print(self.request.POST)
+    #     return redirect('analytics:carrier')
+
+    # def post(self, request, *args, **kwargs):
+    #     if request.POST:
+    #         print(request.POST)
+    #     return redirect('analytics:carrier')
+
+
 class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
     model = CargoFiles
     form_class = AddCarrierFilesForm
@@ -842,6 +869,7 @@ class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['form_add_cargo'] = AddCargo
         context['user_pk_string'] = str(self.request.user.pk)
         context['all_articles'] = CargoArticle.objects.all()
         if self.request.user.role == 'Логист' or self.request.user.role == 'Супер Администратор':
@@ -1335,12 +1363,18 @@ class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
                             try:
                                 time_from_china = xlrd.xldate.xldate_as_datetime(sheet[4][7].value.split(":")[1].replace(" ", ""), 0)
                             except TypeError:
-                                time_from_china = datetime.datetime.strptime(sheet[4][7].value.split(":")[1].replace(" ", ""), '%Y/%m/%d')
+                                try:
+                                    time_from_china = datetime.datetime.strptime(sheet[4][7].value.split(":")[1].replace(" ", ""), '%Y/%m/%d')
+                                except:
+                                    time_from_china = datetime.datetime.strptime(sheet[4][7].value.split(":")[1].replace(" ", ""), '%Y-%m-%d')
                         else:
                             try:
                                 time_from_china = xlrd.xldate.xldate_as_datetime(sheet[4][7].value.split("：")[1].replace(" ", ""), 0)
                             except TypeError:
-                                time_from_china = datetime.datetime.strptime(sheet[4][7].value.split("：")[1].replace(" ", ""), '%Y/%m/%d')
+                                try:
+                                    time_from_china = datetime.datetime.strptime(sheet[4][7].value.split("：")[1].replace(" ", ""), '%Y/%m/%d')
+                                except:
+                                    time_from_china = datetime.datetime.strptime(sheet[4][7].value.split("：")[1].replace(" ", ""), '%Y-%m-%d')
                         total_cost = str(sheet[row][11].value) if sheet[row][11].value else ""
                         check = False
                         old_articles = CargoArticle.objects.filter(article=article)

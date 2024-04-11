@@ -46,6 +46,7 @@ urlpatterns = [
     path('download/<int:file_id>', views.download, name='download_client_payment'),
 
     path('carrier-files/', views.LogisticMainView.as_view(), name='carrier'),
+    path('carrier-files/add-cargo', views.AddCargoView.as_view(), name='add_cargo'),
     path('carrier-files/update-article-status/<int:article_id>', views.change_article_status, name='update_article'),
     path('carrier-files/edit-transport-tariff/<int:article_id>', views.EditTransportTariff.as_view(), name='edit_transportation_tariff_for_clients'),
     path('carrier-files/edit-article/<int:article_id>', views.EditTableArticleView.as_view(), name='edit_table_article'),

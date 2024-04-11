@@ -35,7 +35,7 @@
                         </td>
                         <td>{{ report.initiator.get_FI }}</td>
                         <td>{{ report.status }}</td>
-                        <td>{{ report.bid|default:"" }}</td>
+                        <td>{{ report.bid|default:"-" }}</td>
                         <td>{{ report.time_update }}</td>
                     </tr>
                     {% endfor %}

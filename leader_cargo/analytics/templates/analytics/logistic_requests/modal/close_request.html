@@ -33,7 +33,9 @@
             <div>
                 <select class="form-select" aria-label="Выберите ставку" name="final_bid">
                     {% for bid in bids %}
-                    <option value="{{bid.bid}}">{{bid.bid}}</option>
+                    {% if bid.bid != '-' %}
+                    <option value="{{bid.pk}}">{{bid.bid}} [{{bid.carrier.name}} - {{bid.road.name}}]</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
             </div>

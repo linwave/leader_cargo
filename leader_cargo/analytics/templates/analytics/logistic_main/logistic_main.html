@@ -16,13 +16,20 @@
     {% include "analytics/components/modal/modalInputCarrierFile.html"  %}
     {% include "analytics/components/modal/modalEditArticleForLogist.html"  %}
     {% include "analytics/components/modal/modalDeleteArticleForLogist.html"  %}
+    {% include "analytics/logistic_main/modal/modalAddCargo.html"  %}
     <div class="row g-2 justify-content-start">
         <div class="col-auto">
-
             <button type="button" class="btn btn-sm btn-success"
                     data-bs-toggle="modal" data-bs-target="#modalInputCarrierFile">
                 <i class="fa-solid fa-cloud-arrow-down"></i>
                 Загрузить файл перевозчика
+            </button>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-sm btn-success"
+                    data-bs-toggle="modal" data-bs-target="#modalAddCargo">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
+                Добавить вручную
             </button>
         </div>
         <div class="col-auto">
@@ -112,5 +119,24 @@ for (let i = 0; i < element2.length; i++){
 document.body.addEventListener('htmx:configRequest', (event) => {
     event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}'
 });
+
+function integer_mask(MyName){
+let element = document.querySelectorAll('.'+MyName+'');
+var integer_options = {
+    mask: Number,
+    padFractionalZeros: false,
+    normalizeZeros: true,
+    radix: ',',
+    mapToRadix: ['.'],
+    scale: 3,
+    min: 0,
+    max: 10000000,
+    thousandsSeparator: '',
+};
+for (let i = 0; i < element.length; i++){
+        let mask = IMask(element[i], integer_options);
+    }
+}
+integer_mask("imask_float");
 </script>
 {% endblock %}
