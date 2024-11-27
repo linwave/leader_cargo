@@ -1,0 +1,95 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-htmx-label">
+            Создание запроса на счет
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body mb-2">
+        <form method="post" id="add_clients_form" action="{% url 'bills:clients_add' %}">
+            {% csrf_token %}
+            <div class="row g-2">
+                <div class="col-12">
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="inputGroupSelect01">Выберите клиента</label>
+                        <select name="client" class="form-select" id="inputGroupSelect01">
+                            {% for client in clients %}
+                            <option value="{{client.pk}}">{{client.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-12">
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="inputGroupSelect02">Выберите наше ООО/ИП</label>
+                        <select name="entity" class="form-select" id="inputGroupSelect02">
+                            {% for entity in entities %}
+                            <option value="{{entity.pk}}">{{entity.name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-12">
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="inputGroupSelect03">Укажи "с НДС"/"без НДС"</label>
+                        <select name="nds_status" class="form-select" id="inputGroupSelect03">
+                            <option value="c НДС">c НДС</option>
+                            <option value="без НДС">без НДС</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="hx-rows">
+                <div class="row g-2 mb-3 align-items-center justify-content-end">
+                    <div class="col-4">
+                        <input name="name" type="text" class="form-control" autocomplete="off" required placeholder="Наименование">
+                    </div>
+                    <div class="col-3">
+                        <input name="count" type="number" class="form-control" autocomplete="off" required placeholder="Штук">
+                    </div>
+                    <div class="col-4">
+                        <input name="sum" type="text" class="form-control float-mask" autocomplete="off" required placeholder="Общая стоимость">
+                    </div>
+                    <div class="col-1 curs pb-1" style="display: flex;justify-content: center;font-size: 26px;">
+                        <span class="form-text"><i class="fa-solid fa-trash" style="color: red;"></i></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-4">
+                    <button type="button" class="btn btn-success" style="width: 100%;"
+                            hx-get="{% url 'bills:bills_add_row' %}"
+                            hx-target="#hx-rows"
+                            hx-swap="beforeend"><i class="fa-solid fa-plus"></i> Добавить строчку</button>
+                </div>
+                <div class="col-8">
+                    <div class="input-group ">
+                        <span class="input-group-text">Проверьте сумму итого</span>
+                        <input name="summa" type="text" id="summa"  class="form-control" autocomplete="off" required disabled>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-2 ">
+                <div class="col-12">
+                    <div class="mb-3">
+                        <label for="exampleFormControlTextarea1" class="form-label">Комментарий</label>
+                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button form="add_clients_form" type="submit" class="btn btn-success">Создать</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>
+<script>
+    float_mask();
+    phone_mask();
+    inn_mask();
+</script>

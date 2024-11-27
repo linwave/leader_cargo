@@ -96,7 +96,7 @@
             </button>
         </div>
         <div class="col-auto">
-            <button form="edit_logistics_requests_form" type="submit" class="btn btn-sm btn-secondary">
+            <button form="edit_logistics_requests_form" type="submit" name="save" class="btn btn-sm btn-secondary">
                 <i class="fa-solid fa-file-pen"></i> Сохранить
             </button>
         </div>
@@ -139,7 +139,7 @@
             {% for good in goods %}
             <tr>
                 <th scope="row">{{ forloop.counter }}</th>
-                <td height="150" class="my_td">
+                <td height="150" class="my_td" id="for_delete_image_{{good.pk}}">
                     <input type="file" id="image-upload_{{good.pk}}" hidden
                            name="photo_path_logistic_goods"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
@@ -154,18 +154,23 @@
                         </label>
                     </div>
                     <div class="top-right">
-                        <i class="fa-solid fa-rectangle-xmark" style="color: red;font-size: 25px;"></i>
+                        <i class="fa-solid fa-rectangle-xmark" style="z-ind ex: 10;cursor: pointer;color: red;font-size: 25px;"
+                           hx-get="{% url 'analytics:edit_goods_logistic_requests' good.pk %}?delete=on"
+                           hx-encoding='multipart/form-data'
+                           hx-trigger="click"
+                           hx-target="#for_delete_image_{{good.pk}}"
+                           hx-swap="outerHTML"></i>
                     </div>
                     <script>
-                    var input = document.getElementById('image-upload_{{good.pk}}');
-                    input.addEventListener('change', function() {
-                        var file = this.files[0];
-                        var reader = new FileReader();
-                        reader.onloadend = function() {
-                            document.getElementById('image-preview_{{good.pk}}').src = reader.result;
-                            }
-                        reader.readAsDataURL(file);
-                    });
+                        var input = document.getElementById('image-upload_{{good.pk}}');
+                        input.addEventListener('change', function() {
+                            var file = this.files[0];
+                            var reader = new FileReader();
+                            reader.onloadend = function() {
+                                document.getElementById('image-preview_{{good.pk}}').src = reader.result;
+                                }
+                            reader.readAsDataURL(file);
+                        });
                     </script>
                 </td>
                 <td>
@@ -183,7 +188,7 @@
                               hx-swap="none">{{ good.material|default:'' }}</textarea>
                 </td>
                 <td>
-                    <input class="form-control" style="border: none;" type="text"
+                    <input class="form-control imask_int" style="border: none;" type="text"
                            name="number_of_packages"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
@@ -191,7 +196,7 @@
                            value="{{ good.number_of_packages|default:'' }}"/>
                 </td>
                 <td>
-                    <input class="form-control" style="border: none;" type="text"
+                    <input class="form-control imask_int" style="border: none;" type="text"
                            name="quantity_in_each_package"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
@@ -199,7 +204,7 @@
                            value="{{ good.quantity_in_each_package|default:'' }}"/>
                 </td>
                 <td>
-                    <input class="form-control" style="border: none;" type="text"
+                    <input class="form-control imask_int" style="border: none;" type="text"
                            name="size_of_packaging"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
@@ -207,7 +212,7 @@
                            value="{{ good.size_of_packaging|default:'' }}"/>
                 </td>
                 <td>
-                    <input class="form-control" style="border: none;" type="text"
+                    <input class="form-control imask_int" style="border: none;" type="text"
                            name="gross_weight_of_packaging"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
@@ -215,7 +220,7 @@
                            value="{{ good.gross_weight_of_packaging|default:'' }}"/>
                 </td>
                 <td>
-                    <input class="form-control" style="border: none;" type="text"
+                    <input class="form-control imask_int" style="border: none;" type="text"
                            name="total_volume"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
@@ -223,7 +228,7 @@
                            value="{{ good.total_volume|default:'' }}"/>
                 </td>
                 <td>
-                    <input class="form-control" style="border: none;" type="text"
+                    <input class="form-control imask_int" style="border: none;" type="text"
                            name="total_gross_weight"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"
@@ -231,7 +236,7 @@
                            value="{{ good.total_gross_weight|default:'' }}"/>
                 </td>
                 <td>
-                    <input class="form-control" style="border: none;" type="text"
+                    <input class="form-control imask_int" style="border: none;" type="text"
                            name="total_quantity"
                            hx-post="{% url 'analytics:edit_goods_logistic_requests' good.pk %}"
                            hx-trigger="keyup changed delay:0.5s"

@@ -1,0 +1,76 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="modal-htmx" tabindex="-1"
+     aria-labelledby="modal-htmx-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div id="hx-modal">
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row g-2 mb-2 justify-content-left">
+        <div class="col-auto">
+            <a type="button" class="btn btn-sm btn-success"
+               data-bs-toggle="modal"
+               data-bs-target="#modal-htmx"
+               hx-get="{% url 'bills:bills_add' %}"
+               hx-target="#hx-modal">
+                <i class="fa-solid fa-bell"></i> Создание запроса на счет
+            </a>
+        </div>
+    </div>
+</div>
+<table class="table table-sm table-hover table-bordered align-middle" style="width:100%;border-spacing: 0;">
+    <thead class="table-dark align-middle">
+    <tr>
+        <th scope="col" style="background-color: #111;">#</th>
+        <th scope="col" style="background-color: #111;">Менеджер</th>
+        <th scope="col" style="background-color: #111;">Статус</th>
+        <th scope="col" >Клиент</th>
+        <th scope="col" >НДС</th>
+        <th scope="col" >Сумма</th>
+        <th scope="col" >Наше ЮР.лицо</th>
+        <th scope="col" >Счета</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for bill in bills %}
+    <tr class="curs" onclick="window.location='{{ bill.get_absolute_url_bill }}';">
+        <th scope="row">{{ forloop.counter }}</th>
+        <td>{{bill.manager.get_FI}}</td>
+        <td>{{bill.name}}</td>
+        <td>{{bill.type}}</td>
+        <td>{{bill.nds_status}}</td>
+        <td>{{bill.inn}}</td>
+        <td>{{bill.phone_mask}}</td>
+        <td>{{bill.manager.get_FI}}</td>
+    </tr>
+    {% endfor %}
+    <tr class="curs">
+        <th scope="row">1</th>
+        <td>Manager</td>
+        <td>Черновик</td>
+        <td>Олегус Олегусный</td>
+        <td>с НДС</td>
+        <td>1321903</td>
+        <td>ИП долбаеба</td>
+        <td>Счета</td>
+    </tr>
+    <tr class="curs">
+        <th scope="row">2</th>
+        <td>Manager Oleg</td>
+        <td>Новый</td>
+        <td>Сергей</td>
+        <td>без НДС</td>
+        <td>987878986798</td>
+        <td>ООО китаеза</td>
+        <td>Счета</td>
+    </tr>
+    </tbody>
+</table>
+{% endblock %}

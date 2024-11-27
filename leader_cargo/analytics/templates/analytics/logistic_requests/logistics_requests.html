@@ -5,12 +5,32 @@
 {% endblock %}
 
 {% block content %}
+<div class="modal fade" id="delete_request" tabindex="-1"
+     aria-labelledby="delete-request-Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-delete-request">
+        </div>
+    </div>
+</div>
 <div class="modal fade" id="add_logistic_requests" tabindex="-1"
      aria-labelledby="add-logistic-requests-Label" aria-hidden="true">
     <div class="modal-dialog">
         <div id="hx-modal-logistic-requests">
         </div>
     </div>
+</div>
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+    </symbol>
+    <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+    </symbol>
+    <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+    </symbol>
+</svg>
+<div class="container-fluid" id="htmx_create_all_files">
 </div>
 {% if user.role != 'Логист' %}
 <div class="container-fluid">
@@ -30,22 +50,22 @@
     <div class="row">
         <div class="col-9">
             <div class="table-responsive" style="border-radius: 4px;border: 1px solid #000;
-            overflow-y: hidden;overflow-x: hidden;height: 740px;">
+            overflow-y: auto;overflow-x: auto;height: 90vh;">
                 <table class="table align-middle  table-hover g-1"
                        style="font-size: 0.8rem;">
-                    <thead class="table-dark ">
+                    <thead class="table-dark " style="position: sticky;top: 0;left: 0;z-index: 10;">
                     <tr>
-                        <th scope="col">#</th>
+                        <th width="10" scope="col">#</th>
                         <th scope="col">Название</th>
                         <th scope="col">Инициатор</th>
                         <th scope="col">Статус</th>
-                        <th scope="col">Ставка</th>
+                        <th scope="col">Перевозчик</th>
                         <th scope="col">Дата последнего обновления</th>
                     </tr>
                     </thead>
                     <tbody class="table-light">
                     {% for report in reports_work %}
-                    <tr>
+                    <tr onclick="window.location='{{ report.get_absolute_url_request }}';"  style="cursor: pointer;">
                         <th scope="row">
                             <a href="{{ report.get_absolute_url_request }}"
                                class="text-decoration-none" style="color: black;">
@@ -59,7 +79,7 @@
                         </td>
                         <td>{{ report.initiator.get_FI }}</td>
                         <td>{{ report.status }}</td>
-                        <td>{{ report.bid|default:"-" }}</td>
+                        <td>{{ report.carrier.name|default:"-" }}</td>
                         <td>{{ report.time_update }}</td>
                     </tr>
                     {% endfor %}
@@ -69,24 +89,32 @@
         </div>
         <div class="col-3">
             <div class="table-responsive" style="border-radius: 4px;border: 1px solid #000;
-            overflow-y: hidden;overflow-x: hidden;height: 740px;">
+            overflow-y: auto;overflow-x: auto;height: 90vh;">
                 <table class="table  align-middle  table-hover g-1"
                        style="font-size: 0.8rem;">
-                    <thead class="table-dark" align="center">
+                    <thead class="table-dark" align="center" style="position: sticky;top: 0;left: 0;z-index: 10;">
                     <tr>
                         <th scope="col" colspan="2">Черновики</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for report in reports_draft %}
-                    <tr>
+                    <tr   style="cursor: pointer;">
                         <td align="center">
                             <a href="{{ report.get_absolute_url_request }}"
                                class="text-decoration-none" style="color: black;">
                                 {% if report.notification %}<i class="fa-solid fa-circle-exclamation" style="color: red"></i>{% endif %}{{ report.name }}
                             </a>
                         </td>
-                        <td align="center"><i class="fa-solid fa-trash" style="color: red;font-size: 14px;cursor: pointer;"></i></td>
+                        {% if user.pk == report.initiator.pk %}
+                        <td align="center"
+                            data-bs-toggle="modal"
+                            data-bs-target="#delete_request"
+                            hx-get="{% url 'analytics:delete_logistic_requests' report.pk %}"
+                            hx-target="#hx-modal-delete-request"><i class="fa-solid fa-trash" style="color: red;font-size: 14px;cursor: pointer;z-index: 10;"></i></td>
+                        {% else %}
+                        <td align="center" ><i class="fa-solid fa-trash" style="color: red;font-size: 14px;cursor: pointer;z-index: 10;"></i></td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                     </tbody>
@@ -96,52 +124,68 @@
     </div>
 </div>
 {% else %}
-<div class="container-fluid"
-     hx-get="{% url 'analytics:logistic_requests_auto_update' %}"
-     hx-trigger="every 5s"
-     hx-swap="outerHTML">
-    <div class="row">
-        <div class="col-12">
-            <div class="table-responsive" style="border-radius: 4px;border: 1px solid #000;
-            overflow-y: hidden;overflow-x: hidden;height: 740px;">
-                <table class="table align-middle  table-hover g-1"
-                       style="font-size: 0.8rem;">
-                    <thead class="table-dark ">
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Название</th>
-                        <th scope="col">Инициатор</th>
-                        <th scope="col">Статус</th>
-                        <th scope="col">Ставка</th>
-                        <th scope="col">Дата последнего обновления</th>
-                    </tr>
-                    </thead>
-                    <tbody class="table-light">
-                    {% for report in reports_work %}
-                    <tr>
-                        <th scope="row">
-                            <a href="{{ report.get_absolute_url_request }}"
-                               class="text-decoration-none" style="color: black;">
-                                {{ forloop.counter }}
-                            </a>
-                        </th>
-                        <td>
-                            <a href="{{ report.get_absolute_url_request }}"
-                               class="text-decoration-none" style="color: black;">
-                                {{ report.name }}
-                            </a>
-                        </td>
-                        <td>{{ report.initiator.get_FI }}</td>
-                        <td>{{ report.status }}</td>
-                        <td>{{ report.bid|default:"-" }}</td>
-                        <td>{{ report.time_update }}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+<form hx-post="{% url 'analytics:requests_create_all_files' %}"
+      hx-target="#htmx_create_all_files"
+      id="create_all_files">
+    {% csrf_token %}
+    <div class="container-fluid"
+         hx-get="{% url 'analytics:logistic_requests_auto_update' %}"
+         hx-trigger="every 240s"
+         hx-swap="outerHTML"
+         hx-target="#table"
+         id="table">
+        <div class="row">
+            <div class="col-12">
+                <div class="table-responsive" style="border-radius: 4px;border: 1px solid #000;
+            overflow-y: auto;overflow-x: auto;height: 90vh;">
+                    <table class="table align-middle  table-hover g-1"
+                           style="font-size: 0.8rem;">
+                        <thead class="table-dark align-middle" style="position: sticky;top: 0;left: 0;z-index: 10;">
+                        <tr>
+                            <th width="40" scope="col">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                                    Создать
+                                </button>
+                            </th>
+                            <th width="10" scope="col">#</th>
+                            <th scope="col">Название</th>
+                            <th scope="col">Инициатор</th>
+                            <th scope="col">Статус</th>
+                            <th scope="col">Перевозчик</th>
+                            <th scope="col">Причина закрытия</th>
+                            <th scope="col">Дата последнего обновления</th>
+                        </tr>
+                        </thead>
+                        <tbody class="table-light">
+                        {% for report in reports_work %}
+                        <tr style="cursor: pointer;">
+                            <td style="text-align: center;font-size: 20px;"><input class="form-check-input" type="checkbox" name="report_id_{{report.pk}}"></td>
+                            <th scope="row" onclick="window.location='{{ report.get_absolute_url_request }}';">
+                                <a href="{{ report.get_absolute_url_request }}"
+                                   class="text-decoration-none" style="color: black;">
+                                    {{ forloop.counter }}
+                                </a>
+                            </th>
+                            <td onclick="window.location='{{ report.get_absolute_url_request }}';">
+                                <a href="{{ report.get_absolute_url_request }}"
+                                   class="text-decoration-none" style="color: black;">
+                                    {{ report.name }}
+                                </a>
+                            </td>
+                            <td onclick="window.location='{{ report.get_absolute_url_request }}';">{{ report.initiator.get_FI }}</td>
+                            <td onclick="window.location='{{ report.get_absolute_url_request }}';">{{ report.status }}</td>
+                            <td onclick="window.location='{{ report.get_absolute_url_request }}';">{{ report.carrier.name|default:"-" }}</td>
+                            <td onclick="window.location='{{ report.get_absolute_url_request }}';">{% if report.status == 'Закрыт' %}{{ report.reason_for_close|default:"-" }}{% endif %}</td>
+                            <td onclick="window.location='{{ report.get_absolute_url_request }}';">{{ report.time_update }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</form>
 {% endif %}
 {% endblock %}

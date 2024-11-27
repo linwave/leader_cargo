@@ -261,3 +261,8 @@ class ManagerPlans(models.Model):
 
     def __str__(self):
         return f"План по чистой прибыли менеджера {self.manager_id} на {self.month}.{self.year} = {self.manager_monthly_net_profit_plan}"
+
+    class Meta:
+        verbose_name = 'План менеджера'
+        verbose_name_plural = 'Планы менеджеров'
+        ordering = ['-time_create']

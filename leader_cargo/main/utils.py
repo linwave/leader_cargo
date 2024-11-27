@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from analytics.models import RequestsForLogisticsCalculations
 from .models import ExchangeRates
 
-categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки']
+categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки', 'Запрос счетов']
 
 menu = {
     'Вход': {'title': 'Вход', 'url_name': 'main:login', 'short_url': 'login', 'display': True},
@@ -15,14 +15,20 @@ menu = {
                        'category_name': categories[1], 'menu_role': 'sub'},
     'Запросы на просчет': {'title': 'Обработка запросов', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
                            'category_name': categories[1], 'menu_role': 'sub'},
+    'Запрос счетов': {'title': 'Запрос счетов', 'url_name': 'bills:bills', 'short_url': 'bills', 'display': True,
+                      'category_name': categories[6], 'menu_role': 'basic'},
+    'Наши Юр. лица': {'title': 'Наши Юр. лица', 'url_name': 'bills:entity', 'short_url': 'entity', 'display': True,
+                      'category_name': categories[6], 'menu_role': 'sub'},
+    'Счета клиентов': {'title': 'Клиенты', 'url_name': 'bills:clients', 'short_url': 'clients', 'display': True,
+                       'category_name': categories[6], 'menu_role': 'sub'},
     'Калькулятор логистики': {'title': 'Калькулятор логистики', 'url_name': 'analytics:calculator', 'short_url': 'calculator', 'display': False,
                               'category_name': categories[1], 'menu_role': 'sub'},
     'Перевозчики': {'title': 'Перевозчики', 'url_name': 'analytics:carriers_list', 'short_url': 'carriers_list', 'display': True,
                     'category_name': categories[1], 'menu_role': 'sub'},
 
-    'Курсы валют': {'title': 'Курсы валют', 'url_name': 'main:exchangerates', 'short_url': 'exchangerates', 'display': True,
+    'Курсы валют': {'title': 'Курсы валют', 'url_name': 'main:exchangerates', 'short_url': 'exchangerates', 'display': False,
                     'category_name': categories[0], 'menu_role': 'basic'},
-    'Установка курса валют': {'title': 'Установка курса валют', 'url_name': 'main:create_exchangerates', 'short_url': 'create_exchangerates', 'display': True,
+    'Установка курса валют': {'title': 'Установка курса валют', 'url_name': 'main:create_exchangerates', 'short_url': 'create_exchangerates', 'display': False,
                               'category_name': categories[0], 'menu_role': 'sub'},
 
     'Мониторинг': {'title': 'Мониторинг', 'url_name': 'main:monitoring', 'short_url': 'monitoring', 'display': True,
@@ -51,6 +57,11 @@ menu_super_admin = [
         'name': categories[0],
         'basic': menu['Курсы валют'],
         'sub_menu': [menu['Установка курса валют']]
+    },
+    {
+        'name': categories[6],
+        'basic': menu['Запрос счетов'],
+        'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
     },
     {
         'name': categories[1],
@@ -84,16 +95,21 @@ menu_rop = [
         'basic': menu['Учет грузов'],
         'sub_menu': [menu['Запрос логисту']]
     },
+    # {
+    #     'name': categories[6],
+    #     'basic': menu['Запрос счетов'],
+    #     'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
+    # },
     {
         'name': categories[2],
         'basic': menu['Мониторинг'],
         'sub_menu': [menu['Таблица результатов']]
     },
-    # {
-    #     'name': categories[3],
-    #     'basic': menu['Сотрудники'],
-    #     'sub_menu': [menu['Регистрация сотрудника']]
-    # },
+    {
+        'name': categories[3],
+        'basic': menu['Сотрудники'],
+        'sub_menu': [menu['Регистрация сотрудника']]
+    },
     # {
     #     'name': categories[4],
     #     'basic': menu['Клиенты'],
@@ -111,6 +127,11 @@ menu_admin = [
         'basic': menu['Курсы валют'],
         'sub_menu': [menu['Установка курса валют']]
     },
+    # {
+    #     'name': categories[6],
+    #     'basic': menu['Запрос счетов'],
+    #     'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
+    # },
     {
         'name': categories[3],
         'basic': menu['Сотрудники'],
@@ -124,6 +145,11 @@ menu_manager = [
         'basic': menu['Учет грузов'],
         'sub_menu': [menu['Запрос логисту']]
     },
+    # {
+    #     'name': categories[6],
+    #     'basic': menu['Запрос счетов'],
+    #     'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
+    # },
     {
         'name': categories[2],
         'basic': menu['Таблица результатов'],
@@ -140,7 +166,12 @@ menu_buyer = [
         'name': categories[5],
         'basic': menu['Заявки'],
         'sub_menu': [menu['Создание заявки']]
-    }
+    },
+    # {
+    #     'name': categories[6],
+    #     'basic': menu['Запрос счетов'],
+    #     'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
+    # },
 ]
 
 menu_client = [
@@ -163,6 +194,11 @@ menu_logist = [
         # 'sub_menu': [menu['Запросы на просчет']]
         'sub_menu': [menu['Запросы на просчет'], menu['Перевозчики']]
     },
+    # {
+    #     'name': categories[6],
+    #     'basic': menu['Запрос счетов'],
+    #     'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
+    # },
     {
         'name': categories[2],
         'basic': menu['Таблица результатов'],
@@ -187,7 +223,7 @@ class DataMixin:
         if self.request.user.is_authenticated:
             context['menu'] = initial_user_parameters[self.request.user.role]['menu']
             if self.request.user.role == 'Логист':
-                context['badge_reports'] = RequestsForLogisticsCalculations.objects.filter(status='Новый').count()
+                context['badge_reports'] = RequestsForLogisticsCalculations.objects.filter(status__in=['Новый', 'Запрос на изменение']).count()
         context['last_currency'] = self.get_last_currency_dollar_and_yuan()
         context['today'] = datetime.datetime.date(datetime.datetime.now()).strftime("%d.%m.%y")
         return context

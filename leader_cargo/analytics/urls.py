@@ -8,6 +8,7 @@ app_name = 'analytics'
 
 urlpatterns = [
     path('logistic-requests/', views.LogisticRequestsView.as_view(), name='logistic_requests'),
+    path('logistic-requests/create_all_files', views.requests_create_all_files, name='requests_create_all_files'),
     path('logistic-requests/htmx-auto-update', views.LogisticRequestsViewAutoUpdate, name='logistic_requests_auto_update'),
     path('logistic-requests/add', views.LogisticRequestsAddView.as_view(), name='add_logistic_requests'),
     path('logistic-requests/edit/<int:request_id>', views.LogisticRequestsEditView.as_view(), name='edit_logistic_requests'),
@@ -24,8 +25,12 @@ urlpatterns = [
     path('logistic-requests/edit/<int:request_id>/add-goods', views.AddGoodsLogisticRequestsView.as_view(), name='add_goods_logistic_requests'),
     path('logistic-requests/edit-goods/<int:goods_id>', views.editGoodsLogisticRequests, name='edit_goods_logistic_requests'),
     path('logistic-requests/edit/<int:request_id>/delete-goods/<int:goods_id>', views.DeleteGoodsLogisticRequestsView.as_view(), name='delete_goods_logistic_requests'),
-    path('logistic-requests/edit/<int:bid_id>/add-bid', views.editBidLogisticRequestsView, name='add_bid'),
 
+    path('logistic-requests/edit-goods/<int:goods_id>/add-bid', views.BidForGoodsView.as_view(), name='add_bid'),
+    path('logistic-requests/edit-goods/<int:goods_id>/add-bid/<int:road_id>/<int:carrier_id>', views.BidForGoodsView.as_view(), name='add_bid_good'),
+    path('logistic-requests/edit-goods/<int:goods_id>/active-bid/<int:road_id>/<int:carrier_id>', views.activitedBid, name='active_bid'),
+
+    path('requests-invoice/', views.RequestsInvoiceView.as_view(), name='requests_invoice'),
 
     path('calculator/', views.LogisticCalculatorView.as_view(), name='calculator'),
 

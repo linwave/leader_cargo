@@ -1,0 +1,175 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="modal-htmx" tabindex="-1"
+     aria-labelledby="modal-htmx-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div id="hx-modal">
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-7">
+            <form method="post" id="edit_clients_form" action="{% url 'bills:clients_edit' client.pk %}">
+                {% csrf_token %}
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label for="name" class="form-label">Название</label>
+                        <input name="name" type="text" id="name"  class="form-control" autocomplete="off" required value="{{client.name}}">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-3">
+                        <label class="form-label">Тип организации</label>
+                        <select class="form-select" id="type" name="type" aria-label="Выберите тип организации">
+                            {% if client.type == 'ООО' %}
+                            <option selected value="ООО">ООО</option>
+                            <option value="ИП">ИП</option>
+                            {% else %}
+                            <option value="ООО">ООО</option>
+                            <option selected value="ИП">ИП</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <label for="nds_status" class="form-label">Статус НДС</label>
+                        <select class="form-select" id="nds_status" name="nds_status" aria-label="Выберите тип организации">
+                            {% if client.nds_status == '-' %}
+                            <option selected value="-">-</option>
+                            <option value="c НДС">c НДС</option>
+                            <option value="без НДС">без НДС</option>
+                            <option value="оба">оба</option>
+                            {% elif client.nds_status == 'c НДС' %}
+                            <option value="-">-</option>
+                            <option selected value="c НДС">c НДС</option>
+                            <option value="без НДС">без НДС</option>
+                            <option value="оба">оба</option>
+                            {% elif client.nds_status == 'без НДС' %}
+                            <option value="-">-</option>
+                            <option value="c НДС">c НДС</option>
+                            <option selected value="без НДС">без НДС</option>
+                            <option value="оба">оба</option>
+                            {% elif client.nds_status == 'оба' %}
+                            <option value="-">-</option>
+                            <option value="c НДС">c НДС</option>
+                            <option value="без НДС">без НДС</option>
+                            <option selected value="оба">оба</option>
+                            {% endif %}
+
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label for="inn-mask" class="form-label">ИНН</label>
+                        <input min="10" minlength="10" name="inn" type="text" id="inn-mask"  class="form-control" required value="{{client.inn}}">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label for="cpp" class="form-label">КПП</label>
+                        <input name="cpp" type="number" id="cpp"  class="form-control" autocomplete="off" value="{{client.cpp}}">
+                    </div>
+                    <div class="col-6">
+                        <label for="ogrnip" class="form-label">ОГРНИП</label>
+                        <input name="ogrnip" type="number" id="ogrnip"  class="form-control" autocomplete="off" value="{{client.ogrnip}}">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label for="ur_address" class="form-label">Юридический адрес</label>
+                        <input name="ur_address" type="text" id="ur_address"  class="form-control" autocomplete="off" required value="{{client.ur_address}}">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label for="fact_address" class="form-label">Фактический адрес</label>
+                        <input name="fact_address" type="text" id="fact_address"  class="form-control" autocomplete="off" required value="{{client.fact_address}}">
+                    </div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label for="fio" class="form-label">ФИО</label>
+                        <input name="fio" type="text" id="fio"  class="form-control" autocomplete="off" required value="{{client.fio}}">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label for="name_job" class="form-label">Наименование должности</label>
+                        <input name="name_job" type="text" id="name_job"  class="form-control" autocomplete="off" required value="{{client.name_job}}">
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label for="phone-mask" class="form-label">Телефон</label>
+                        <input min="18" minlength="18" name="phone" type="text" id="phone-mask"  class="form-control" autocomplete="off" required value="{{client.phone}}">
+                    </div>
+                    <div class="col-6">
+                        <label for="based_charter" class="form-label">На основании</label>
+                        <input name="based_charter" type="text" id="based_charter"  class="form-control" value="{{client.based_charter}}" autocomplete="off">
+                    </div>
+                </div>
+            </form>
+            <div class="container mt-2">
+                <div class="row mb-2 justify-content-end">
+                    <div class="col-auto mr-2">
+                        <button type="submit" form="edit_clients_form" class="btn btn-sm btn-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Сохранить
+                        </button>
+                    </div>
+                    <div class="col-auto mr-0">
+                        <a href="{% url 'bills:clients' %}" class="btn btn-sm btn-secondary">
+                            <i class="fa-solid fa-rotate-left"></i> Назад
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-5">
+            <a type="button" class="btn btn-sm btn-success"
+               data-bs-toggle="modal"
+               data-bs-target="#modal-htmx"
+               hx-get="{% url 'bills:requisites_add' client.pk %}?client={{client.pk}}"
+               hx-target="#hx-modal">
+                <i class="fa-solid fa-wallet"></i> Добавить реквизиты
+            </a>
+            <table class="table table-sm table-hover table-bordered align-middle mt-2" style="width:100%;border-spacing: 0;">
+                <thead class="table-dark align-middle">
+                <tr>
+                    <th scope="col" style="background-color:     #111;">#</th>
+                    <th scope="col" style="background-color: #111;">Название</th>
+                    <th scope="col" >Р/с</th>
+                    <th scope="col" >БИК</th>
+                    <th scope="col" >К/с</th>
+                    <th scope="col" >Название банка</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for req in requisites %}
+                <tr class="curs"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modal-htmx"
+                    hx-get="{% url 'bills:requisites_edit' client.pk req.pk %}"
+                    hx-target="#hx-modal">
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{req.name}}</td>
+                    <td>{{req.rs}}</td>
+                    <td>{{req.bic}}</td>
+                    <td>{{req.ks}}</td>
+                    <td>{{req.name_bank}}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    phone_mask();
+    inn_mask();
+</script>
+{% endblock %}

@@ -124,8 +124,8 @@ class MonitoringManagerReportView(MyLoginMixin, DataMixin, ListView):
 
         if self.request.GET.get('month') or self.request.GET.get('year'):
             now = datetime.datetime.now()
-            context['manager_cargo'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id'])
-            context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id'])
+            context['manager_cargo'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id']).select_related('cargo_id')
+            context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id']).select_related('manager_id')
 
             if 'month' in self.request.GET:
                 month = self.request.GET.get('month')
@@ -149,9 +149,9 @@ class MonitoringManagerReportView(MyLoginMixin, DataMixin, ListView):
             now = datetime.datetime.now()
             month = now.month
             year = now.year
-            context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id'], report_upload_date__month=month, report_upload_date__year=year)
-            context['manager_cargo_sent'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id'], time_from_china__month=month, time_from_china__year=year)
-            context['manager_cargo_issued'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id'], time_cargo_release__month=month, time_cargo_release__year=year)
+            context['manager_reports'] = ManagersReports.objects.filter(manager_id=self.kwargs['manager_id'], report_upload_date__month=month, report_upload_date__year=year).select_related('manager_id')
+            context['manager_cargo_sent'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id'], time_from_china__month=month, time_from_china__year=year).select_related('cargo_id')
+            context['manager_cargo_issued'] = CargoArticle.objects.filter(responsible_manager=self.kwargs['manager_id'], time_cargo_release__month=month, time_cargo_release__year=year).select_related('cargo_id')
 
         context['day_reports'] = dict()
         context['warm_clients_success'] = 0
@@ -485,7 +485,7 @@ class EmployeesView(MyLoginMixin, DataMixin, ListView):
     template_name = 'main/employees.html'
     context_object_name = 'employees'
     login_url = reverse_lazy('main:login')
-    role_have_perm = ['Супер Администратор', 'Администратор']
+    role_have_perm = ['Супер Администратор', 'Администратор', 'РОП']
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Сотрудники")
@@ -504,7 +504,7 @@ class AddEmployeeView(MyLoginMixin, DataMixin, CreateView):
     template_name = 'main/create_employees.html'
     success_url = reverse_lazy('main:employees')
     login_url = reverse_lazy('main:login')
-    role_have_perm = ['Супер Администратор', 'Администратор']
+    role_have_perm = ['Супер Администратор', 'Администратор', 'РОП']
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Регистрация сотрудника")
@@ -538,7 +538,7 @@ class CardEmployeesView(MyLoginMixin, DataMixin, UpdateView):
     pk_url_kwarg = 'employee_id'
     success_url = reverse_lazy('main:employees')
     login_url = reverse_lazy('main:login')
-    role_have_perm = ['Супер Администратор', 'Администратор']
+    role_have_perm = ['Супер Администратор', 'Администратор', 'РОП']
 
     def get_context_data(self, *, object_list=None, **kwargs):
         c_def = self.get_user_context(title="Карточка сотрудника")

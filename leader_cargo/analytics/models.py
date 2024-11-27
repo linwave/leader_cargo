@@ -17,6 +17,7 @@ def get_file_path(instance, filename):
 class CargoFiles(models.Model):
     carriers = [
         ('Ян', 'Ян'),
+        # ('Ян (новый)', 'Ян (новый)'),
         ('Ян (полная машина)', 'Ян (полная машина)'),
         ('Валька', 'Валька'),
         ('Мурад', 'Мурад'),
@@ -54,7 +55,8 @@ class CargoArticle(models.Model):
         ('Ян', 'Ян'),
         ('Валька', 'Валька'),
         ('Мурад', 'Мурад'),
-        ('Гелик', 'Гелик')
+        ('Гелик', 'Гелик'),
+        ('Склад №5', 'Склад №5')
     ]
     path_formats = [
         ('Быстрое авто', 'Быстрое авто'),
@@ -65,8 +67,9 @@ class CargoArticle(models.Model):
     ]
     managers = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], status=True).order_by('last_name')
     managers_choices = []
-    for manager in managers:
-        managers_choices.append((f'{manager.pk}', f'{manager.last_name} {manager.first_name}'))
+    if managers:
+        for manager in managers:
+            managers_choices.append((f'{manager.pk}', f'{manager.last_name} {manager.first_name}'))
 
     article = models.CharField(max_length=50, verbose_name='Артикул')
     responsible_manager = models.CharField(max_length=100, verbose_name='Ответственный менеджер', choices=managers_choices, blank=True, null=True)
@@ -98,6 +101,7 @@ class CargoArticle(models.Model):
     cargo_id = models.ForeignKey('CargoFiles', on_delete=models.PROTECT, blank=True, null=True)
 
     transportation_tariff_with_factor = models.FloatField(verbose_name='Тариф перевозки с коэффициентом', blank=True, null=True)
+    transportation_tariff_with_factor_multi = models.CharField(max_length=255, verbose_name='Тариф перевозки с коэффициентом комбинированная', blank=True, null=True)
     total_cost_with_factor = models.FloatField(verbose_name='Итоговая стоимость перевозки с коэффициентом', blank=True, null=True)
 
     time_create = models.DateTimeField(auto_now_add=True)
@@ -122,6 +126,8 @@ class CargoArticle(models.Model):
             return None
 
     def get_short_name_transportation_tariff(self):
+        if self.transportation_tariff_with_factor_multi:
+            return self.transportation_tariff_with_factor_multi
         if self.transportation_tariff_with_factor:
             return round(self.transportation_tariff_with_factor, 2)
         return self.transportation_tariff.replace('+', ' +')
@@ -258,6 +264,7 @@ class RequestsForLogisticsCalculations(models.Model):
 
     bid = models.CharField(max_length=50, verbose_name='Окончательная ставка', blank=True, null=True)
     reason_for_close = models.CharField(max_length=100, verbose_name='Причина закрытия', blank=True, null=True)
+    carrier = models.ForeignKey(CarriersList, on_delete=models.PROTECT, verbose_name='Перевозчик', blank=True, null=True)
     roads = models.ManyToManyField(RoadsList)
 
     comments_initiator = models.CharField(max_length=250, verbose_name='Комментарии от инициатора', blank=True, null=True)
@@ -311,8 +318,8 @@ class RequestsForLogisticsGoods(models.Model):
 
     request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE, related_name='goods')
     photo_path_logistic_goods = models.ImageField(verbose_name='Фото товара', upload_to=get_file_path, blank=True, null=True)
-    description = models.CharField(max_length=50, verbose_name='Описание товара', blank=True, null=True)
-    material = models.CharField(max_length=50, verbose_name='Материал', blank=True, null=True)
+    description = models.CharField(max_length=255, verbose_name='Описание товара', blank=True, null=True)
+    material = models.CharField(max_length=255, verbose_name='Материал', blank=True, null=True)
     number_of_packages = models.CharField(max_length=50, verbose_name='Количество упаковок/мест', blank=True, null=True)
     quantity_in_each_package = models.CharField(max_length=50, verbose_name='Количество в каждой упаковке (шт)', blank=True, null=True)
     size_of_packaging = models.CharField(max_length=50, verbose_name='Объём/размер упаковки (м3)', blank=True, null=True)
@@ -321,6 +328,8 @@ class RequestsForLogisticsGoods(models.Model):
     total_gross_weight = models.CharField(max_length=50, verbose_name='Общий вес брутто (кг)', blank=True, null=True)
     total_quantity = models.CharField(max_length=50, verbose_name='Общее кол-во (шт)', blank=True, null=True)
     trademark = models.CharField(max_length=50, verbose_name='Торговая марка', blank=True, null=True)
+
+    bid = models.CharField(max_length=50, verbose_name='Ставка товара', blank=True, null=True)
 
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
@@ -334,8 +343,8 @@ class RequestsForLogisticsGoods(models.Model):
 
 
 class RequestsForLogisticsRate(models.Model):
-    request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE, related_name='rate')
-    # good = models.ForeignKey(RequestsForLogisticsGoods, on_delete=models.CASCADE, related_name='rate')
+    # request = models.ForeignKey(RequestsForLogisticsCalculations, on_delete=models.CASCADE, related_name='rate')
+    good = models.ForeignKey(RequestsForLogisticsGoods, on_delete=models.CASCADE, related_name='rate')
     road = models.ForeignKey(RoadsList, on_delete=models.CASCADE, verbose_name='Название дороги')
     carrier = models.ForeignKey(CarriersList, on_delete=models.CASCADE, verbose_name='Название перевозчика')
 
@@ -346,7 +355,7 @@ class RequestsForLogisticsRate(models.Model):
     time_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Ставка {self.bid} товара {self.request} дороги {self.road} перевозчика {self.carrier}"
+        return f"Ставка {self.bid} товара {self.good} дороги {self.road} перевозчика {self.carrier}"
 
     class Meta:
         verbose_name = 'Ставки на запрос в логистику'

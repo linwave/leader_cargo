@@ -120,7 +120,7 @@
             <td>{{ article.name_goods|default:"" }}</td>
             <td>{{ article.number_of_seats|floatformat:"0g" }}</td>
             <td>{{ article.weight }}</td>
-            <td>{{ article.volume|floatformat:"2g" }}</td>
+            <td>{{ article.volume }}</td>
             <td>{{ article.get_short_name_transportation_tariff }}</td>
             {% if user.role == 'Логист' %}
             <td style="background: #3dad32;">{{ article.transportation_tariff_for_clients|default:"" }}</td>

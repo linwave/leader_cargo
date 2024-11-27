@@ -1,0 +1,43 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-htmx-label">
+            <i class="fa-solid fa-wallet"></i> Редактирование реквизитов {{requisite.name}}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body mb-2">
+        <form method="post" id="edit_requisites_form" action="{% url 'bills:requisites_edit' client.pk requisite.pk %}">
+            {% csrf_token %}
+            <div class="row g-2">
+                <div class="col-12">
+                    <label for="requisites-name" class="form-label">Название реквизитов</label>
+                    <input name="requisites-name" type="text" id="requisites-name" class="form-control" autocomplete="off" required value="{{requisite.name}}">
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-4">
+                    <label for="rs" class="form-label">Р/с</label>
+                    <input name="rs" type="number" id="rs"  class="form-control" autocomplete="off" required value="{{requisite.rs}}">
+                </div>
+                <div class="col-4">
+                    <label for="ks" class="form-label">К/с</label>
+                    <input name="ks" type="number" id="ks"  class="form-control" autocomplete="off" required value="{{requisite.ks}}">
+                </div>
+                <div class="col-4">
+                    <label for="bic" class="form-label">БИК</label>
+                    <input name="bic" type="number" id="bic"  class="form-control" autocomplete="off" required value="{{requisite.bic}}">
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-12">
+                    <label for="name_bank" class="form-label">Название банка</label>
+                    <input name="name_bank" type="text" id="name_bank"  class="form-control" autocomplete="off" required  value="{{requisite.name_bank}}">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button form="edit_requisites_form" type="submit" class="btn btn-primary">Редактировать</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

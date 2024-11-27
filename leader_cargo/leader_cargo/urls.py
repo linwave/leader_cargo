@@ -10,10 +10,17 @@ from django.views.static import serve
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('main.urls')),
+    path('api/', include('api.urls')),
     path('logistic/', include('analytics.urls')),
+    path('bills/', include('bills.urls')),
 ]
 
 if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns = [
+                      path("__debug__/", include("debug_toolbar.urls")),
+                  ] + urlpatterns
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 else:
     urlpatterns += [

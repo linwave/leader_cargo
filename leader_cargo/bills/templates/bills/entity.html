@@ -1,0 +1,52 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="modal-htmx" tabindex="-1"
+     aria-labelledby="modal-htmx-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div id="hx-modal">
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row g-2 mb-2 justify-content-left">
+        <div class="col-auto">
+            <a type="button" class="btn btn-sm btn-success"
+               data-bs-toggle="modal"
+               data-bs-target="#modal-htmx"
+               hx-get="{% url 'bills:entity_add' %}"
+               hx-target="#hx-modal">
+                <i class="fa-solid fa-building"></i> Создание наших Юр. лиц
+            </a>
+        </div>
+    </div>
+</div>
+<table class="table table-sm table-hover table-bordered align-middle" style="width:100%;border-spacing: 0;">
+    <thead class="table-dark align-middle">
+    <tr>
+        <th scope="col" style="background-color: #111;">#</th>
+        <th scope="col" style="background-color: #111;">Название</th>
+        <th scope="col" >Тип</th>
+        <th scope="col" >НДС</th>
+        <th scope="col" >ИНН</th>
+        <th scope="col" >Телефон</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for entity in entities %}
+    <tr class="curs" onclick="window.location='{{ entity.get_absolute_url_entity }}';">
+        <th scope="row">{{ forloop.counter }}</th>
+        <td>{{entity.name}}</td>
+        <td>{{entity.type}}</td>
+        <td>{{entity.nds_status}}</td>
+        <td>{{entity.inn}}</td>
+        <td>{{entity.phone_mask}}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

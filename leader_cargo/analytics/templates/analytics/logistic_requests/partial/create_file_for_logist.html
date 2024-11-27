@@ -1,0 +1,35 @@
+{% if error %}
+<div class="container-fluid" id="htmx_create_all_files">
+    <div class="container-fluid">
+        <div class="row g-2 mb-2 justify-content-left">
+            <div class="col-auto">
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                    <div>
+                        <strong>Техническая ошибка:</strong><br>
+                        <strong>"{{ message_error|join:"<br>" }}"</strong><br>
+                        <strong>Просьба, написать тех. поддержке со скриншотом ошибки и прикрепить файл, из-за которого это произошло</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="container-fluid" id="htmx_create_all_files">
+    <div class="container-fluid">
+        <div class="row g-2 mb-2 justify-content-left">
+            <div class="col-auto">
+                <div class="alert alert-success" role="alert">
+                    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
+                    <a class="btn btn-sm btn-success" href="{{ name_for_excel }}" download>
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Успешно создан файл
+                    </a>
+                    <br>
+                    {{ reports_name|join:", "}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

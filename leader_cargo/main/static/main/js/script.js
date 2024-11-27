@@ -170,3 +170,46 @@ function submit_any_form(MyForm)
 {
     document.getElementById(MyForm).submit()
 }
+function imask_class_int(){
+let element = document.querySelectorAll(".imask_int");
+var integer_options = {
+    mask: Number,
+    padFractionalZeros: false,
+    normalizeZeros: true,
+    radix: ',',
+    mapToRadix: ['.'],
+    scale: 3,
+    min: 0,
+    max: 10000000000,
+    thousandsSeparator: ''
+};
+for (let i = 0; i < element.length; i++){
+        let mask = IMask(element[i], integer_options);
+    }
+}
+
+function inn_mask(){
+var element = document.getElementById('inn-mask');
+var maskOptions = {
+            mask: '0000000000'
+};
+var mask_phone = IMask(element, maskOptions);
+}
+
+function float_mask(){
+let element = document.querySelectorAll(".float-mask");
+var float_options = {
+    mask: Number,
+    padFractionalZeros: false,
+    normalizeZeros: true,
+    radix: ',',
+    mapToRadix: ['.'],
+    scale: 2,
+    min: 0,
+    max: 10000000000,
+    thousandsSeparator: ''
+};
+for (let i = 0; i < element.length; i++){
+        let mask = IMask(element[i], float_options);
+    }
+}

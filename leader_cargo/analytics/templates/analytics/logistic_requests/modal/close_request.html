@@ -11,7 +11,7 @@
             <div>
                 Выберите причину закрытия
             </div>
-            <div>
+            <div class="mb-3">
                 <select class="form-select" aria-label="Выберите причину закрытия"
                         name="reason"
                         hx-get="{% url 'analytics:request_status_in_close' my_request.pk %}"
@@ -27,24 +27,21 @@
                 </select>
             </div>
             {% if my_select == '6' %}
-            <div class="mt-2">
-                Выберите ставку
-            </div>
-            <div>
-                <select class="form-select" aria-label="Выберите ставку" name="final_bid">
-                    {% for bid in bids %}
-                    {% if bid.bid != '-' %}
-                    <option value="{{bid.pk}}">{{bid.bid}} [{{bid.carrier.name}} - {{bid.road.name}}]</option>
-                    {% endif %}
+            {% for good in my_goods %}
+            <div class="input-group mb-3">
+                <span class="input-group-text">{{good.description}}</span>
+                <select class="form-select" aria-label="Выберите ставку" name="good-bid-{{good.pk}}">
+                    {% for bid in good.rate.all %}
+                    <option value="bid-{{bid.pk}}">{{bid.bid}} [{{bid.carrier.name}} - {{bid.road.name}}]</option>
                     {% endfor %}
                 </select>
             </div>
+            {% endfor %}
             {% endif %}
         </form>
     </div>
     <div class="modal-footer">
         <button form="close_request_form" type="submit" class="btn btn-success">Подтвердить</button>
-        <!--        <button type="submit" class="btn btn-success">Подтвердить</button>-->
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
     </div>
 </div>

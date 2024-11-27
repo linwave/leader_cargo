@@ -4,50 +4,35 @@
         <input type="text" class="form-control" value="{{ my_request.initiator.get_FI }}" disabled>
     </div>
     <div class="input-group mb-2" style="width: 300px" id="req-status">
-    <span class="input-group-text">Статус:</span>
-    <input type="text" class="form-control" value="{{ my_request.status }}" disabled>
-</div>
+        <span class="input-group-text">Статус:</span>
+        <input type="text" class="form-control" value="{{ my_request.status }}" disabled>
+    </div>
     <div class="input-group mb-2" style="width: 600px">
         <span class="input-group-text">Наименование запроса:</span>
         <input type="text" class="form-control" value="{{ my_request.name }}" disabled>
     </div>
-    <div class="table-responsive" style="">
-        <table class="table table-sm table-bordered align-middle g-1" align="center"
-               style="width:600px;font-size: 1rem;align-items: center;border-radius: 4px;border: 1px solid #000;overflow-x: auto;">
-            <thead class="align-middle table-dark">
-            <tr align="center">
-                <th scope="col" style="background-color: #CED4DA;color: black;"><i class="fa-solid fa-road"></i>/<i class="fa-solid fa-cubes-stacked"></i></th>
-                {% for carrier in all_carriers %}
-                <th scope="col" style="background-color: #11101D">{{carrier.name}}</th>
-                {% endfor %}
-            </tr>
-            </thead>
-            <tbody align="center">
-            {% for road in my_request.roads.all %}
-            <tr>
-                <th style="background-color: #0d6efd;color: #fff;"><span>{{road.name}}</span></th>
-                {% for bid in all_bids %}
-                {% if bid.road.pk == road.pk %}
-                {% if my_request.status == 'На просчете' or my_request.status == 'Частично обработано' or my_request.status == 'Обработано' %}
-                <td><input class="form-control" type="text" name="rate" style="border: none;"
-                       hx-post="{% url 'analytics:add_bid' bid.pk %}"
-                       hx-trigger="keyup changed delay:0.5s"
-                       hx-target="#req-status"
-                       hx-swap="outerHTML"
-                       value="{{ bid.bid|default:'' }}"></td>
-                {% else %}
-                {% if bid.active %}
-                <td style="background-color: #198754;color: #fff;">{{bid.bid|default:'Ожидание'}}</td>
-                {% else %}
-                <td>{{bid.bid|default:'Ожидание'}}</td>
-                {% endif %}
-                {% endif %}
-                {% endif %}
-                {% endfor %}
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <div class="input-group mb-2">
+        <span class="input-group-text">Приоритет дорогам:</span>
+        {% if roads %}
+        {% for road in roads %}
+        {% if road.activity %}
+        {% if road.name in my_request_description_roads %}
+        <input name="road-{{road.pk}}" type="checkbox" class="btn-check" id="{{road.name}}" autocomplete="off" checked disabled>
+        {% else %}
+        <input name="road-{{road.pk}}" type="checkbox" class="btn-check" id="{{road.name}}" autocomplete="off" disabled>
+        {% endif %}
+        <label class="btn btn-outline-primary" for="{{road.name}}">{{road.name}}</label>
+        {% else %}
+        <span class="d-inline-block" tabindex="0" data-bs-toggle="popover" data-bs-placement="top"
+              data-bs-trigger="hover focus" data-bs-content="Дорога не доступна">
+                    <input type="checkbox" class="btn-check" id="{{road.name}} dis" autocomplete="off" disabled>
+                    <label class="btn btn-outline-primary" for="{{road.name}} dis" style="border-radius: 0px;">{{road.name}}</label>
+                </span>
+        {% endif %}
+        {% endfor %}
+        {% else %}
+        Дороги отсутствуют
+        {% endif %}
     </div>
     <div class="input-group mb-2" style="width: 600px">
         <span class="input-group-text">Комментарий:</span>
@@ -110,7 +95,7 @@
             </a>
         </div>
         {% endif %}
-        {% if my_request.status == 'Новый' or my_request.status == 'В работе' or my_request.status == 'Запрос на изменение' %}
+        {% if my_request.status == 'Новый' or my_request.status == 'В работе' or my_request.status == 'Запрос на изменение' or my_request.status == 'На просчете' %}
         <div class="col-auto">
             <a class="btn btn-sm btn-warning"
                data-bs-toggle="modal"
@@ -131,6 +116,7 @@
             <thead class="align-middle table-dark">
             <tr align="center">
                 <th scope="col">#</th>
+                <th scope="col" style="width: 100px;">Ставка</th>
                 <th scope="col">Фото товара <br> 图片</th>
                 <th scope="col">Описание товара <br> 品名</th>
                 <th scope="col">Материал <br> 材</th>
@@ -149,10 +135,16 @@
             {% for good in goods %}
             <tr>
                 <th scope="row">{{ forloop.counter }}</th>
+                <td class="td_for_modal" data-bs-toggle="modal"
+                    data-bs-target="#modal-goods"
+                    hx-get="{% url 'analytics:add_bid' good.pk %}"
+                    hx-target="#hx-modal-goods" style="cursor: pointer;">
+                    <span id="good-{{good.pk}}-bid" style="font-weight: 900;">{{good.bid|default:'Ожидание'}}</span>
+                </td>
                 <td class="my_td" width="150">
                     <a target="_blank" href="{% if good.photo_path_logistic_goods %}{{ good.photo_path_logistic_goods.url }}{% else %}{% endif %}">
                         <img src="{% if good.photo_path_logistic_goods %}{{ good.photo_path_logistic_goods.url }}{% else %}{% endif %}"
-                             id="image-preview_{{good.pk}}"  style="width: 150px;">
+                             id="image-preview_{{good.pk}}" class="image_for_request">
                     </a>
                 </td>
                 <td>{{ good.description|default:'' }}</td>

@@ -1,4 +1,89 @@
-<div class="input-group mb-2" style="width: 300px" id="req-status">
-    <span class="input-group-text">Статус:</span>
-    <input type="text" class="form-control" value="{{ my_request.status }}" disabled>
+{% if my_request.status != 'Закрыт' and my_request.status != 'Запрос на изменение' %}
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Ставки по товару<br>{{good.description}}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <div class="table-responsive" style="display: flex;align-items: center;justify-content: center;">
+            <table class="table table-sm table-bordered align-middle g-1" align="center"
+                   style="width:1100px;font-size: 1rem;align-items: center;border-radius: 4px;border: 1px solid #000;overflow-x: auto;">
+                <thead class="align-middle table-dark">
+                <tr align="center">
+                    <th scope="col" style="background-color: #CED4DA;color: black;"><i class="fa-solid fa-road"></i>/<i class="fa-solid fa-cubes-stacked"></i></th>
+                    {% for carrier in carriers %}
+                    <th scope="col" style="background-color: #11101D">{{carrier.name}}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody align="center">
+                {% for road in roads %}
+                <tr>
+                    <th style="{% if road in my_roads %}background-color: #0d6efd;color: #fff;{% else %}background-color: #fff;color: #0d6efd;{% endif %}"><span>{{road.name}}</span></th>
+                    {% for carrier in carriers %}
+                    <td style="position :relative;"><input class="form-control border-radius-0" type="text" name="rate" style="border: none;"
+                                                           hx-get="{% url 'analytics:add_bid_good' good.pk road.pk carrier.pk %}"
+                                                           hx-trigger="keyup changed delay:0.1s"
+                                                           hx-swap="none"
+                                                           value="{% for bid in my_bids %}{% if bid.road.pk == road.pk and bid.carrier.pk == carrier.pk %}{{ bid.bid|default:'' }}{% endif %}{% endfor %}"><input type="radio" class="btn-check" name="options-outlined" id="road-{{road.pk}}-carrier-{{carrier.pk}}" autocomplete="off" {% for bid in my_bids %}{% if bid.road.pk == road.pk and bid.carrier.pk == carrier.pk %}{% if bid.active %}checked{% endif %}{% endif %}{% endfor %}><label
+                            class="btn btn-outline-success label-check" for="road-{{road.pk}}-carrier-{{carrier.pk}}"
+                            hx-post="{% url 'analytics:active_bid' good.pk road.pk carrier.pk %}"
+                            hx-trigger="click"
+                            hx-target="#good-{{good.pk}}-bid"
+                    ></label>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <!--        <button form="bid_good_form" type="submit" class="btn btn-success">Подтвердить</button>-->
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
 </div>
+{% else %}
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modal-main-label">
+            Ставки по товару<br>{{good.description}}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <div class="table-responsive" style="display: flex;align-items: center;justify-content: center;">
+            <table class="table table-sm table-bordered align-middle g-1" align="center"
+                   style="width:1100px;font-size: 1rem;align-items: center;border-radius: 4px;border: 1px solid #000;overflow-x: auto;">
+                <thead class="align-middle table-dark">
+                <tr align="center">
+                    <th scope="col" style="background-color: #CED4DA;color: black;"><i class="fa-solid fa-road"></i>/<i class="fa-solid fa-cubes-stacked"></i></th>
+                    {% for carrier in carriers %}
+                    <th scope="col" style="background-color: #11101D">{{carrier.name}}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody align="center">
+                {% for road in roads %}
+                <tr>
+                    <th style="{% if road in my_roads %}background-color: #0d6efd;color: #fff;{% else %}background-color: #fff;color: #0d6efd;{% endif %}"><span>{{road.name}}</span></th>
+                    {% for carrier in carriers %}
+                    <td style="position :relative;z-index: 10;">
+                        <input class="form-control border-radius-0 {% for bid in my_bids %}{% if bid.road.pk == road.pk and bid.carrier.pk == carrier.pk %}{% if bid.active %}active-bid{% endif %}{% if bid.bid == good.bid %} manager-bid {% endif %}{% endif %}{% endfor %}" type="text" name="rate" style="border: none;" disabled
+                               value="{% for bid in my_bids %}{% if bid.road.pk == road.pk and bid.carrier.pk == carrier.pk %}{{ bid.bid|default:'' }}{% endif %}{% endfor %}">
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>
+{% endif %}
