@@ -169,3 +169,8 @@ leader_cargo/db_d.sqlite3
 leader_cargo/requirements.txt
 leader_cargo/bills/migrations
 leader_cargo/api/migrations
+.idea/leader_cargo.iml
+leader_cargo/db_24.01.2025.sqlite3
+*.sqlite3
+leader_cargo/leader_cargo/__pycache__
+.idea

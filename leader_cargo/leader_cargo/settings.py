@@ -129,3 +129,15 @@ INTERNAL_IPS = [
     "127.0.0.1",
     # ...
 ]
+
+# Настройки Celery
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+# Использование пула потоков вместо prefork
+CELERY_WORKER_POOL = 'threads'
+CELERY_WORKER_CONCURRENCY = 4  # Установите количество потоков по вашему усмотрению
+
+# Дополнительные настройки для Celery
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
