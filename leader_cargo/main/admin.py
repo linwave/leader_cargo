@@ -1,7 +1,57 @@
-from django.contrib import admin
-from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, ExchangeRates
+from django.contrib import admin, messages
+from django.http import HttpResponseRedirect
+from django.urls import path
+from django.utils.html import format_html
+
+from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, ExchangeRates, Calls, CallsFile
 from analytics.models import RequestsForLogisticsRate, RequestsForLogisticsGoods, RequestsForLogisticFiles, RoadsList, CarriersList, CargoFiles, CargoArticle, PaymentDocumentsForArticles, RequestsForLogisticsCalculations
 from bills.models import Clients, RequisitesClients, Entity, RequisitesEntity, Bills, BillsFiles
+
+
+@admin.register(Calls)
+class CallsAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'operator', 'status_call', 'client_name', 'client_phone', 'client_location', 'date_next_call', 'time_create',
+                    'manager', 'date_to_manager', 'status_manager', 'date_next_call_manager')
+    list_display_links = ('pk',)
+    actions = ['clear_all_records']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('operator', 'manager')
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('clear-all/', self.admin_site.admin_view(self.clear_all_view), name='calls-clear-all'),
+        ]
+        return custom_urls + urls
+
+    def clear_all_records(self, request, queryset):
+        # Проверка на наличие разрешения (если требуется)
+        if not request.user.is_superuser:
+            self.message_user(request, "У вас нет прав для выполнения этого действия.", level=messages.ERROR)
+            return
+
+        # Вызов метода clear_all
+        Calls.clear_all()
+        self.message_user(request, "Все звонки были удалены.", level=messages.SUCCESS)
+
+    clear_all_records.short_description = "Удалить все звонки"
+
+    def clear_all_view(self, request):
+        # Вызов метода clear_all
+        Calls.clear_all()
+        self.message_user(request, "Все звонки были удалены.", level=messages.SUCCESS)
+        return HttpResponseRedirect("../")
+
+@admin.register(CallsFile)
+class CallsFileAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'crm', 'user', 'file', 'uploaded_at')
+    list_display_links = ('pk',)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('user')
 
 
 @admin.register(ExchangeRates)

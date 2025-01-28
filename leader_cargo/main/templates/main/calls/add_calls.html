@@ -1,0 +1,18 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="add-logistic-requests-Label">
+            Добавление звонков по файлу
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body mb-2">
+        <form method="post" id="form_add_calls" action="{% url 'main:add_calls' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+        {{ form.as_p }}
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button form="form_add_calls" type="submit" class="btn btn-success">Загрузить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

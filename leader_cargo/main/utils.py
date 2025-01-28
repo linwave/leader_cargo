@@ -2,9 +2,9 @@ import datetime
 from django.shortcuts import redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from analytics.models import RequestsForLogisticsCalculations
-from .models import ExchangeRates
+from .models import ExchangeRates, Calls
 
-categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки', 'Запрос счетов']
+categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки', 'Запрос счетов', 'Звонки']
 
 menu = {
     'Вход': {'title': 'Вход', 'url_name': 'main:login', 'short_url': 'login', 'display': True},
@@ -50,6 +50,9 @@ menu = {
                'category_name': categories[5], 'menu_role': 'basic'},
     'Создание заявки': {'title': 'Создание клиента', 'url_name': 'main:create_appeal', 'short_url': 'create_appeal', 'display': False,
                         'category_name': categories[5], 'menu_role': 'sub'},
+
+    'Звонки': {'title': 'Звонки', 'url_name': 'main:calls', 'short_url': 'calls', 'display': True,
+               'category_name': categories[7], 'menu_role': 'basic'},
 }
 
 menu_super_admin = [
@@ -87,6 +90,11 @@ menu_super_admin = [
         'name': categories[5],
         'basic': menu['Заявки'],
         'sub_menu': [menu['Создание заявки']]
+    },
+    {
+        'name': categories[7],
+        'basic': menu['Звонки'],
+        'sub_menu': []
     }
 ]
 menu_rop = [
@@ -119,7 +127,12 @@ menu_rop = [
     #     'name': categories[5],
     #     'basic': menu['Заявки'],
     #     'sub_menu': [menu['Создание заявки']]
-    # }
+    # },
+    {
+        'name': categories[7],
+        'basic': menu['Звонки'],
+        'sub_menu': []
+    }
 ]
 menu_admin = [
     {
@@ -138,7 +151,13 @@ menu_admin = [
         'sub_menu': [menu['Регистрация сотрудника']]
     }
 ]
-
+menu_operator = [
+    {
+        'name': categories[7],
+        'basic': menu['Звонки'],
+        'sub_menu': []
+    }
+]
 menu_manager = [
     {
         'name': categories[1],
@@ -159,7 +178,12 @@ menu_manager = [
     #     'name': categories[5],
     #     'basic': menu['Заявки'],
     #     'sub_menu': [menu['Создание заявки']]
-    # }
+    # },
+    {
+        'name': categories[7],
+        'basic': menu['Звонки'],
+        'sub_menu': []
+    }
 ]
 menu_buyer = [
     {
@@ -212,6 +236,7 @@ initial_user_parameters = {
     'Администратор': {'login_url': 'main:exchangerates', 'menu': menu_admin},
     'Логист': {'login_url': 'analytics:carrier', 'menu': menu_logist},
     'Менеджер': {'login_url': 'main:monitoring_leaderboard', 'menu': menu_manager},
+    'Оператор': {'login_url': 'main:calls', 'menu': menu_operator},
     'Закупщик': {'login_url': 'main:appeals', 'menu': menu_buyer},
     'Клиент': {'login_url': 'main:appeals', 'menu': menu_client},
 }
@@ -224,6 +249,8 @@ class DataMixin:
             context['menu'] = initial_user_parameters[self.request.user.role]['menu']
             if self.request.user.role == 'Логист':
                 context['badge_reports'] = RequestsForLogisticsCalculations.objects.filter(status__in=['Новый', 'Запрос на изменение']).count()
+            if self.request.user.role == 'Менеджер':
+                context['badge_calls'] = Calls.objects.filter(manager=self.request.user).filter(status_manager='Новая').select_related('operator', 'manager').count()
         context['last_currency'] = self.get_last_currency_dollar_and_yuan()
         context['today'] = datetime.datetime.date(datetime.datetime.now()).strftime("%d.%m.%y")
         return context

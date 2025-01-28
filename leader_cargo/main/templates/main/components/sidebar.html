@@ -2,7 +2,7 @@
 <div class="sidebar close">
     <div id="sidebarBtn" class="logo-details">
         <i  class="fa-solid fa-bars"></i>
-        <span class="logo_name">FastChina</span>
+        <span class="logo_name">Magistral</span>
     </div>
     <ul class="nav-links">
         {% for cat in menu %}
@@ -26,6 +26,9 @@
                     {% elif cat.name == 'Заявки' %}
                     <i class="fa-solid fa-clipboard-list"></i>
                     {% endif %}
+                    {% if cat.name == 'Звонки' %}
+                    <i class="fa-solid fa-phone-volume"></i>
+                    {% endif %}
                     <span class="link_name">{{cat.name}}</span>
                     {% if cat.name == 'Логистика' %}
                     <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_reports}}</span>
@@ -42,9 +45,9 @@
                 {% for sub in cat.sub_menu %}
                 <li>
                     <a href="{% url sub.url_name %}">{{sub.title}}
-                    {% if sub.title == 'Обработка запросов' %}
-                    <span class="badge badge-in-sub rounded-pill bg-danger">{{badge_reports}}</span>
-                    {% endif %}
+                        {% if sub.title == 'Обработка запросов' %}
+                        <span class="badge badge-in-sub rounded-pill bg-danger">{{badge_reports}}</span>
+                        {% endif %}
                     </a>
 
                 </li>
@@ -69,8 +72,23 @@
                 {% elif cat.name == 'Заявки' %}
                 <i class="fa-solid fa-clipboard-list"></i>
                 {% endif %}
-                <!--                        <i class="fa-solid fa-border-all"></i>-->
+                {% if cat.name == 'Звонки' %}
+                <i class="fa-solid fa-phone-volume"></i>
+                {% endif %}
                 <span class="link_name">{{cat.name}}</span>
+                {% if cat.name == 'Звонки' %}
+
+                <div hx-get="{% url 'main:new_calls' %}"
+                     hx-trigger="every 10s"
+                     hx-swap="innerHTML">
+                    {% if badge_calls != 0 %}
+                    <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_calls}}</span>
+                    {% endif %}
+                </div>
+
+                {% endif %}
+                <!--                        <i class="fa-solid fa-border-all"></i>-->
+
             </a>
             <ul class="sub-menu blank">
                 <li><a class="link_name" href="{% url cat.basic.url_name %}">{{cat.name}}</a></li>
@@ -93,3 +111,20 @@
         </li>
     </ul>
 </div>
+<script>
+let arrow = document.querySelectorAll(".arrow");
+
+for (var i=0; i < arrow.length; i++) {
+    arrow[i].addEventListener("click", (e)=>{
+    let arrowParent = e.target.parentElement.parentElement;
+    arrowParent.classList.toggle("showMenu");
+    });
+    }
+let sidebar = document.querySelector(".sidebar");
+let sidebarBtn = document.getElementById("sidebarBtn");
+console.log(sidebarBtn);
+sidebarBtn.addEventListener("click", ()=>{
+    sidebar.classList.toggle("close");
+    });
+
+</script>

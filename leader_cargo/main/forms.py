@@ -1,7 +1,9 @@
+from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
-from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans
+from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, Calls, CallsFile
 from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
 
 
@@ -53,13 +55,13 @@ class EditManagerPlanForm(ModelForm):
 
 class LoginUserForm(AuthenticationForm):
     phone = CharField(label='Телефон', max_length=50, widget=TextInput(attrs={
-                                                                              'id': 'phone-mask',
-                                                                              'type': 'text',
-                                                                              }))
+        'id': 'phone-mask',
+        'type': 'text',
+    }))
     password = CharField(label='Пароль', max_length=50, widget=TextInput(attrs={
 
-                                                                                "type": "password",
-                                                                                "id": "inputPassword5"}))
+        "type": "password",
+        "id": "inputPassword5"}))
 
 
 class AddAppealsForm(ModelForm):
@@ -492,8 +494,9 @@ class CardEmployeesForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         roles = [
+            ('РОП', 'РОП'),
             ('Менеджер', 'Менеджер'),
-            ('Закупщик', 'Закупщик'),
+            ('Оператор', 'Оператор'),
         ]
         self.fields["role"].widget.attrs.update({"class": 'form-control'})
         self.fields["role"].choices = roles
@@ -540,3 +543,144 @@ class CardEmployeesForm(ModelForm):
         }
 
 
+class EditCallsOperator(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Фильтруем менеджеров по ролям "РОП" и "Менеджер"
+        self.fields['manager'].queryset = CustomUser.objects.filter(role__in=['РОП', 'Менеджер'])
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            # if field == 'weight':
+            #     self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.cleaned_data.get('manager') and not instance.date_to_manager:
+            # Устанавливаем текущую дату и время, если выбран менеджер и date_to_manager пустой
+            instance.date_to_manager = timezone.now()
+        if self.cleaned_data.get('manager') != instance.manager:
+            # Устанавливаем текущую дату и время, если выбран менеджер и date_to_manager пустой
+            instance.date_to_manager = timezone.now()
+        if not self.cleaned_data.get('manager'):
+            instance.date_to_manager = None
+        if commit:
+            instance.save()
+        return instance
+
+    class Meta:
+        model = Calls
+        fields = ["status_call", "date_call", "client_name", "client_phone", "client_location", "description", 'date_next_call', 'manager']
+        widgets = {
+            "date_call": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "date_next_call": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "client_phone": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'autocomplete': 'off',
+            }),
+            "description": Textarea(attrs={
+                'class': 'form-control',
+                'maxlength': 250,
+            }),
+        }
+
+class EditCallsManager(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Фильтруем менеджеров по ролям "РОП" и "Менеджер"
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+        if 'description' in self.fields:
+            self.fields['description'].widget.attrs['readonly'] = True
+
+    class Meta:
+        model = Calls
+        fields = ["status_manager", "client_name", "client_phone", "client_location", "description", "description_manager", 'date_next_call_manager']
+        widgets = {
+            "date_next_call_manager": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "client_phone": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'autocomplete': 'off',
+            }),
+            "description": Textarea(attrs={
+                'class': 'form-control',
+                'maxlength': 250,
+            }),
+            "description_manager": Textarea(attrs={
+                'class': 'form-control',
+                'maxlength': 250,
+            }),
+        }
+class CallsFileForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = CallsFile
+        fields = ['crm', 'file']
+        widgets = {
+            'file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+
+
+class CallsFilterForm(forms.Form):
+
+    STATUS_OPERATOR_CHOICES = [
+        ('Не обработано', 'Не обработано'),
+        ('Не дозвонились', 'Не дозвонились'),
+        ('Не заинтересован', 'Не заинтересован'),
+        ('Заинтересован', 'Заинтересован'),
+        ('Перезвонить позже', 'Перезвонить позже')
+    ]
+
+    STATUS_MANAGER_CHOICES = [
+        ('Новая', 'Новая'),
+        ('В работе', 'В работе'),
+        ('Утверждена', 'Утверждена'),
+        ('Отказ', 'Отказ')
+    ]
+
+    status_call = forms.MultipleChoiceField(
+        choices=STATUS_OPERATOR_CHOICES,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label='Статус заявки'
+    )
+
+    status_manager = forms.MultipleChoiceField(
+        choices=STATUS_MANAGER_CHOICES,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label='Статус заявки менеджера'
+    )
+# class AddCalls(ModelForm):
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         for field in self.fields:
+#             self.fields[field].widget.attrs.update({'class': 'form-control'})
+#
+#     class Meta:
+#         model = Calls
+#         fields = ["name_carrier", "file_path"]
+#         widgets = {
+#             "name_carrier": Select(attrs={
+#                 'class': 'form-control',
+#                 'id': 'name_carrier',
+#             }),
+#         }

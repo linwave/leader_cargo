@@ -1,9 +1,13 @@
 import datetime
+import logging
 
+import pandas as pd
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
+from django.utils import timezone
 
+logger = logging.getLogger(__name__)
 
 class CustomUser(AbstractUser):
     towns = [
@@ -16,6 +20,7 @@ class CustomUser(AbstractUser):
         ('Администратор', 'Администратор'),
         ('Логист', 'Логист'),
         ('Менеджер', 'Менеджер'),
+        ('Оператор', 'Оператор'),
         ('Закупщик', 'Закупщик'),
         ('Клиент', 'Клиент')
     ]
@@ -40,10 +45,10 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = 'Пользователи'
         verbose_name_plural = 'Пользователи'
-        ordering = ['-status', 'town', 'role', '-time_create']
+        ordering = ['-status', 'town', '-role', '-time_create']
 
     def __str__(self):
-        return f"{self.last_name} {self.first_name} - {self.phone} - {self.town}"
+        return f'{self.last_name} {self.first_name}'
 
     def get_absolute_url_client(self):
         return reverse('main:card_client', kwargs={'client_id': self.pk})
@@ -266,3 +271,119 @@ class ManagerPlans(models.Model):
         verbose_name = 'План менеджера'
         verbose_name_plural = 'Планы менеджеров'
         ordering = ['-time_create']
+
+
+class CallsFile(models.Model):
+    CRM = [
+            ('Битрикс24', 'Битрикс24'),
+            ('amoCRM', 'acoCRM'),
+    ]
+    crm = models.CharField(max_length=50, choices=CRM, verbose_name='CRM')
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, verbose_name='Пользователь')
+    file = models.FileField(upload_to='files/calls/%Y/%m/%d/', verbose_name='Файл')
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата загрузки')
+
+    def __str__(self):
+        return f"{self.file.name} ({self.uploaded_at})"
+
+    class Meta:
+        verbose_name = 'Загруженный файл Call'
+        verbose_name_plural = 'Загруженные файлы Calls'
+
+
+class Calls(models.Model):
+    statuses_operator = [
+        ('Не обработано', 'Не обработано'),
+        ('Не дозвонились', 'Не дозвонились'),
+        ('Не заинтересован', 'Не заинтересован'),
+        ('Заинтересован', 'Заинтересован'),
+        ('Перезвонить позже', 'Перезвонить позже')
+    ]
+    statuses_manager = [
+        ('Новая', 'Новая'),
+        ('В работе', 'В работе'),
+        ('Утверждена', 'Утверждена'),
+        ('Отказ', 'Отказ')
+    ]
+    operator = models.ForeignKey(CustomUser, verbose_name='Ответственный оператор', on_delete=models.SET_NULL, blank=True, null=True, related_name="operator_calls")
+    date_call = models.DateTimeField(verbose_name='Дата звонка', blank=True, null=True)
+    client_name = models.CharField(verbose_name='ФИО клиента', max_length=255, blank=True, null=True)
+    client_phone = models.CharField(verbose_name='Контактный номер', max_length=50, unique=True)
+    client_location = models.CharField(verbose_name='Город клиента', max_length=50, blank=True, null=True)
+    description = models.TextField(verbose_name='Комментарий по звонку оператор', max_length=255, blank=True, null=True)
+    status_call = models.CharField(default="Не обработано", choices=statuses_operator, verbose_name='Статус заявки', max_length=50)
+    date_next_call = models.DateTimeField(verbose_name='Дата следующего звонка', blank=True, null=True)
+
+    manager = models.ForeignKey(CustomUser, verbose_name='Ответственный менеджер', on_delete=models.SET_NULL, blank=True, null=True, related_name="manager_calls")
+    date_to_manager = models.DateTimeField(verbose_name='Дата передачи менеджеру', blank=True, null=True)
+    status_manager = models.CharField(default="Новая", choices=statuses_manager, verbose_name='Статус заявки менеджера', max_length=50)
+    date_next_call_manager = models.DateTimeField(verbose_name='Дата следующего звонка менеджером', blank=True, null=True)
+    description_manager = models.TextField(verbose_name='Комментарий по звонку менеджером', max_length=255, blank=True, null=True)
+
+    call_file = models.ForeignKey(CallsFile, on_delete=models.SET_NULL, blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Заявка на прозвон {self.client_name} {self.client_phone}"
+
+    class Meta:
+        verbose_name = 'Звонки'
+        verbose_name_plural = 'Звонки'
+        ordering = ['-time_create']
+
+    @classmethod
+    def normalize_client_name(cls, row, columns):
+        client_name_parts = []
+        for col in columns:
+            value = str(row[col]).strip() if pd.notnull(row[col]) else None
+            if value:
+                client_name_parts.append(value)
+        return ' '.join(client_name_parts) if client_name_parts else None
+
+    @classmethod
+    def create_from_row(cls, row, columns, operator, call_file):
+        client_name = cls.normalize_client_name(row, columns['client_name'])
+        client_phone = str(row[columns['client_phone'][0]]).strip() if pd.notnull(row[columns['client_phone'][0]]) else None
+
+        if not client_name or not client_phone:
+            # logger.warning(f'Пропущена строка: client_name={client_name}, client_phone={client_phone}')
+            return None
+
+        return cls(
+            client_name=client_name,
+            client_phone=client_phone,
+            status_call='Не обработано',
+            date_call=timezone.now(),
+            operator=operator,
+            call_file=call_file,
+        )
+
+    @classmethod
+    def get_existing_phones(cls):
+        return set(cls.objects.values_list('client_phone', flat=True))
+    @staticmethod
+    def clear_all():
+        with transaction.atomic():
+            Calls.objects.all().delete()
+
+# class CallsFiles(models.Model):
+#     CRM = [
+#         ('Битрикс24', 'Битрикс24'),
+#         ('amoCRM', 'acoCRM'),
+#     ]
+#     name_crm = models.CharField(max_length=50, choices=carriers, verbose_name='Перевозчик')
+#     file_path = models.FileField(verbose_name='Файл CRM', upload_to='files/cargo/%Y/%m/%d/', blank=False, null=False)
+#     time_create = models.DateTimeField(auto_now_add=True)
+#     time_update = models.DateTimeField(auto_now=True)
+#     status = models.BooleanField(default=True, blank=True, null=True)
+#
+#     def __str__(self):
+#         return f"{self.name_carrier} {self.file_path}"
+#
+#     class Meta:
+#         verbose_name = 'Файлы грузов'
+#         verbose_name_plural = 'Файлы грузов'
+
+

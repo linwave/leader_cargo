@@ -1,12 +1,15 @@
 import calendar
 import datetime
 import re
-
-from django.contrib.auth import logout, authenticate, login, update_session_auth_hash
+import pandas as pd
+from django.contrib import messages
+from django.contrib.auth import logout, authenticate, login, update_session_auth_hash, get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Q
-from django.shortcuts import redirect
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
 import string
 import random
 
@@ -15,9 +18,10 @@ from django.utils.timezone import make_aware
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
-    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm
+    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsManager
 from .models import *
 from .utils import DataMixin, MyLoginMixin
+from .tasks import process_excel_file
 
 from analytics.models import CargoArticle
 
@@ -31,7 +35,8 @@ statuses = [
     'Доставка',
     'Завершено',
 ]
-
+logger = logging.getLogger(__name__)
+User = get_user_model()
 
 # Доп. функции
 def generate_password(length):
@@ -420,7 +425,7 @@ class MonitoringLeaderboardView(MyLoginMixin, DataMixin, ListView):
                         all_work_days += 1
                     if day <= datetime.datetime.now().day and item < 5 and day != 0:
                         current_work_days += 1
-            context['prediction'] = context['prediction']/current_work_days * all_work_days
+            context['prediction'] = context['prediction'] / current_work_days * all_work_days
         c_def = self.get_user_context(title="Таблица результатов")
         return dict(list(context.items()) + list(c_def.items()))
 
@@ -493,9 +498,9 @@ class EmployeesView(MyLoginMixin, DataMixin, ListView):
 
     def get_queryset(self):
         if self.request.user.role == 'Супер Администратор':
-            return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик', 'РОП', 'Администратор'])
+            return CustomUser.objects.all()
         else:
-            return CustomUser.objects.filter(role__in=['Менеджер', 'Закупщик'])
+            return CustomUser.objects.filter(role__in=['Логист', 'Оператор', 'Менеджер', 'Закупщик'])
 
 
 class AddEmployeeView(MyLoginMixin, DataMixin, CreateView):
@@ -861,3 +866,216 @@ class DeleteGoodsView(MyLoginMixin, DataMixin, DeleteView):
         goods = self.get_object()
         goods.delete()
         return redirect('main:card_appeal', appeal_id=self.kwargs['appeal_id'])
+
+
+class CallsView(MyLoginMixin, DataMixin, TemplateView):
+    login_url = reverse_lazy('main:login')
+    role_have_perm = ['Супер Администратор', 'Менеджер', 'Оператор', 'РОП']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Получаем данные из формы
+        form = CallsFilterForm(self.request.GET or None)
+        selected_operator_statuses = self.request.GET.getlist('status_call')
+        selected_manager_statuses = self.request.GET.getlist('status_manager')
+
+        # Получаем все звонки с использованием select_related для оптимизации
+        # Фильтруем звонки по выбранным статусам
+        if self.request.user.role == 'Оператор' or self.request.user.role == 'Супер Администратор' or self.request.user.role == 'РОП':
+            calls_query = Calls.objects.select_related('operator', 'manager').order_by('pk').all()
+        elif self.request.user.role == 'Менеджер':
+            calls_query = Calls.objects.filter(manager=self.request.user).select_related('operator', 'manager').order_by('pk').all()
+        if selected_operator_statuses:
+            calls_query = calls_query.filter(status_call__in=selected_operator_statuses)
+        if selected_manager_statuses:
+            calls_query = calls_query.filter(status_manager__in=selected_manager_statuses)
+        # Устанавливаем количество элементов на странице
+        paginator = Paginator(calls_query, 30)  # Здесь 10 - количество элементов на странице
+
+        # Получаем номер текущей страницы из GET-параметра 'page'
+        page = self.request.GET.get('page')
+
+        try:
+            calls_paginated = paginator.page(page)
+        except PageNotAnInteger:
+            # Если 'page' не является целым числом, показываем первую страницу
+            calls_paginated = paginator.page(1)
+        except EmptyPage:
+            # Если 'page' больше максимального количества страниц, показываем последнюю страницу
+            calls_paginated = paginator.page(paginator.num_pages)
+
+        # Определяем диапазон страниц для отображения
+        current_page = calls_paginated.number
+        total_pages = paginator.num_pages
+        page_range = range(max(1, current_page - 3), min(total_pages, current_page + 3) + 1)
+
+        c_def = self.get_user_context(title="Звонки")
+        context['calls'] = calls_paginated
+        context['paginator_'] = paginator
+        context['page_range_'] = page_range
+        context['form'] = form
+        context['messages'] = [message for message in messages.get_messages(self.request)]
+        context['selected_operator_statuses'] = selected_operator_statuses
+        context['selected_manager_statuses'] = selected_manager_statuses
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def get_template_names(self):
+        # if self.request.htmx:
+        #     return "main/calls/calls_content.html"
+        # else:
+        return 'main/calls/calls.html'
+
+def find_best_matches(column_name, possible_names):
+    column_name_lower = ''.join(column_name.split()).lower()
+    best_match = None
+    max_similarity = 0
+
+    for possible_name in possible_names:
+        possible_name_lower = ''.join(possible_name.split()).lower()
+        intersection = len(set(column_name_lower) & set(possible_name_lower))
+        union = len(set(column_name_lower) | set(possible_name_lower))
+        if union == 0:
+            continue
+        similarity = intersection / union
+        if similarity > max_similarity and similarity >= 0.9:
+            max_similarity = similarity
+            best_match = possible_name
+
+    return best_match
+
+
+def new_calls(request):
+    badge_calls = Calls.objects.filter(manager=request.user).filter(status_manager='Новая').select_related('operator', 'manager').count()
+    return render(request, 'main/calls/new_calls.html',
+                      context={'badge_calls': badge_calls})
+def add_calls(request):
+    if request.POST:
+        form = CallsFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            calls_file = form.save(commit=False)
+            calls_file.user = request.user
+            calls_file.save()
+
+            # Размер пакета для batch_create
+            BATCH_SIZE = 10000
+
+            try:
+                excel_file = calls_file.file
+
+                # Чтение файла Excel с использованием pandas
+                df = pd.read_excel(excel_file)
+
+                # Определение возможных вариантов имен колонок
+                column_mapping = {
+                    'client_name': ['название лида', 'имя', 'фамилия', 'имя клиента', 'компания'],
+                    'client_phone': ['телефон', 'номер телефона', 'контактный номер', 'рабочий телефон'],
+                }
+
+                # Нормализация имен колонок и сбор данных
+                normalized_columns = {key: [] for key in column_mapping.keys()}
+                for col in df.columns:
+                    for key, possible_names in column_mapping.items():
+                        best_match = find_best_matches(col, possible_names)
+                        if best_match:
+                            normalized_columns[key].append(col)
+                            break
+
+                # Проверка наличия хотя бы одной колонки для каждого поля
+                required_columns = set(column_mapping.keys())
+                missing_columns = []
+                for key in required_columns:
+                    if not normalized_columns[key]:
+                        missing_columns.append(key)
+                if missing_columns:
+                    # logger.error(f'Отсутствуют необходимые колонки: {", ".join(missing_columns)}.')
+                    return HttpResponse(f'Отсутствуют необходимые колонки: {", ".join(missing_columns)}.')
+
+                # Получение всех операторов и установка начального индекса
+                operators = list(User.objects.filter(role='Оператор'))  # Фильтрация по роли Оператор
+                current_operator_index = 0
+
+                # Процесс создания объектов Calls
+                total_rows = len(df)
+                processed_rows = 0
+                created_calls_count = 0
+                duplicate_phone_count = 0
+
+                # logger.info(f'Начало обработки файла {calls_file.file.name}. Всего строк: {total_rows}')
+
+                calls_to_create = []
+                existing_phones = Calls.get_existing_phones()
+
+                for index, row in df.iterrows():
+                    processed_rows += 1
+
+                    # Выбор следующего оператора по очереди
+                    if operators:
+                        current_operator = operators[current_operator_index]
+                        current_operator_index = (current_operator_index + 1) % len(operators)
+                    else:
+                        current_operator = None  # Если нет операторов, оставляем поле operator пустым
+
+                    # Создание объекта Calls
+                    call = Calls.create_from_row(row, normalized_columns, current_operator, calls_file)
+                    if call:
+                        if call.client_phone in existing_phones:
+                            # logger.warning(f'Пропущена строка {processed_rows}: client_phone={call.client_phone} уже существует.')
+                            duplicate_phone_count += 1
+                            continue
+                        calls_to_create.append(call)
+                        existing_phones.add(call.client_phone)
+
+                    # Массовое создание объектов Calls с пакетным созданием
+                    if len(calls_to_create) >= BATCH_SIZE:
+                        created_calls = Calls.objects.bulk_create(calls_to_create)
+                        created_calls_count += len(created_calls)
+                        # logger.info(f'Создано {created_calls_count} новых объектов Calls.')
+                        calls_to_create = []
+
+                # Создание оставшихся объектов Calls
+                if calls_to_create:
+                    created_calls = Calls.objects.bulk_create(calls_to_create)
+                    created_calls_count += len(created_calls)
+                    # logger.info(f'Создано {created_calls_count} новых объектов Calls.')
+
+                # logger.info(f'Файл {calls_file.file.name} успешно обработан. Всего строк: {total_rows}, обработано: {processed_rows}, создано заявок: {created_calls_count}, дублирующихся номеров: {duplicate_phone_count}')
+                if created_calls_count == 0:
+                    messages.info(request, f'Файл {calls_file.file.name} был загружен ранее.\n Создано заявок: {created_calls_count}')
+                else:
+                    messages.success(request, f'Файл {calls_file.file.name} успешно обработан.\n Всего строк: {total_rows}, обработано: {processed_rows}, создано заявок: {created_calls_count}, дублирующихся номеров: {duplicate_phone_count}')
+                return redirect('main:calls')
+            except Exception as e:
+                # logger.error(f'Ошибка при обработке файла {calls_file.file.name}: {e}')
+                messages.error(request, f'Ошибка при обработке файла {calls_file.file.name}: {e}')
+                return redirect('main:calls')
+
+    else:
+        form = CallsFileForm()
+    return render(request, 'main/calls/add_calls.html',
+                  context={'form': form})
+
+
+# Функция для нахождения ближайшего совпадения по названию колонки
+
+
+def edit_calls(request, call_id):
+    call = Calls.objects.get(pk=call_id)
+    if request.user.role == 'Менеджер':
+        form = EditCallsManager(instance=call)
+    else:
+        form = EditCallsOperator(instance=call)
+    if request.POST:
+        if request.POST.get('csrfmiddlewaretoken'):
+            if request.user.role == 'Менеджер':
+                form_edit = EditCallsManager(request.POST, instance=call)
+            else:
+                form_edit = EditCallsOperator(request.POST, instance=call)
+            if form_edit.is_valid():
+                form_edit.save()
+                messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone}")
+        return redirect(reverse('main:calls'))
+    else:
+        return render(request, 'main/calls/edit_calls.html',
+                      context={'call': call,
+                               'form': form})
