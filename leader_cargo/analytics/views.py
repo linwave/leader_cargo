@@ -673,13 +673,13 @@ class BidForGoodsView(MyLoginMixin, DataMixin, TemplateView):
         context["my_request"] = context["good"].request
         context["my_roads"] = context["my_request"].roads.all()
         context['roads'] = RoadsList.objects.all()
-        context['carriers'] = CarriersList.objects.all()
+        context['carriers'] = CarriersList.objects.filter(status=True).filter(activity=True)
         context['my_bids'] = context["good"].rate.all()
         c_def = self.get_user_context(title="Добавление ставки")
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):
-        if self.request.user.role == 'Логист':
+        if self.request.user.role == 'Логист' or self.request.user.role == 'Супер Администратор':
             return self.template_name_logist
         else:
             return self.template_name_other
@@ -1074,6 +1074,7 @@ class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
         context['form_add_cargo'] = AddCargo
         context['user_pk_string'] = str(self.request.user.pk)
         context['all_articles'] = CargoArticle.objects.all()
+        context['carriers'] = CarriersList.objects.all()
         if self.request.user.role == 'Логист' or self.request.user.role == 'Супер Администратор':
             context['count_empty_responsible_manager'] = context['all_articles'].filter(responsible_manager=None).count()
             all_articles_count = context['all_articles'].count()

@@ -13,6 +13,7 @@
 </div>
 <div class="row g-2 justify-content-left m-3">
     {% for carrier in carriers %}
+    {% if carrier.status %}
     <div class="col-auto">
         <div class="card text-bg-dark border-dark" style="width: 25rem;">
             <div class="card-header ">
@@ -76,6 +77,7 @@
             </ul>
         </div>
     </div>
+    {% endif %}
     {% endfor %}
 </div>
 <div class="row g-2 justify-content-left m-1">

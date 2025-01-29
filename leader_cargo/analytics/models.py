@@ -14,171 +14,6 @@ def get_file_path(instance, filename):
     return os.path.join(instance.directory_string_var, filename)
 
 
-class CargoFiles(models.Model):
-    carriers = [
-        ('Ян', 'Ян'),
-        # ('Ян (новый)', 'Ян (новый)'),
-        ('Ян (полная машина)', 'Ян (полная машина)'),
-        ('Валька', 'Валька'),
-        ('Мурад', 'Мурад'),
-        ('Гелик', 'Гелик')
-    ]
-    name_carrier = models.CharField(max_length=50, choices=carriers, verbose_name='Перевозчик')
-    file_path = models.FileField(verbose_name='Файлы перевозчиков', upload_to='files/cargo/%Y/%m/%d/', blank=False, null=False)
-    time_create = models.DateTimeField(auto_now_add=True)
-    time_update = models.DateTimeField(auto_now=True)
-    status = models.BooleanField(default=True, blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.name_carrier} {self.file_path}"
-
-    class Meta:
-        verbose_name = 'Файлы грузов'
-        verbose_name_plural = 'Файлы грузов'
-
-
-class CargoArticle(models.Model):
-    statuses = [
-        ('В пути', 'В пути'),
-        ('Прибыл в РФ', 'Прибыл в РФ')
-    ]
-    paid_by_the_client_statuses = [
-        ('Оплачено полностью', 'Оплачено полностью'),
-        ('Оплачено частично', 'Оплачено частично'),
-        ('Не оплачено', 'Не оплачено'),
-    ]
-    payment_to_the_carrier_statuses = [
-        ('Оплачено', 'Оплачено'),
-        ('Не оплачено', 'Не оплачено'),
-    ]
-    carriers = [
-        ('Ян', 'Ян'),
-        ('Валька', 'Валька'),
-        ('Мурад', 'Мурад'),
-        ('Гелик', 'Гелик'),
-        ('Склад №5', 'Склад №5')
-    ]
-    path_formats = [
-        ('Быстрое авто', 'Быстрое авто'),
-        ('Обычное авто', 'Обычное авто'),
-        ('Уссурийск', 'Уссурийск'),
-        ('ЖД', 'ЖД'),
-        ('Авиа', 'Авиа')
-    ]
-    managers = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], status=True).order_by('last_name')
-    managers_choices = []
-    if managers:
-        for manager in managers:
-            managers_choices.append((f'{manager.pk}', f'{manager.last_name} {manager.first_name}'))
-
-    article = models.CharField(max_length=50, verbose_name='Артикул')
-    responsible_manager = models.CharField(max_length=100, verbose_name='Ответственный менеджер', choices=managers_choices, blank=True, null=True)
-    carrier = models.CharField(max_length=100, verbose_name='Перевозчик', choices=carriers, blank=True, null=True)
-    path_format = models.CharField(max_length=100, verbose_name='Формат пути', choices=path_formats, blank=True, null=True)
-    name_goods = models.CharField(max_length=50, verbose_name='Наименование товара', blank=True, null=True)
-    number_of_seats = models.CharField(max_length=50, verbose_name='Количество мест')
-    weight = models.CharField(max_length=50, verbose_name='Вес, кг')
-    volume = models.CharField(max_length=50, verbose_name='Объем')
-    transportation_tariff = models.CharField(max_length=50, verbose_name='Тариф перевозки')
-    transportation_tariff_for_clients = models.CharField(max_length=50, verbose_name='Тариф перевозки для клиента', blank=True, null=True)
-    cost_goods = models.CharField(max_length=50, verbose_name='Стоимость товара', blank=True, null=True)
-    insurance_cost = models.CharField(max_length=50, verbose_name='Стоимость страховки', blank=True, null=True)
-    packaging_cost = models.CharField(max_length=50, verbose_name='Стоимость упаковки', blank=True, null=True)
-    time_from_china = models.DateTimeField(verbose_name='Дата отправки с Китайского склада', blank=True, null=True)
-    total_cost = models.CharField(max_length=50, verbose_name='Итоговая стоимость перевозки', blank=True, null=True)
-    address_transportation_cost = models.CharField(max_length=50, verbose_name='Адресная доставка', blank=True, null=True)
-
-    prr = models.CharField(max_length=50, verbose_name='ПРР', blank=True, null=True)
-    tat_cost = models.CharField(max_length=50, verbose_name='Оплата ТАТ', blank=True, null=True)
-    paid_by_the_client_status = models.CharField(max_length=50, default='Не оплачено',
-                                                 choices=paid_by_the_client_statuses, verbose_name='Оплачено клиентом', blank=True, null=True)
-    time_paid_by_the_client_status = models.DateTimeField(verbose_name='Дата полной оплаты клиентом', blank=True, null=True)
-    payment_to_the_carrier_status = models.CharField(max_length=50, default='Не оплачено',
-                                                     choices=payment_to_the_carrier_statuses, verbose_name='Оплата перевозчику', blank=True, null=True)
-    time_cargo_arrival_to_RF = models.DateTimeField(verbose_name='Дата прибытия груза в РФ', blank=True, null=True)
-    time_cargo_release = models.DateTimeField(verbose_name='Дата выдачи груза', blank=True, null=True)
-
-    cargo_id = models.ForeignKey('CargoFiles', on_delete=models.PROTECT, blank=True, null=True)
-
-    transportation_tariff_with_factor = models.FloatField(verbose_name='Тариф перевозки с коэффициентом', blank=True, null=True)
-    transportation_tariff_with_factor_multi = models.CharField(max_length=255, verbose_name='Тариф перевозки с коэффициентом комбинированная', blank=True, null=True)
-    total_cost_with_factor = models.FloatField(verbose_name='Итоговая стоимость перевозки с коэффициентом', blank=True, null=True)
-
-    time_create = models.DateTimeField(auto_now_add=True)
-    time_update = models.DateTimeField(auto_now=True)
-    status = models.CharField(max_length=50, default='В пути', choices=statuses, verbose_name='Статус', blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.article} {self.status}"
-
-    class Meta:
-        verbose_name = 'Артикула'
-        verbose_name_plural = 'Артикула'
-        ordering = ['-time_from_china']
-
-    def get_FI_responsible_manager(self):
-        try:
-            manager = CustomUser.objects.get(pk=int(self.responsible_manager), status=True)
-            return f'{manager.last_name} {manager.first_name}'
-        except TypeError:
-            return None
-        except ValueError:
-            return None
-
-    def get_short_name_transportation_tariff(self):
-        if self.transportation_tariff_with_factor_multi:
-            return self.transportation_tariff_with_factor_multi
-        if self.transportation_tariff_with_factor:
-            return round(self.transportation_tariff_with_factor, 2)
-        return self.transportation_tariff.replace('+', ' +')
-
-    def get_short_name_total_cost(self):
-        if self.total_cost_with_factor:
-            return self.total_cost_with_factor
-        return self.total_cost
-
-    def get_number_of_days_on_the_way(self):
-        if self.time_cargo_arrival_to_RF and self.time_from_china:
-            return (self.time_cargo_arrival_to_RF - self.time_from_china).days
-        else:
-            return ''
-
-    def get_number_of_days_without_payment(self):
-        if self.time_paid_by_the_client_status and self.time_cargo_release:
-            day = (self.time_paid_by_the_client_status - self.time_cargo_release).days
-            if day < 0:
-                return 0
-            return day
-        elif self.time_cargo_release:
-            return (make_aware(datetime.datetime.now()) - self.time_cargo_release).days
-        else:
-            return ''
-
-    def update_status_article(self):
-        if self.status == 'Прибыл в РФ':
-            self.status = 'В пути'
-        elif self.status == 'В пути':
-            self.status = 'Прибыл в РФ'
-        self.save()
-
-
-class PaymentDocumentsForArticles(models.Model):
-    article = models.ForeignKey(CargoArticle, verbose_name='Артикул', on_delete=models.CASCADE, related_name='file_payment_by_client')
-    name = models.CharField(verbose_name='Название файла', max_length=250, blank=True, null=True)
-    file_path = models.FileField(verbose_name='Платежки', upload_to='files/logistic/client_payments/%Y/%m/%d/', blank=True, null=True)
-    balance = models.FloatField(verbose_name='Деньги в платежки', blank=True, null=True)
-
-    time_create = models.DateTimeField(auto_now_add=True)
-    time_update = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Платежные документы - {self.article}"
-
-    class Meta:
-        verbose_name = 'Платежные документы'
-        verbose_name_plural = 'Платежные документы'
-
-
 class RoadsList(models.Model):
     name = models.CharField(max_length=100, verbose_name='Название дороги')
     activity = models.BooleanField(verbose_name='Статус активности дороги', default=True, blank=True, null=True)
@@ -360,3 +195,170 @@ class RequestsForLogisticsRate(models.Model):
     class Meta:
         verbose_name = 'Ставки на запрос в логистику'
         verbose_name_plural = 'Ставки на запрос в логистику'
+
+
+class CargoFiles(models.Model):
+    carriers = [
+        ('Ян', 'Ян'),
+        # ('Ян (новый)', 'Ян (новый)'),
+        ('Ян (полная машина)', 'Ян (полная машина)'),
+    ]
+    name_carrier = models.CharField(max_length=50, choices=carriers, verbose_name='Перевозчик')
+    file_path = models.FileField(verbose_name='Файлы перевозчиков', upload_to='files/cargo/%Y/%m/%d/', blank=False, null=False)
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+    status = models.BooleanField(default=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name_carrier} {self.file_path}"
+
+    class Meta:
+        verbose_name = 'Файлы грузов'
+        verbose_name_plural = 'Файлы грузов'
+
+
+class CargoArticle(models.Model):
+    statuses = [
+        ('В пути', 'В пути'),
+        ('Прибыл в РФ', 'Прибыл в РФ')
+    ]
+    paid_by_the_client_statuses = [
+        ('Оплачено полностью', 'Оплачено полностью'),
+        ('Оплачено частично', 'Оплачено частично'),
+        ('Не оплачено', 'Не оплачено'),
+    ]
+    payment_to_the_carrier_statuses = [
+        ('Оплачено', 'Оплачено'),
+        ('Не оплачено', 'Не оплачено'),
+    ]
+    carriers = [
+        ('Ян', 'Ян'),
+        ('Валька', 'Валька'),
+        ('Мурад', 'Мурад'),
+        ('Гелик', 'Гелик'),
+        ('Склад №5', 'Склад №5')
+    ]
+    path_formats = [
+        ('Быстрое авто', 'Быстрое авто'),
+        ('Обычное авто', 'Обычное авто'),
+        ('Уссурийск', 'Уссурийск'),
+        ('ЖД', 'ЖД'),
+        ('Авиа', 'Авиа')
+    ]
+    managers = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], status=True).order_by('last_name')
+    managers_choices = []
+    if managers:
+        for manager in managers:
+            managers_choices.append((f'{manager.pk}', f'{manager.last_name} {manager.first_name}'))
+
+    article = models.CharField(max_length=50, verbose_name='Артикул')
+    responsible_manager = models.CharField(max_length=100, verbose_name='Ответственный менеджер', choices=managers_choices, blank=True, null=True)
+
+    carrier = models.CharField(max_length=100, verbose_name='Перевозчик', choices=carriers, blank=True, null=True)
+
+    path_format = models.CharField(max_length=100, verbose_name='Формат пути', choices=path_formats, blank=True, null=True)
+    name_goods = models.CharField(max_length=50, verbose_name='Наименование товара', blank=True, null=True)
+    number_of_seats = models.CharField(max_length=50, verbose_name='Количество мест')
+    weight = models.CharField(max_length=50, verbose_name='Вес, кг')
+    volume = models.CharField(max_length=50, verbose_name='Объем')
+    transportation_tariff = models.CharField(max_length=50, verbose_name='Тариф перевозки')
+    transportation_tariff_for_clients = models.CharField(max_length=50, verbose_name='Тариф перевозки для клиента', blank=True, null=True)
+    cost_goods = models.CharField(max_length=50, verbose_name='Стоимость товара', blank=True, null=True)
+    insurance_cost = models.CharField(max_length=50, verbose_name='Стоимость страховки', blank=True, null=True)
+    packaging_cost = models.CharField(max_length=50, verbose_name='Стоимость упаковки', blank=True, null=True)
+    time_from_china = models.DateTimeField(verbose_name='Дата отправки с Китайского склада', blank=True, null=True)
+    total_cost = models.CharField(max_length=50, verbose_name='Итоговая стоимость перевозки', blank=True, null=True)
+    address_transportation_cost = models.CharField(max_length=50, verbose_name='Адресная доставка', blank=True, null=True)
+
+    prr = models.CharField(max_length=50, verbose_name='ПРР', blank=True, null=True)
+    tat_cost = models.CharField(max_length=50, verbose_name='Оплата ТАТ', blank=True, null=True)
+    paid_by_the_client_status = models.CharField(max_length=50, default='Не оплачено',
+                                                 choices=paid_by_the_client_statuses, verbose_name='Оплачено клиентом', blank=True, null=True)
+    time_paid_by_the_client_status = models.DateTimeField(verbose_name='Дата полной оплаты клиентом', blank=True, null=True)
+    payment_to_the_carrier_status = models.CharField(max_length=50, default='Не оплачено',
+                                                     choices=payment_to_the_carrier_statuses, verbose_name='Оплата перевозчику', blank=True, null=True)
+    time_cargo_arrival_to_RF = models.DateTimeField(verbose_name='Дата прибытия груза в РФ', blank=True, null=True)
+    time_cargo_release = models.DateTimeField(verbose_name='Дата выдачи груза', blank=True, null=True)
+
+    cargo_id = models.ForeignKey('CargoFiles', on_delete=models.PROTECT, blank=True, null=True)
+
+    transportation_tariff_with_factor = models.FloatField(verbose_name='Тариф перевозки с коэффициентом', blank=True, null=True)
+    transportation_tariff_with_factor_multi = models.CharField(max_length=255, verbose_name='Тариф перевозки с коэффициентом комбинированная', blank=True, null=True)
+    total_cost_with_factor = models.FloatField(verbose_name='Итоговая стоимость перевозки с коэффициентом', blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=50, default='В пути', choices=statuses, verbose_name='Статус', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.article} {self.status}"
+
+    class Meta:
+        verbose_name = 'Артикула'
+        verbose_name_plural = 'Артикула'
+        ordering = ['-time_from_china']
+
+    def get_FI_responsible_manager(self):
+        try:
+            manager = CustomUser.objects.get(pk=int(self.responsible_manager), status=True)
+            return f'{manager.last_name} {manager.first_name}'
+        except TypeError:
+            return None
+        except ValueError:
+            return None
+
+    def get_short_name_transportation_tariff(self):
+        if self.transportation_tariff_with_factor_multi:
+            return self.transportation_tariff_with_factor_multi
+        if self.transportation_tariff_with_factor:
+            return round(self.transportation_tariff_with_factor, 2)
+        return self.transportation_tariff.replace('+', ' +')
+
+    def get_short_name_total_cost(self):
+        if self.total_cost_with_factor:
+            return self.total_cost_with_factor
+        return self.total_cost
+
+    def get_number_of_days_on_the_way(self):
+        if self.time_cargo_arrival_to_RF and self.time_from_china:
+            return (self.time_cargo_arrival_to_RF - self.time_from_china).days
+        else:
+            return ''
+
+    def get_number_of_days_without_payment(self):
+        if self.time_paid_by_the_client_status and self.time_cargo_release:
+            day = (self.time_paid_by_the_client_status - self.time_cargo_release).days
+            if day < 0:
+                return 0
+            return day
+        elif self.time_cargo_release:
+            return (make_aware(datetime.datetime.now()) - self.time_cargo_release).days
+        else:
+            return ''
+
+    def update_status_article(self):
+        if self.status == 'Прибыл в РФ':
+            self.status = 'В пути'
+        elif self.status == 'В пути':
+            self.status = 'Прибыл в РФ'
+        self.save()
+
+
+class PaymentDocumentsForArticles(models.Model):
+    article = models.ForeignKey(CargoArticle, verbose_name='Артикул', on_delete=models.CASCADE, related_name='file_payment_by_client')
+    name = models.CharField(verbose_name='Название файла', max_length=250, blank=True, null=True)
+    file_path = models.FileField(verbose_name='Платежки', upload_to='files/logistic/client_payments/%Y/%m/%d/', blank=True, null=True)
+    balance = models.FloatField(verbose_name='Деньги в платежки', blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Платежные документы - {self.article}"
+
+    class Meta:
+        verbose_name = 'Платежные документы'
+        verbose_name_plural = 'Платежные документы'
+
+
+

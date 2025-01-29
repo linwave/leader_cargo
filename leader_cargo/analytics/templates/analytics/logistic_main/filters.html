@@ -54,11 +54,11 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-dark">
                 <li><input class="dropdown-item" value="Все перевозчики" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Ян" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Валька" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Мурад" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Гелик" name="carrier" type="submit"/></li>
-                <li><input class="dropdown-item" value="Склад №5" name="carrier" type="submit"/></li>
+                {% for car in carriers %}
+                {% if car.status %}
+                <li><input class="dropdown-item" value="{{car.name}}" name="carrier" type="submit"/></li>
+                {% endif %}
+                {% endfor %}
             </ul>
         </div>
         <div class="col-auto">
