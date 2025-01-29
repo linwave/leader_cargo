@@ -9,6 +9,7 @@
     <!--FAVICON-->
     <link rel="shortcut icon" type="image/png" href="{% static 'main/images/favicon.ico' %}">
     <!--FONT AWESOME-->
+<!--    <link rel="stylesheet" href="{% static 'main/fontawesome/css/all.min.css' %}">-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!--Bootstrap CSS-->
     <link rel="stylesheet" href="{% static 'main/css/bootstrap.css' %}">
@@ -20,6 +21,8 @@
 <!--    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"-->
 <!--            integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>-->
     <!--DATATABLES CSS-->
+<!--    <link rel="stylesheet" href="{% static 'main/datatables/css/dataTables.bootstrap5.min.css' %}">-->
+<!--    <link rel="stylesheet" href="{% static 'main/datatables/css/fixedColumns.bootstrap5.min.css' %}">-->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.bootstrap5.min.css">
     <!--MY CSS-->
@@ -72,20 +75,20 @@
     {% endif %}
 </section>
 </body>
-<script>
-let arrow = document.querySelectorAll(".arrow");
+<!--<script>-->
+<!--let arrow = document.querySelectorAll(".arrow");-->
 
-for (var i=0; i < arrow.length; i++) {
-    arrow[i].addEventListener("click", (e)=>{
-    let arrowParent = e.target.parentElement.parentElement;
-    arrowParent.classList.toggle("showMenu");
-    });
-    }
-let sidebar = document.querySelector(".sidebar");
-let sidebarBtn = document.getElementById("sidebarBtn");
-console.log(sidebarBtn);
-sidebarBtn.addEventListener("click", ()=>{
-    sidebar.classList.toggle("close");
-    });
+<!--for (var i=0; i < arrow.length; i++) {-->
+<!--    arrow[i].addEventListener("click", (e)=>{-->
+<!--    let arrowParent = e.target.parentElement.parentElement;-->
+<!--    arrowParent.classList.toggle("showMenu");-->
+<!--    });-->
+<!--    }-->
+<!--let sidebar = document.querySelector(".sidebar");-->
+<!--let sidebarBtn = document.getElementById("sidebarBtn");-->
+<!--console.log(sidebarBtn);-->
+<!--sidebarBtn.addEventListener("click", ()=>{-->
+<!--    sidebar.classList.toggle("close");-->
+<!--    });-->
 
-</script>
+<!--</script>-->

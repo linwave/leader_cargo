@@ -1,9 +1,10 @@
 {% extends 'main/base.html' %}
-
+{% load static %}
 {% block title %}
 {{ title }}
 {% endblock %}
 
 {% block content %}
+{% include "main/components/notification.html" %}
 {% include "main/calls/calls_content.html" %}
 {% endblock %}

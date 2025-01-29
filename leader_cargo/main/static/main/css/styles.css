@@ -3,6 +3,14 @@
     padding: 0;
     box-sizing: border-box;
 }
+:root {
+  --main-bg-color: #131412;
+  --main-hover-color: #38deec;
+  --main-green-color: #66FF00;
+  --main-red-color: #ff1f1f;
+  --border-quality-width: 2px;
+  --sidebar--transition--speed: 0.3s;
+}
 body{
     background: #E4E9F7;
 }
@@ -187,7 +195,7 @@ body{
     width: 260px;
     background: #11101d;
     z-index: 100;
-    transition: all 0.5s ease;
+    transition: all var(--sidebar--transition--speed) ease;
 }
 .sidebar.close{
     width: 76px;
@@ -223,8 +231,8 @@ body{
     font-size: 22px;
     color: #fff;
     font-weight: 600;
-    transition: 0.3s ease;
-    transition-delay: 0.1s;
+    transition: var(--sidebar--transition--speed) ease;
+    transition-delay: 0s;
 }
 .sidebar.close .logo-details i:hover{
     background: #1d1b31;
@@ -248,7 +256,7 @@ body{
 .sidebar .nav-links li{
     position: relative;
     list-style: none;
-    transition: all 0.5s ease;
+    transition: all var(--sidebar--transition--speed) ease;
 }
 .sidebar .nav-links li:hover{
     background: #1d1b31;
@@ -269,7 +277,7 @@ body{
     color: #fff;
     font-size: 20px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--sidebar--transition--speed) ease;
 }
 .sidebar.close .nav-links li .badge-in-icon{
     font-size: 9px;
@@ -319,7 +327,7 @@ body{
     font-weight: 400;
     white-space: nowrap;
     opacity: 0.6;
-    transition: all 0.3s ease;
+    transition: all var(--sidebar--transition--speed) ease;
 }
 .sidebar .nav-links li .sub-menu a:hover{
     opacity: 1;
@@ -340,7 +348,7 @@ body{
     top: 0;
     opacity: 1;
     pointer-events: auto;
-    transition: all 0.4s ease;
+    transition: all var(--sidebar--transition--speed) ease;
 }
 .sidebar .nav-links li .sub-menu .link_name{
     display: none;
@@ -370,7 +378,7 @@ body{
     justify-content: space-between;
     background: #1d1b31;
     padding: 10px 0;
-    transition: all 0.5s ease;
+    transition: all var(--sidebar--transition--speed) ease;
 }
 .sidebar.close .profile-details {
     background: none;
@@ -389,7 +397,7 @@ body{
     border-radius: 16px;
     margin: 0 12px 0 12px;
     background: #1d1b31;
-    transition: all 0.5s ease;
+    transition: all var(--sidebar--transition--speed) ease;
 }
 .sidebar.close .profile-details img{
     padding: 10px;
@@ -419,7 +427,7 @@ body{
     height: 100%;
     left: 260px;
     width: calc(100% - 260px);
-    transition: all 0.5s ease;
+    transition: all var(--sidebar--transition--speed) ease;
 
 }
 .sidebar.close ~ .home-section{
@@ -820,6 +828,52 @@ div.dataTables_wrapper {
 /*.my-input-checked{
     border-color: #91ff87;
 }*/
+
 .border-radius-0{
     border-radius: 0;
+}
+
+/* Стили для пагинации */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.page-links {
+    display: flex;
+    list-style: none;
+    padding: 0;
+}
+
+.page-link {
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 0 4px;
+    text-decoration: none;
+    color: #333;
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.page-link:hover {
+    background-color: #ddd;
+    color: #000;
+}
+
+.current-page {
+    margin: 0 10px;
+    font-weight: bold;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+}
+
+.current-page:hover {
+    background-color: #0056b3;
 }

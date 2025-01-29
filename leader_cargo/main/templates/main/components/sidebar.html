@@ -80,10 +80,13 @@
 
                 <div hx-get="{% url 'main:new_calls' %}"
                      hx-trigger="every 10s"
-                     hx-swap="innerHTML">
-                    {% if badge_calls != 0 %}
-                    <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_calls}}</span>
-                    {% endif %}
+                     hx-swap="innerHTML"
+                     hx-target="#new-calls-badge-content">
+                    <div id="new-calls-badge-content">
+                        {% if badge_calls != 0 %}
+                        <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_calls}}</span>
+                        {% endif %}
+                    </div>
                 </div>
 
                 {% endif %}

@@ -1,3 +1,29 @@
+{% load static %}
 {% if badge_calls != 0 %}
 <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_calls}}</span>
 {% endif %}
+<script type="text/javascript">
+    // Получаем количество новых звонков и флаг наличия изменений из контекста
+    var badgeCalls = {{ badge_calls }};
+    var hasChanges = {{ has_changes|yesno:"true,false" }};
+
+    // Обновляем заголовок страницы
+    if (badgeCalls > 0) {
+        document.title = `Звонки (${badgeCalls})`;
+    } else {
+        document.title = 'Звонки';
+    }
+
+    // Если количество звонков изменилось и больше 0, то воспроизводим звуковое уведомление
+    if (hasChanges && badgeCalls !== 0) {
+        var audio = document.getElementById('notification-sound');
+        audio.volume = 0.4;
+        try {
+            audio.play();
+        } catch (err) {
+            console.error("Playback was denied", err);
+        }
+        // Запускаем анимацию заголовка страницы
+        animateTitle(badgeCalls);
+    }
+</script>

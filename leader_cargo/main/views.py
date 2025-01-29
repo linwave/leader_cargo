@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 import string
 import random
@@ -37,6 +37,7 @@ statuses = [
 ]
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
 
 # Доп. функции
 def generate_password(length):
@@ -874,7 +875,7 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        c_def = self.get_user_context(title="Звонки")
         # Получаем данные из формы
         form = CallsFilterForm(self.request.GET or None)
         selected_operator_statuses = self.request.GET.getlist('status_call')
@@ -910,7 +911,7 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
         total_pages = paginator.num_pages
         page_range = range(max(1, current_page - 3), min(total_pages, current_page + 3) + 1)
 
-        c_def = self.get_user_context(title="Звонки")
+
         context['calls'] = calls_paginated
         context['paginator_'] = paginator
         context['page_range_'] = page_range
@@ -921,10 +922,8 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):
-        # if self.request.htmx:
-        #     return "main/calls/calls_content.html"
-        # else:
         return 'main/calls/calls.html'
+
 
 def find_best_matches(column_name, possible_names):
     column_name_lower = ''.join(column_name.split()).lower()
@@ -946,9 +945,20 @@ def find_best_matches(column_name, possible_names):
 
 
 def new_calls(request):
+    # Получаем количество новых звонков
     badge_calls = Calls.objects.filter(manager=request.user).filter(status_manager='Новая').select_related('operator', 'manager').count()
+
+    # Проверяем наличие изменений по сравнению с предыдущим значением
+    last_badge_calls = request.session.get('last_badge_calls', 0)
+    has_changes = badge_calls != last_badge_calls
+
+    # Сохраняем текущее значение для будущего сравнения
+    request.session['last_badge_calls'] = badge_calls
     return render(request, 'main/calls/new_calls.html',
-                      context={'badge_calls': badge_calls})
+                  context={'badge_calls': badge_calls,
+                           'has_changes': has_changes})
+
+
 def add_calls(request):
     if request.POST:
         form = CallsFileForm(request.POST, request.FILES)
@@ -1043,7 +1053,8 @@ def add_calls(request):
                 if created_calls_count == 0:
                     messages.info(request, f'Файл {calls_file.file.name} был загружен ранее.\n Создано заявок: {created_calls_count}')
                 else:
-                    messages.success(request, f'Файл {calls_file.file.name} успешно обработан.\n Всего строк: {total_rows}, обработано: {processed_rows}, создано заявок: {created_calls_count}, дублирующихся номеров: {duplicate_phone_count}')
+                    messages.success(request,
+                                     f'Файл {calls_file.file.name} успешно обработан.\n Всего строк: {total_rows}, обработано: {processed_rows}, создано заявок: {created_calls_count}, дублирующихся номеров: {duplicate_phone_count}')
                 return redirect('main:calls')
             except Exception as e:
                 # logger.error(f'Ошибка при обработке файла {calls_file.file.name}: {e}')

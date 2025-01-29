@@ -1,0 +1,76 @@
+{% load static %}
+<!-- Аудиофайл для уведомления -->
+<audio id="notification-sound" src="{% static 'main/audio/notification.wav' %}" preload="auto" style="display:none;"></audio>
+
+<!-- Кнопка для инициализации звука -->
+<button id="init-audio" style="display:none;">Initialize Audio</button>
+<script>
+    // Предварительная инициализация звука
+    const initAudioButton = document.getElementById('init-audio');
+    const notificationSound = document.getElementById('notification-sound');
+    const audioInitNotification = document.getElementById('audio-init-notification');
+    // Нажатие на скрытую кнопку для инициализации звука
+    initAudioButton.click();
+
+    // HTMX обработчик после запроса
+    document.body.addEventListener('htmx:afterRequest', function(event) {
+        // Проверяем, что обновленный контент относится к блоку new-calls-badge
+        if (event.detail.target.id === 'new-calls-badge') {
+            const response = event.detail.xhr.response;
+            if (response) {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(response, 'text/html');
+                var badgeElement = doc.querySelector('.bg-danger');
+                var badgeCalls = badgeElement ? parseInt(badgeElement.innerText) : 0;
+                var hasChanges = JSON.parse(doc.querySelector('#has-changes').innerText.toLowerCase());
+
+                // Обновляем заголовок страницы
+                if (badgeCalls > 0) {
+                    document.title = `Звонки (${badgeCalls})`;
+                } else {
+                    document.title = 'Звонки';
+                }
+
+                // Если количество звонков изменилось и больше 0, то воспроизводим звуковое уведомление
+                if (hasChanges && badgeCalls > 0) {
+                    try {
+                        notificationSound.play();
+                    } catch (err) {
+                        console.error("Playback was denied", err);
+                    }
+                    animateTitle(badgeCalls);
+                }
+            }
+        }
+    });
+    // Функция для анимации заголовка страницы
+    var originalTitle = document.title;
+    var blinkingInterval;
+
+    function animateTitle(badgeCalls) {
+        let counter = 0;
+        const messages = [
+            `У вас ${badgeCalls} новых звонков!`,
+            `Проверьте новые звонки!`,
+            `Не пропустите новые звонки!`
+        ];
+
+        blinkingInterval = setInterval(() => {
+            if (counter >= messages.length) {
+                counter = 0;
+            }
+            document.title = messages[counter];
+            counter++;
+        }, 1000);
+
+        // Через 5 секунд возвращаем заголовок в исходное состояние
+        setTimeout(() => {
+            clearInterval(blinkingInterval);
+            if (badgeCalls > 0) {
+                document.title = `Звонки (${badgeCalls})`;
+            } else {
+                document.title = 'Звонки';
+            }
+        }, 5000);  // Время анимации в миллисекундах
+    }
+</script>
