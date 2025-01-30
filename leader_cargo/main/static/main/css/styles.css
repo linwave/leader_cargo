@@ -14,17 +14,21 @@
 body{
     background: #E4E9F7;
 }
-.select2-selection--multiple{
-
+.select2-container--default .select2-selection--multiple{
     font-size: .875rem;
-
+    border: none;
+}
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border: none;
 }
 /* Стиль для контейнера выпадающего списка */
 .select2-dropdown {
+    border: none;
 }
 
 /* Стиль для элементов списка */
 .select2-results__option {
+    font-size: .875rem;
 }
 
 /* Стиль для выбранного элемента списка */
