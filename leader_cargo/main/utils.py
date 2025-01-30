@@ -250,7 +250,7 @@ class DataMixin:
             if self.request.user.role == 'Логист':
                 context['badge_reports'] = RequestsForLogisticsCalculations.objects.filter(status__in=['Новый', 'Запрос на изменение']).count()
             if self.request.user.role == 'Менеджер':
-                context['badge_calls'] = Calls.objects.filter(manager=self.request.user).filter(status_manager='Новая').select_related('operator', 'manager').count()
+                context['badge_calls'] = Calls.objects.filter(manager=self.request.user, status_manager='Новая').select_related('operator', 'manager').count()
         context['last_currency'] = self.get_last_currency_dollar_and_yuan()
         context['today'] = datetime.datetime.date(datetime.datetime.now()).strftime("%d.%m.%y")
         return context

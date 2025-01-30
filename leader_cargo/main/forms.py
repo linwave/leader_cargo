@@ -657,7 +657,7 @@ class CallsFilterForm(forms.Form):
 
     status_call = forms.MultipleChoiceField(
         choices=STATUS_OPERATOR_CHOICES,
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input '}),
         required=False,
         label='Статус заявки'
     )

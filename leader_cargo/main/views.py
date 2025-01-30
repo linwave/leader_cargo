@@ -881,23 +881,31 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
         form = CallsFilterForm(self.request.GET or None)
         selected_operator_statuses = self.request.GET.getlist('status_call')
         selected_manager_statuses = self.request.GET.getlist('status_manager')
-
+        page_size = self.request.GET.get('page_size', 30)  # По умолчанию 30
+        search_query = self.request.GET.get('search', '')
         # Получаем все звонки с использованием select_related для оптимизации
+        calls_query = Calls.objects.select_related('operator', 'manager').all()
         # Фильтруем звонки по выбранным статусам
-        if self.request.user.role == 'Оператор' or self.request.user.role == 'Супер Администратор' or self.request.user.role == 'РОП':
+        if self.request.user.role in ['Оператор', 'Супер Администратор', 'РОП']:
             calls_query = Calls.objects.select_related('operator', 'manager').order_by('pk').all()
         elif self.request.user.role == 'Менеджер':
             calls_query = Calls.objects.filter(manager=self.request.user).select_related('operator', 'manager').order_by('pk').all()
+
         if selected_operator_statuses:
             calls_query = calls_query.filter(status_call__in=selected_operator_statuses)
         if selected_manager_statuses:
             calls_query = calls_query.filter(status_manager__in=selected_manager_statuses)
+
+        # Фильтрация по запросу поиска
+        if search_query:
+            calls_query = calls_query.filter(
+                client_phone__icontains=search_query
+            ) | calls_query.filter(
+                client_name__icontains=search_query
+            )
         # Устанавливаем количество элементов на странице
-        paginator = Paginator(calls_query, 30)  # Здесь 10 - количество элементов на странице
-
-        # Получаем номер текущей страницы из GET-параметра 'page'
+        paginator = Paginator(calls_query, int(page_size))
         page = self.request.GET.get('page')
-
         try:
             calls_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -911,8 +919,6 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
         current_page = calls_paginated.number
         total_pages = paginator.num_pages
         page_range = range(max(1, current_page - 3), min(total_pages, current_page + 3) + 1)
-
-
         context['calls'] = calls_paginated
         context['paginator_'] = paginator
         context['page_range_'] = page_range
@@ -920,9 +926,14 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
         context['messages'] = [message for message in messages.get_messages(self.request)]
         context['selected_operator_statuses'] = selected_operator_statuses
         context['selected_manager_statuses'] = selected_manager_statuses
+        context['page_size'] = page_size  # Передаем значение page_size в контекст
+        context['search'] = search_query  # Передаем значение search в контекст
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):
+        print(self.request.htmx.target)
+        if self.request.htmx.target == 'calls-table':
+            return 'main/calls/calls_table.html'
         return 'main/calls/calls.html'
 
 

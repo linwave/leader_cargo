@@ -1,9 +1,111 @@
 {% extends 'main/base.html' %}
 {% load static %}
+{% load custom_filters %}
 {% block title %}
 {{ title }}
 {% endblock %}
 
 {% block content %}
-{% include "main/calls/calls_content.html" %}
+<div class="modal fade" id="hx-modal" tabindex="-1"
+     aria-labelledby="modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-body">
+        </div>
+    </div>
+</div>
+{% if user.role == 'Супер Администратор' or  user.role == 'РОП' or user.role == 'Оператор' %}
+<div class="container-fluid">
+    <div class="row g-2 mb-2 justify-content-left">
+        <div class="col-auto">
+            <a type="button" class="btn btn-sm btn-success"
+               data-bs-toggle="modal"
+               data-bs-target="#hx-modal"
+               hx-get="{% url 'main:add_calls' %}"
+               hx-target="#hx-modal-body">
+                <i class="fa-solid fa-phone"></i> Добавление звонков
+            </a>
+        </div>
+        <div class="col-auto">
+            <a type="button" class="btn btn-sm btn-success"
+               data-bs-toggle="modal"
+               data-bs-target="#hx-modal"
+               hx-get="{% url 'main:add_calls' %}"
+               hx-target="#hx-modal-body">
+                <i class="fa-solid fa-phone"></i> Добавление звонков (в ручную)
+            </a>
+        </div>
+    </div>
+</div>
+{% if user.role == 'Супер Администратор' or user.role == 'РОП' or user.role == 'Оператор' %}
+<div class="container-fluid mt-2 mb-2">
+    <form hx-get="{% url 'main:calls' %}"
+          hx-target="#calls-table"
+          hx-trigger="change, submit, keyup delay:0.3s"
+          hx-swap="innerHTML"
+          hx-push-url="true"
+          id="filter-form" method="GET" action="{% url 'main:calls' %}">
+        <div class="row justify-content-start gy-3">
+            <div class="col-6">
+                <!--                <label for="status_call" class="form-label">Статус заявки</label>-->
+                <select id="status_call" name="status_call" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in form.fields.status_call.choices %}
+                    <option value="{{ value }}" {% if value in selected_operator_statuses %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6">
+                <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
+                <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in form.fields.status_manager.choices %}
+                    <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="row justify-content-between mt-2">
+            <div class="col-4">
+                <input type="text" id="search" name="search" class="form-control form-control-sm" placeholder="Поиск..." value="{{ search }}">
+            </div>
+            <div class="col-auto">
+                <select id="page_size" name="page_size" class="form-select form-select-sm">
+                    <option value="20" {% if page_size == 20 %}selected{% endif %}>20</option>
+                    <option value="30" {% if page_size == 30 %}selected{% endif %}>30</option>
+                    <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
+{% endif %}
+{% if messages %}
+<div class="container-fluid pl-2">
+    <div class="row justify-content-left">
+        {% include "main/components/messages.html"  %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+<script>
+
+    $(document).ready(function() {
+        $('#status_call').select2({
+            placeholder: "Выбрать статус заявки",
+            allowClear: true,
+            width: '100%'
+        }).on('change', function(e) {
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
+        $('#status_manager').select2({
+            placeholder: "Выбрать статус заявки менеджера",
+            allowClear: true,
+            width: '100%'
+        }).on('change', function(e) {
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
+    });
+</script>
+<div id="calls-table">
+    {% include "main/calls/calls_table.html"  %}
+</div>
 {% endblock %}

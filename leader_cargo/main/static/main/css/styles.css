@@ -14,6 +14,31 @@
 body{
     background: #E4E9F7;
 }
+.select2-selection--multiple{
+
+    font-size: .875rem;
+
+}
+/* Стиль для контейнера выпадающего списка */
+.select2-dropdown {
+}
+
+/* Стиль для элементов списка */
+.select2-results__option {
+}
+
+/* Стиль для выбранного элемента списка */
+.select2-results__option[aria-selected="true"] {
+}
+
+/* Стиль для элемента списка при наведении */
+.select2-results__option:hover {
+}
+
+/* Стиль выбранных элементов*/
+.select2-selection__choice{
+    padding: 1px 6px;
+}
 .curs{
     cursor: pointer;
 }

@@ -1,79 +1,11 @@
-<div class="modal fade" id="hx-modal" tabindex="-1"
-     aria-labelledby="modal-label" aria-hidden="true">
-    <div class="modal-dialog">
-        <div id="hx-modal-body">
-        </div>
-    </div>
-</div>
-{% if user.role == 'Супер Администратор' or  user.role == 'РОП' or user.role == 'Оператор' %}
-<div class="container-fluid">
-    <div class="row g-2 mb-2 justify-content-left">
-        <div class="col-auto">
-            <a type="button" class="btn btn-sm btn-success"
-               data-bs-toggle="modal"
-               data-bs-target="#hx-modal"
-               hx-get="{% url 'main:add_calls' %}"
-               hx-target="#hx-modal-body">
-                <i class="fa-solid fa-phone"></i> Добавление звонков
-            </a>
-        </div>
-        <div class="col-auto">
-            <a type="button" class="btn btn-sm btn-success"
-               data-bs-toggle="modal"
-               data-bs-target="#hx-modal"
-               hx-get="{% url 'main:add_calls' %}"
-               hx-target="#hx-modal-body">
-                <i class="fa-solid fa-phone"></i> Добавление звонков (в ручную)
-            </a>
-        </div>
-    </div>
-</div>
-<!--<div class="container-fluid">-->
-<!--    <form method="GET" action="" class="row g-3 mb-3">-->
-<!--        <div class="col-md-6">-->
-<!--            <label for="id_status_call" class="form-label">Статус заявки</label>-->
-<!--            <div class="form-check form-check-inline">-->
-<!--                {% for value, label in form.fields.status_call.choices %}-->
-<!--                <div class="form-check">-->
-<!--                    <input class="form-check-input" type="checkbox" name="status_call" id="id_status_call_{{ forloop.counter0 }}" value="{{ value }}"-->
-<!--                           {% if value in selected_operator_statuses %}checked{% endif %}>-->
-<!--                    <label class="form-check-label" for="id_status_call_{{ forloop.counter0 }}">{{ label }}</label>-->
-<!--                </div>-->
-<!--                {% endfor %}-->
-<!--            </div>-->
-<!--        </div>-->
-<!--        <div class="col-md-6">-->
-<!--            <label for="id_status_manager" class="form-label">Статус заявки менеджера</label>-->
-<!--            <div class="form-check form-check-inline">-->
-<!--                {% for value, label in form.fields.status_manager.choices %}-->
-<!--                <div class="form-check">-->
-<!--                    <input class="form-check-input" type="checkbox" name="status_manager" id="id_status_manager_{{ forloop.counter0 }}" value="{{ value }}"-->
-<!--                           {% if value in selected_manager_statuses %}checked{% endif %}>-->
-<!--                    <label class="form-check-label" for="id_status_manager_{{ forloop.counter0 }}">{{ label }}</label>-->
-<!--                </div>-->
-<!--                {% endfor %}-->
-<!--            </div>-->
-<!--        </div>-->
-<!--        <div class="col-12">-->
-<!--            <button type="submit" class="btn btn-primary">Фильтровать</button>-->
-<!--        </div>-->
-<!--    </form>-->
-<!--</div>-->
-{% if messages %}
-<div class="container-fluid pl-2">
-    <div class="row justify-content-left">
-        {% include "main/components/messages.html"  %}
-    </div>
-</div>
-{% endif %}
-{% endif %}
+{% load custom_filters %}
 {% if user.role == 'Оператор' %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="table-responsive" style="border: 1px solid #000;
             overflow-y: auto;overflow-x: auto;height: 72vh;">
-                <table class="table align-middle  table-hover g-1"
+                <table class="table align-middle table-hover g-1"
                        style="font-size: 0.8rem;">
                     <thead class="table-dark " style="position: sticky;top: 0;left: 0;z-index: 10;">
                     <tr>
@@ -217,19 +149,19 @@
 <div class="pagination">
         <span class="page-links">
             {% if calls.has_previous %}
-                <a href="?page=1&{{ request.GET.urlencode|slice:'5:' }}" class="page-link">&laquo; 1</a>
-                <a href="?page={{ calls.previous_page_number }}&{{ request.GET.urlencode|slice:'5:' }}" class="page-link"><</a>
+                <a href="?page=1&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">&laquo; 1</a>
+                <a href="?page={{ calls.previous_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link"><</a>
             {% endif %}
             {% for i in page_range_ %}
                 {% if calls.number == i %}
                     <span class="current-page page-link">{{ i }}</span>
                 {% else %}
-                    <a href="?page={{ i }}&{{ request.GET.urlencode|slice:'5:' }}" class="page-link">{{ i }}</a>
+                    <a href="?page={{ i }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ i }}</a>
                 {% endif %}
             {% endfor %}
             {% if calls.has_next %}
-                <a href="?page={{ calls.next_page_number }}&{{ request.GET.urlencode|slice:'5:' }}" class="page-link">></a>
-                <a href="?page={{ calls.paginator.num_pages }}&{{ request.GET.urlencode|slice:'5:' }}" class="page-link">{{ calls.paginator.num_pages }} &raquo;</a>
+                <a href="?page={{ calls.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
+                <a href="?page={{ calls.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ calls.paginator.num_pages }} &raquo;</a>
             {% endif %}
         </span>
 </div>

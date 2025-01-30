@@ -9,6 +9,7 @@
     const initAudioButton = document.getElementById('init-audio');
     const notificationSound = document.getElementById('notification-sound');
     const audioInitNotification = document.getElementById('audio-init-notification');
+    var pageTitle = document.title.split('(')[0].trim();
     // Нажатие на скрытую кнопку для инициализации звука
     initAudioButton.click();
 
@@ -50,10 +51,12 @@
     function animateTitle(badgeCalls) {
         let counter = 0;
         const messages = [
-            `У вас ${badgeCalls} новых звонков!`,
-            `Проверьте новые звонки!`,
-            `Не пропустите новые звонки!`
-        ];
+        `${pageTitle} (${badgeCalls})`,
+        `${pageTitle}`,
+        `${pageTitle} (${badgeCalls})`,
+        `${pageTitle}`,
+        `${pageTitle} (${badgeCalls})`,
+    ];
 
         blinkingInterval = setInterval(() => {
             if (counter >= messages.length) {
