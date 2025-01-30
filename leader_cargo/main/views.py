@@ -4,6 +4,7 @@ import re
 import pandas as pd
 from django.contrib import messages
 from django.contrib.auth import logout, authenticate, login, update_session_auth_hash, get_user_model
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -1069,7 +1070,7 @@ def add_calls(request):
 
 # Функция для нахождения ближайшего совпадения по названию колонки
 
-
+@login_required
 def edit_calls(request, call_id):
     call = Calls.objects.get(pk=call_id)
     if request.user.role == 'Менеджер':
@@ -1085,7 +1086,11 @@ def edit_calls(request, call_id):
             if form_edit.is_valid():
                 form_edit.save()
                 messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone}")
-        return redirect(reverse('main:calls'))
+            referer = request.META.get('HTTP_REFERER', reverse('main:calls'))
+            # Добавляем якорь к URL
+            if referer:
+                referer += f'#call_{call_id}'
+            return redirect(referer)
     else:
         return render(request, 'main/calls/edit_calls.html',
                       context={'call': call,

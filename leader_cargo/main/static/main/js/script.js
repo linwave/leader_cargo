@@ -1,3 +1,132 @@
+var originalTitle = document.title;
+var blinkingInterval;
+var isBlinking = false;
+var currentBadgeCalls = 0;
+
+function initializeAudio() {
+    const audioButton = document.getElementById('init-audio');
+    const notificationSound = document.getElementById('notification-sound');
+
+    if (audioButton && notificationSound) {
+        audioButton.click();
+        notificationSound.play().catch(() => {
+            // Если произошла ошибка, игнорируем её
+        }).then(() => {
+            notificationSound.pause();
+            notificationSound.currentTime = 0;
+        });
+    }
+}
+
+function animateTitle(badgeCalls) {
+    let counter = 0;
+    const messages = [
+        `У вас ${badgeCalls} новых звонков!`,
+        `Проверьте новые звонки!`,
+        `Не пропустите новые звонки!`
+    ];
+    currentBadgeCalls = badgeCalls;
+
+    if (!isBlinking) {
+        isBlinking = true;
+        blinkingInterval = setInterval(() => {
+            if (counter >= messages.length) {
+                counter = 0;
+            }
+            document.title = messages[counter];
+            counter++;
+        }, 1000);
+
+        // Возвращаем заголовок в исходное состояние при активации вкладки
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                clearInterval(blinkingInterval);
+                if (currentBadgeCalls > 0) {
+                    document.title = `Звонки (${currentBadgeCalls})`;
+                } else {
+                    document.title = 'Звонки';
+                }
+                isBlinking = false;
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            if (document.hasFocus()) {
+                clearInterval(blinkingInterval);
+                if (currentBadgeCalls > 0) {
+                    document.title = `Звонки (${currentBadgeCalls})`;
+                } else {
+                    document.title = 'Звонки';
+                }
+                isBlinking = false;
+            }
+        });
+    }
+}
+
+function handleHtmxResponse(badgeCalls) {
+    try {
+        const notificationSound = document.getElementById('notification-sound');
+        notificationSound.play();
+    } catch (err) {
+        console.error("Playback was denied", err);
+    }
+
+    // Запускаем анимацию заголовка страницы
+    animateTitle(badgeCalls);
+}
+
+window.addEventListener('DOMContentLoaded', (event) => {
+    // Инициализируем звуковой файл при взаимодействии с документом
+    document.body.addEventListener('click', initializeAudio, { once: true });
+});
+
+function animateTitle(badgeCalls) {
+    let counter = 0;
+    const messages = [
+        `У вас ${badgeCalls} новых звонков!`,
+        `Проверьте новые звонки!`,
+        `Не пропустите новые звонки!`
+    ];
+    currentBadgeCalls = badgeCalls;
+
+    if (!isBlinking) {
+        isBlinking = true;
+        blinkingInterval = setInterval(() => {
+            if (counter >= messages.length) {
+                counter = 0;
+            }
+            document.title = messages[counter];
+            counter++;
+        }, 1000);
+
+        // Возвращаем заголовок в исходное состояние при активации вкладки
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                clearInterval(blinkingInterval);
+                if (currentBadgeCalls > 0) {
+                    document.title = `Звонки (${currentBadgeCalls})`;
+                } else {
+                    document.title = 'Звонки';
+                }
+                isBlinking = false;
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            if (document.hasFocus()) {
+                clearInterval(blinkingInterval);
+                if (currentBadgeCalls > 0) {
+                    document.title = `Звонки (${currentBadgeCalls})`;
+                } else {
+                    document.title = 'Звонки';
+                }
+                isBlinking = false;
+            }
+        });
+    }
+}
+
 function password_toggle(tag){
     const showPassword = document.querySelector(tag);
 const passwordField = document.querySelector("#inputPassword5");

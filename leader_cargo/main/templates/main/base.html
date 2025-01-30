@@ -43,7 +43,8 @@
 <script type="text/javascript" src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
 <!--MY JS-->
 <script src="{% static 'main/js/script.js' %}"></script>
-
+<!--SIDEBAR-->
+{% include "main/components/notification.html" %}
 <!--SIDEBAR-->
 {% if user.is_authenticated %}
 {% include "main/components/sidebar.html"  %}

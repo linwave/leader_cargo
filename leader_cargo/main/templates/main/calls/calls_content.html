@@ -95,6 +95,7 @@
                         data-bs-target="#hx-modal"
                         hx-get="{% url 'main:edit_calls' call.pk %}"
                         hx-target="#hx-modal-body"
+                        id="call_{{ call.id }}"
                         style="cursor: pointer;">
                         <th scope="row">{{ call.pk }}</th>
                         <td>{{ call.operator.get_FI|default:"" }}</td>
@@ -142,6 +143,7 @@
                         data-bs-target="#hx-modal"
                         hx-get="{% url 'main:edit_calls' call.pk %}"
                         hx-target="#hx-modal-body"
+                        id="call_{{ call.id }}"
                         style="cursor: pointer;">
                         <th scope="row">{{ call.pk }}</th>
                         <td>{{ call.status_manager|default:"" }}</td>
@@ -189,6 +191,7 @@
                         data-bs-target="#hx-modal"
                         hx-get="{% url 'main:edit_calls' call.pk %}"
                         hx-target="#hx-modal-body"
+                        id="call_{{ call.id }}"
                         style="cursor: pointer;">
                         <th scope="row">{{ call.pk }}</th>
                         <td>{{ call.operator.get_FI|default:"" }}</td>
