@@ -13,7 +13,7 @@
         </div>
     </div>
 </div>
-{% if user.role == 'Супер Администратор' or  user.role == 'РОП' or user.role == 'Оператор' %}
+{% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
 <div class="container-fluid">
     <div class="row g-2 mb-2 justify-content-left">
         <div class="col-auto">
@@ -36,7 +36,8 @@
         </div>
     </div>
 </div>
-{% if user.role == 'Супер Администратор' or user.role == 'РОП' or user.role == 'Оператор' %}
+{% endif %}
+{% if user.role == 'Супер Администратор' or user.role == 'РОП' or user.role == 'Оператор' or user.role == 'Менеджер' %}
 <div class="container-fluid mt-2 mb-2">
     <form hx-get="{% url 'main:calls' %}"
           hx-target="#calls-table"
@@ -68,10 +69,10 @@
             </div>
             <div class="col-auto">
                 <select id="page_size" name="page_size" class="form-select form-select-sm">
-                    <option value="20" {% if page_size == 20 %}selected{% endif %}>20</option>
-                    <option value="30" {% if page_size == 30 %}selected{% endif %}>30</option>
-                    <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
-                    <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+                    <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
+                    <option value="30" {% if page_size == '30' %}selected{% endif %}>30</option>
+                    <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
+                    <option value="100" {% if page_size == '100' %}selected{% endif %}>100</option>
                 </select>
             </div>
         </div>
@@ -84,7 +85,6 @@
         {% include "main/components/messages.html"  %}
     </div>
 </div>
-{% endif %}
 {% endif %}
 <script>
 
