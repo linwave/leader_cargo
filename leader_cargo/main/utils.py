@@ -55,7 +55,7 @@ menu = {
 
     'Звонки': {'title': 'Звонки', 'url_name': 'main:calls', 'short_url': 'calls', 'display': True,
                'category_name': categories[7], 'menu_role': 'basic'},
-    'Лиды': {'title': 'Лиды', 'url_name': 'main:lids', 'short_url': 'lids', 'display': True,
+    'Лиды': {'title': 'Лиды', 'url_name': 'main:leads', 'short_url': 'leads', 'display': True,
              'category_name': categories[7], 'menu_role': 'sub'},
 }
 

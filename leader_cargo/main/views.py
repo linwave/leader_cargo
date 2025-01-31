@@ -899,13 +899,13 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
         # Фильтрация по запросу поиска
         if search_query:
             calls_query = calls_query.filter(
-                Q(client_phone__icontains=search_query)
+                Q(client_phone__iregex=search_query)
                 |
-                Q(client_name__icontains=search_query)
+                Q(client_name__iregex=search_query)
                 |
-                Q(client_location__icontains=search_query)
+                Q(client_location__iregex=search_query)
                 |
-                Q(description__icontains=search_query)
+                Q(description__iregex=search_query)
             )
         # Устанавливаем количество элементов на странице
         paginator = Paginator(calls_query, int(page_size))
@@ -940,7 +940,7 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
         return 'main/calls/calls.html'
 
 
-class LidsView(MyLoginMixin, DataMixin, TemplateView):
+class LeadsView(MyLoginMixin, DataMixin, TemplateView):
     login_url = reverse_lazy('main:login')
     role_have_perm = ['Супер Администратор', 'Менеджер', 'Оператор', 'РОП']
 

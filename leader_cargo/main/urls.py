@@ -15,7 +15,7 @@ urlpatterns = [
     path('calls/add_calls', views.add_calls, name='add_calls'),
     path('calls/edit_calls/<int:call_id>', views.edit_calls, name='edit_calls'),
 
-    path('lids/', views.LidsView.as_view(), name='lids'),
+    path('leads/', views.LeadsView.as_view(), name='leads'),
 
     path('monitoring/', views.MonitoringSystemView.as_view(), name='monitoring'),
     path('monitoring/manager/<int:manager_id>/', views.MonitoringManagerReportView.as_view(), name='monitoring_manager_report'),
