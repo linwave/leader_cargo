@@ -30,6 +30,18 @@
                     <i class="fa-solid fa-phone-volume"></i>
                     {% endif %}
                     <span class="link_name">{{cat.name}}</span>
+                    {% if cat.name == 'Звонки' %}
+                    <div hx-get="{% url 'main:new_calls' %}"
+                         hx-trigger="every 10s"
+                         hx-swap="innerHTML"
+                         hx-target="#new-calls-badge-content">
+                        <div id="new-calls-badge-content">
+                            {% if badge_calls != 0 %}
+                            <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_calls}}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                     {% if cat.name == 'Логистика' %}
                     <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_reports}}</span>
                     {% endif %}

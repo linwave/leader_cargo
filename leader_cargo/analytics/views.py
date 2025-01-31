@@ -1020,6 +1020,17 @@ class LogisticCalculatorView(MyLoginMixin, DataMixin, TemplateView):
         return dict(list(context.items()) + list(c_def.items()))
 
 
+class CalculatorVolumeView(MyLoginMixin, DataMixin, TemplateView):
+    role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер']
+    template_name = 'analytics/calculator_volume.html'
+    login_url = reverse_lazy('main:login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Калькулятор объема")
+        return dict(list(context.items()) + list(c_def.items()))
+
+
 class RequestsInvoiceView(MyLoginMixin, DataMixin, TemplateView):
     role_have_perm = ['Супер Администратор', 'Логист', 'РОП', 'Менеджер', 'Бухгалтер']
     template_name = 'analytics/requests_invoice/requests_invoice.html'

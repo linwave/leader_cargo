@@ -23,6 +23,8 @@ menu = {
                        'category_name': categories[6], 'menu_role': 'sub'},
     'Калькулятор логистики': {'title': 'Калькулятор логистики', 'url_name': 'analytics:calculator', 'short_url': 'calculator', 'display': False,
                               'category_name': categories[1], 'menu_role': 'sub'},
+    'Расчет объема': {'title': 'Расчет объема', 'url_name': 'analytics:calculator_volume', 'short_url': 'calculator_volume', 'display': True,
+                      'category_name': categories[1], 'menu_role': 'sub'},
     'Перевозчики': {'title': 'Перевозчики', 'url_name': 'analytics:carriers_list', 'short_url': 'carriers_list', 'display': True,
                     'category_name': categories[1], 'menu_role': 'sub'},
 
@@ -53,6 +55,8 @@ menu = {
 
     'Звонки': {'title': 'Звонки', 'url_name': 'main:calls', 'short_url': 'calls', 'display': True,
                'category_name': categories[7], 'menu_role': 'basic'},
+    'Лиды': {'title': 'Лиды', 'url_name': 'main:lids', 'short_url': 'lids', 'display': True,
+             'category_name': categories[7], 'menu_role': 'sub'},
 }
 
 menu_super_admin = [
@@ -69,7 +73,7 @@ menu_super_admin = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
-        'sub_menu': [menu['Запросы на просчет'], menu['Калькулятор логистики'], menu['Перевозчики']]
+        'sub_menu': [menu['Запросы на просчет'], menu['Калькулятор логистики'], menu['Перевозчики'], menu['Расчет объема']]
     },
     {
         'name': categories[2],
@@ -94,14 +98,14 @@ menu_super_admin = [
     {
         'name': categories[7],
         'basic': menu['Звонки'],
-        'sub_menu': []
+        'sub_menu': [menu['Лиды']]
     }
 ]
 menu_rop = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
-        'sub_menu': [menu['Запрос логисту']]
+        'sub_menu': [menu['Запрос логисту'], menu['Расчет объема']]
     },
     # {
     #     'name': categories[6],
@@ -131,7 +135,7 @@ menu_rop = [
     {
         'name': categories[7],
         'basic': menu['Звонки'],
-        'sub_menu': []
+        'sub_menu': [menu['Лиды']]
     }
 ]
 menu_admin = [
@@ -162,7 +166,7 @@ menu_manager = [
     {
         'name': categories[1],
         'basic': menu['Учет грузов'],
-        'sub_menu': [menu['Запрос логисту']]
+        'sub_menu': [menu['Запрос логисту'], menu['Расчет объема']]
     },
     # {
     #     'name': categories[6],
@@ -182,7 +186,7 @@ menu_manager = [
     {
         'name': categories[7],
         'basic': menu['Звонки'],
-        'sub_menu': []
+        'sub_menu': [menu['Лиды']]
     }
 ]
 menu_buyer = [
@@ -210,7 +214,7 @@ menu_logist = [
     {
         'name': categories[0],
         'basic': menu['Курсы валют'],
-        'sub_menu': [menu['Установка курса валют']]
+        'sub_menu': [menu['Установка курса валют'], menu['Расчет объема']]
     },
     {
         'name': categories[1],

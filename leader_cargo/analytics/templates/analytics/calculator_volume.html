@@ -1,0 +1,262 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<style>
+        .image-container {
+            text-align: center;
+        }
+        .result-container {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .input-container {
+            display: none;
+        }
+        .input-container.active {
+            display: block;
+        }
+        .result-value {
+            font-weight: bold;
+            text-align: right;
+            cursor: pointer;
+        }
+        #copyNotification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+        #copyNotification.show {
+            opacity: 1;
+        }
+    </style>
+<div class="container mt-1">
+    <div class="row g-4">
+        <!-- Левая часть: Картинка груза -->
+        <div class="col-md-6 image-container">
+            <img loading="lazy" id="cargoImage" src="{% static 'main/images/box.svg' %}" alt="Груз" class="img-fluid">
+        </div>
+        <!-- Правая часть: Форма ввода данных и результат -->
+        <div class="col-md-6">
+            <h5><i class="fa-solid fa-calculator"></i>Расчет объема груза</h5>
+            <div class="row">
+                <!-- Первая колонка: Ввод ширины, высоты, длины или диаметра и высоты -->
+                <div class="col-md-6">
+                    <div id="boxInputs" class="input-container active">
+                        <div class="form-group">
+                            <label for="length">Длина:</label>
+                            <input type="number" class="form-control" id="length" placeholder="Введите длину">
+                        </div>
+                        <div class="form-group">
+                            <label for="width">Ширина:</label>
+                            <input type="number" class="form-control" id="width" placeholder="Введите ширину">
+                        </div>
+                        <div class="form-group">
+                            <label for="height">Высота:</label>
+                            <input type="number" class="form-control" id="height" placeholder="Введите высоту">
+                        </div>
+                    </div>
+                    <div id="cylinderInputs" class="input-container">
+                        <div class="form-group">
+                            <label for="diameter">Диаметр:</label>
+                            <input type="number" class="form-control" id="diameter" placeholder="Введите диаметр">
+                        </div>
+                        <div class="form-group">
+                            <label for="cylinderHeight">Высота:</label>
+                            <input type="number" class="form-control" id="cylinderHeight" placeholder="Введите высоту">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вторая колонка: Выбор типа груза, единицы измерения и количество -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="cargoType">Вид груза:</label>
+                        <select class="form-control" id="cargoType">
+                            <option value="box">Коробка</option>
+                            <option value="cylinder">Цилиндр</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="unit">Единица измерения:</label>
+                        <select class="form-control" id="unit">
+                            <option value="mm">мм</option>
+                            <option value="cm" selected>см</option>
+                            <option value="m">м</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Количество:</label>
+                        <input type="number" class="form-control" id="quantity" placeholder="Введите количество" value="1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-container">
+                <h5><i class="fa-solid fa-box"></i>Итого:</h5>
+                <div class="row justify-content-between">
+                    <div class="col-auto">
+                        <p>Объем одной коробки (цилиндра): </p>
+                    </div>
+                    <div class="col-auto">
+                        <span id="volumeOne" class="result-value">0</span> м³
+                    </div>
+                </div>
+                <div class="row justify-content-between">
+                    <div class="col-auto">
+                        <p>Общий объем: </p>
+                    </div>
+                    <div class="col-auto">
+                        <span id="totalVolume" class="result-value">0</span> м³
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Уведомление о копировании с использованием Toasts -->
+    <div aria-live="polite" aria-atomic="true" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+        <div class="toast fade hide" role="alert" aria-live="assertive" aria-atomic="true" id="copyToast">
+            <div class="toast-header">
+                <strong class="me-auto">Уведомление от Magistral</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Значение скопировано в буфер обмена!
+            </div>
+        </div>
+    </div>
+<!-- Уведомление о копировании -->
+    <div id="copyNotification" class="d-none"></div>
+<!-- Подключение jQuery и Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<!-- Ваш скрипт для расчета объема -->
+<script>
+        function calculateVolume() {
+            let width = parseFloat(document.getElementById('width').value) || 0;
+            let height = parseFloat(document.getElementById('height').value) || 0;
+            let length = parseFloat(document.getElementById('length').value) || 0;
+            const quantity = parseInt(document.getElementById('quantity').value) || 1;
+            const unit = document.getElementById('unit').value;
+            const cargoType = document.getElementById('cargoType').value;
+
+            if (cargoType === 'cylinder') {
+                width = parseFloat(document.getElementById('diameter').value) || 0;
+                height = parseFloat(document.getElementById('cylinderHeight').value) || 0;
+                length = 0; // Не используется для цилиндра
+            }
+
+            let volumeOne = 0;
+
+            if (cargoType === 'box') {
+                // Расчет объема для коробки
+                volumeOne = width * height * length;
+            } else if (cargoType === 'cylinder') {
+                // Расчет объема для цилиндра
+                const radius = width / 2;
+                volumeOne = Math.PI * Math.pow(radius, 2) * height;
+            }
+
+            // Конвертация в метры кубические в зависимости от выбранной единицы измерения
+            if (unit === 'mm') {
+                volumeOne /= 1e9; // мм³ -> м³
+            } else if (unit === 'cm') {
+                volumeOne /= 1e6; // см³ -> м³
+            }
+
+            const totalVolume = volumeOne * quantity;
+
+            // Увеличиваем количество знаков после запятой до 7
+            document.getElementById('volumeOne').textContent = volumeOne.toFixed(7);
+            document.getElementById('totalVolume').textContent = totalVolume.toFixed(7);
+        }
+
+        function updateInputFields() {
+            const cargoType = document.getElementById('cargoType').value;
+
+            if (cargoType === 'box') {
+                document.getElementById('boxInputs').classList.add('active');
+                document.getElementById('boxInputs').classList.remove('inactive');
+                document.getElementById('cylinderInputs').classList.remove('active');
+                document.getElementById('cylinderInputs').classList.add('inactive');
+
+                // Обновляем картинку
+                document.getElementById('cargoImage').src = "{% static 'main/images/box.svg' %}";
+            } else if (cargoType === 'cylinder') {
+                document.getElementById('cylinderInputs').classList.add('active');
+                document.getElementById('cylinderInputs').classList.remove('inactive');
+                document.getElementById('boxInputs').classList.remove('active');
+                document.getElementById('boxInputs').classList.add('inactive');
+
+                // Обновляем картинку
+                document.getElementById('cargoImage').src = "{% static 'main/images/cylinder.svg' %}";
+            }
+
+            calculateVolume();
+        }
+
+        // Обновление объема при изменении любого из полей формы
+        document.querySelectorAll('#width, #height, #length, #diameter, #cylinderHeight, #quantity, #unit, #cargoType').forEach(input => {
+            input.addEventListener('input', calculateVolume);
+        });
+
+        // Копирование значения в буфер обмена при клике
+        document.querySelectorAll('.result-value').forEach(element => {
+            element.addEventListener('click', function () {
+                const range = document.createRange();
+                const selection = window.getSelection();
+                range.selectNodeContents(this);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.execCommand('copy');
+                selection.removeAllRanges();
+
+                // Показываем уведомление с значением
+                showCopyNotification(this.textContent);
+            });
+        });
+        /*
+        // Показать уведомление о копировании
+        function showCopyNotification(value) {
+            const notification = document.getElementById('copyNotification');
+            notification.textContent = `Значение ${value} скопировано в буфер обмена!`;
+            notification.classList.add('show');
+            notification.classList.remove('d-none');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                notification.classList.add('d-none');
+            }, 1000); // Скрываем через 2 секунды
+        }
+        */
+        // Показать уведомление о копировании
+        function showCopyNotification(value) {
+            const toast = new bootstrap.Toast(document.getElementById('copyToast'));
+            document.querySelector('.toast-body').textContent = `Значение ${value} скопировано в буфер обмена!`;
+            toast.show();
+        }
+        // Обновление видимости полей при изменении типа груза
+        document.getElementById('cargoType').addEventListener('change', updateInputFields);
+
+        // Инициализация расчета при загрузке страницы
+        window.onload = () => {
+            updateInputFields();
+        };
+    </script>
+{% endblock %}

@@ -33,6 +33,7 @@ urlpatterns = [
     path('requests-invoice/', views.RequestsInvoiceView.as_view(), name='requests_invoice'),
 
     path('calculator/', views.LogisticCalculatorView.as_view(), name='calculator'),
+    path('calculator_volume/', views.CalculatorVolumeView.as_view(), name='calculator_volume'),
 
     path('carriers-list/', views.LogisticCarriersList.as_view(), name='carriers_list'),
     path('carriers-list/add', views.AddLogisticCarriersList.as_view(), name='add_carrier'),
