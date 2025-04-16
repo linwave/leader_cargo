@@ -36,10 +36,11 @@
                     {% endif %}
                     <span class="link_name">{{cat.name|truncatechars:12}}</span>
                     {% if cat.name == 'Звонки' %}
-                    <div hx-get="{% url 'main:new_calls' %}"
-                         hx-trigger="every 10s"
-                         hx-swap="innerHTML"
-                         hx-target="#new-calls-badge-content">
+<!--                    <div hx-get="{% url 'main:new_calls' %}"-->
+<!--                         hx-trigger="every 10s"-->
+<!--                         hx-swap="innerHTML"-->
+<!--                         hx-target="#new-calls-badge-content">-->
+                    <div>
                         <div id="new-calls-badge-content">
                             {% if badge_calls != 0 %}
                             <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_calls}}</span>
