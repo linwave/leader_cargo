@@ -2942,7 +2942,7 @@ def paid_by_the_client_status(request, article_id):
     role_have_perm = ['Супер Администратор', 'Менеджер', 'РОП', 'Логист']
     if request.user.role in role_have_perm:
         article = CargoArticle.objects.get(pk=article_id)
-        if request.user.pk == int(article.responsible_manager):
+        if request.user.pk == int(article.responsible_manager.pk):
             if request.POST:
                 if article.file_payment_by_client.all():
                     article.paid_by_the_client_status = request.POST.get('paid_by_the_client_status')
