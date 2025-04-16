@@ -920,6 +920,7 @@ class CallsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         context['selected_operator_statuses'] = selected_operator_statuses
         context['page_size'] = str(page_size)  # Передаем значение page_size в контекст
         context['search'] = search_query  # Передаем значение search в контекст
+        context['calls_done'] = Calls.all_calls_done()
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):

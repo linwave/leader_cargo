@@ -409,6 +409,10 @@ class Calls(models.Model):
         return calls_query
 
     @classmethod
+    def all_calls_done(cls):
+        return cls.objects.exclude(status_call="Не обработано").select_related('operator', 'manager').count()
+
+    @classmethod
     def search(cls, query, queryset):
         return queryset.filter(
                 Q(client_phone__iregex=query)
