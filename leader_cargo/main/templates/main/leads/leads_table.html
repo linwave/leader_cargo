@@ -33,7 +33,7 @@
                         hx-target="#hx-modal-body"
                         id="lead_{{ lead.id }}"
                         style="cursor: pointer;">
-                        <th scope="row">{{ lead.pk }}</th>
+                        <th scope="row">{{ lead.pk }} - ({{ lead.call.pk }})</th>
                         <td>{{ lead.manager|default:"" }}</td>
                         <td>{{ lead.status_manager|default:"" }}</td>
                         <td>{{ lead.client_name|default:"" }}</td>
