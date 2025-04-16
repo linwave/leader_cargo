@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, Calls, CallsFile
+from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, Calls, CallsFile, Leads
 from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
 
 
@@ -439,8 +439,10 @@ class AddEmployeesForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         roles = [
+            ('РОП', 'РОП'),
+            ('Бухгалтер', 'Бухгалтер'),
             ('Менеджер', 'Менеджер'),
-            ('Закупщик', 'Закупщик'),
+            ('Оператор', 'Оператор'),
         ]
         self.fields["role"].widget.attrs.update({"class": 'form-control'})
         self.fields["role"].choices = roles
@@ -495,6 +497,7 @@ class CardEmployeesForm(ModelForm):
         super().__init__(*args, **kwargs)
         roles = [
             ('РОП', 'РОП'),
+            ('Бухгалтер', 'Бухгалтер'),
             ('Менеджер', 'Менеджер'),
             ('Оператор', 'Оператор'),
         ]
@@ -542,6 +545,124 @@ class CardEmployeesForm(ModelForm):
             })
         }
 
+class EditCallsRop(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Фильтруем менеджеров по ролям "РОП" и "Менеджер"
+        self.fields['manager'].queryset = CustomUser.objects.filter(role__in=['РОП', 'Менеджер'])
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            # if field == 'weight':
+            #     self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.cleaned_data.get('manager') and not instance.date_to_manager:
+            # Устанавливаем текущую дату и время, если выбран менеджер и date_to_manager пустой
+            instance.date_to_manager = timezone.now()
+        if self.cleaned_data.get('manager') != instance.manager:
+            # Устанавливаем текущую дату и время, если выбран менеджер и date_to_manager пустой
+            instance.date_to_manager = timezone.now()
+        if not self.cleaned_data.get('manager'):
+            instance.date_to_manager = None
+        if commit:
+            instance.save()
+        return instance
+
+    class Meta:
+        model = Calls
+        fields = ["operator", "status_call", "date_call", "client_name", "client_phone", "client_location", "description", 'date_next_call', 'manager']
+        widgets = {
+            "date_call": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "date_next_call": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "client_phone": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'autocomplete': 'off',
+            }),
+            "description": Textarea(attrs={
+                'class': 'form-control',
+                'maxlength': 250,
+            }),
+        }
+
+
+class EditLeadsRop(ModelForm):
+    call_description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'maxlength': 250,
+            'readonly': 'readonly',
+        }),
+        label="Комментарий оператора"
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Фильтруем менеджеров по ролям "РОП" и "Менеджер"
+        self.fields['manager'].queryset = CustomUser.objects.filter(role__in=['РОП', 'Менеджер'])
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            # if field == 'weight':
+            #     self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # Получаем старое значение статуса (если объект уже существует)
+        old_status = instance.status_manager if instance.pk else None
+
+        # Проверяем, изменился ли статус
+        new_status = self.cleaned_data.get('status_manager')
+
+        # Логика установки дат в зависимости от нового статуса
+        if new_status == 'В работе' and (not old_status or old_status != 'В работе'):
+            instance.time_in_work = timezone.now()
+        elif new_status == 'Утверждена' and (not old_status or old_status != 'Утверждена'):
+            instance.time_approve = timezone.now()
+        elif new_status == 'Отказ' and (not old_status or old_status != 'Отказ'):
+            instance.time_no = timezone.now()
+
+        # Если статус сброшен обратно на "Новая", сбрасываем все даты
+        if new_status == 'Новая':
+            instance.time_in_work = None
+            instance.time_approve = None
+            instance.time_no = None
+
+        if commit:
+            instance.save()
+        return instance
+
+    class Meta:
+        model = Leads
+        fields = ["manager", "status_manager", "client_name", "client_phone", "client_location", "call_description", "description_manager", "date_next_call_manager"]
+        widgets = {
+            "date_call": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "date_next_call_manager": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "client_phone": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'autocomplete': 'off',
+            }),
+            "description_manager": Textarea(attrs={
+                'class': 'form-control',
+                'maxlength': 250,
+            }),
+        }
 
 class EditCallsOperator(ModelForm):
 
@@ -586,6 +707,78 @@ class EditCallsOperator(ModelForm):
                 'autocomplete': 'off',
             }),
             "description": Textarea(attrs={
+                'class': 'form-control',
+                'maxlength': 250,
+            }),
+        }
+
+
+class EditLeadsManager(ModelForm):
+    call_description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'maxlength': 250,
+            'readonly': 'readonly',
+        }),
+        label="Комментарий оператора"
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+            # if field == 'weight':
+            #     self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+            # Если объект уже существует, заполняем значение call_description
+        if self.instance and self.instance.call:
+            self.fields['call_description'].initial = self.instance.call.description
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # Получаем старое значение статуса (если объект уже существует)
+        old_status = instance.status_manager if instance.pk else None
+
+        # Проверяем, изменился ли статус
+        new_status = self.cleaned_data.get('status_manager')
+
+        # Логика установки дат в зависимости от нового статуса
+        if new_status == 'В работе' and (not old_status or old_status != 'В работе'):
+            instance.time_in_work = timezone.now()
+        elif new_status == 'Утверждена' and (not old_status or old_status != 'Утверждена'):
+            instance.time_approve = timezone.now()
+        elif new_status == 'Отказ' and (not old_status or old_status != 'Отказ'):
+            instance.time_no = timezone.now()
+
+        # Если статус сброшен обратно на "Новая", сбрасываем все даты
+        if new_status == 'Новая':
+            instance.time_in_work = None
+            instance.time_approve = None
+            instance.time_no = None
+
+        if commit:
+            instance.save()
+        return instance
+
+    class Meta:
+        model = Leads
+        fields = ["status_manager", "client_name", "client_phone", "client_location", "call_description", "description_manager", "date_next_call_manager"]
+        widgets = {
+            "date_call": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "date_next_call_manager": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+            }),
+            "client_phone": TextInput(attrs={
+                'class': 'form-control',
+                'type': 'text',
+                'autocomplete': 'off',
+            }),
+            "description_manager": Textarea(attrs={
                 'class': 'form-control',
                 'maxlength': 250,
             }),
@@ -667,6 +860,33 @@ class CallsFilterForm(forms.Form):
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         required=False,
         label='Статус заявки менеджера'
+    )
+    managers = forms.ModelMultipleChoiceField(
+        queryset=CustomUser.get_managers_and_operators(),  # Используем метод для получения менеджеров
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label='Менеджеры'
+    )
+
+class LeadsFilterForm(forms.Form):
+    STATUS_MANAGER_CHOICES = [
+        ('Новая', 'Новая'),
+        ('В работе', 'В работе'),
+        ('Утверждена', 'Утверждена'),
+        ('Отказ', 'Отказ')
+    ]
+
+    status_manager = forms.MultipleChoiceField(
+        choices=STATUS_MANAGER_CHOICES,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label='Статус заявки менеджера'
+    )
+    managers = forms.ModelMultipleChoiceField(
+        queryset=CustomUser.get_managers(),  # Используем метод для получения менеджеров
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label='Менеджеры'
     )
 # class AddCalls(ModelForm):
 #

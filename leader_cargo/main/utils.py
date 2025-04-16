@@ -1,21 +1,23 @@
 import datetime
+
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from analytics.models import RequestsForLogisticsCalculations
 from .models import ExchangeRates, Calls
 
-categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки', 'Запрос счетов', 'Звонки']
+categories = ['Курсы валют', 'Логистика', 'Мониторинг', 'Сотрудники', 'Клиенты', 'Заявки', 'Запрос счетов', 'Звонки', 'Лиды', 'Сделки', 'Выкупы']
 
 menu = {
     'Вход': {'title': 'Вход', 'url_name': 'main:login', 'short_url': 'login', 'display': True},
 
-    'Учет грузов': {'title': 'Учет грузов', 'url_name': 'analytics:carrier', 'short_url': 'carrier', 'display': True,
+    'Учет грузов': {'title': 'Учет грузов', 'url_name': 'analytics:carrier', 'short_url': 'logistic', 'display': True,
                     'category_name': categories[1], 'menu_role': 'sub'},
     'Запрос логисту': {'title': 'Запрос ставки', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
                        'category_name': categories[1], 'menu_role': 'sub'},
     'Запросы на просчет': {'title': 'Обработка запросов', 'url_name': 'analytics:logistic_requests', 'short_url': 'logistic_requests', 'display': False,
                            'category_name': categories[1], 'menu_role': 'sub'},
-    'Запрос счетов': {'title': 'Запрос счетов', 'url_name': 'bills:bills', 'short_url': 'bills', 'display': True,
+    'Запрос счетов': {'title': 'Запрос счетов', 'url_name': 'bills:bills', 'short_url': 'bills', 'display': False,
                       'category_name': categories[6], 'menu_role': 'basic'},
     'Наши Юр. лица': {'title': 'Наши Юр. лица', 'url_name': 'bills:entity', 'short_url': 'entity', 'display': True,
                       'category_name': categories[6], 'menu_role': 'sub'},
@@ -33,9 +35,9 @@ menu = {
     'Установка курса валют': {'title': 'Установка курса валют', 'url_name': 'main:create_exchangerates', 'short_url': 'create_exchangerates', 'display': False,
                               'category_name': categories[0], 'menu_role': 'sub'},
 
-    'Мониторинг': {'title': 'Мониторинг', 'url_name': 'main:monitoring', 'short_url': 'monitoring', 'display': True,
+    'Мониторинг': {'title': 'Мониторинг', 'url_name': 'main:monitoring', 'short_url': 'monitoring', 'display': False,
                    'category_name': categories[2], 'menu_role': 'basic'},
-    'Таблица результатов': {'title': 'Таблица результатов', 'url_name': 'main:monitoring_leaderboard', 'short_url': 'monitoring_leaderboard', 'display': True,
+    'Таблица результатов': {'title': 'Таблица результатов', 'url_name': 'main:monitoring_leaderboard', 'short_url': 'monitoring', 'display': False,
                             'category_name': categories[2], 'menu_role': 'sub'},
 
     'Сотрудники': {'title': 'Сотрудники', 'url_name': 'main:employees', 'short_url': 'employees', 'display': True,
@@ -43,23 +45,45 @@ menu = {
     'Регистрация сотрудника': {'title': 'Регистрация сотрудника', 'url_name': 'main:create_employees', 'short_url': 'create_employees', 'display': True,
                                'category_name': categories[3], 'menu_role': 'sub'},
 
-    'Клиенты': {'title': 'Клиенты', 'url_name': 'main:clients', 'short_url': 'clients', 'display': False,
-                'category_name': categories[4], 'menu_role': 'basic'},
-    'Создание клиента': {'title': 'Создание клиента', 'url_name': 'main:create_client', 'short_url': 'create_client', 'display': False,
-                         'category_name': categories[4], 'menu_role': 'sub'},
+    # 'Клиенты': {'title': 'Клиенты', 'url_name': 'main:clients', 'short_url': 'clients', 'display': False,
+    #             'category_name': categories[4], 'menu_role': 'basic'},
+    # 'Создание клиента': {'title': 'Создание клиента', 'url_name': 'main:create_client', 'short_url': 'create_client', 'display': False,
+    #                      'category_name': categories[4], 'menu_role': 'sub'},
 
     'Заявки': {'title': 'Клиенты', 'url_name': 'main:appeals', 'short_url': 'appeals', 'display': False,
                'category_name': categories[5], 'menu_role': 'basic'},
     'Создание заявки': {'title': 'Создание клиента', 'url_name': 'main:create_appeal', 'short_url': 'create_appeal', 'display': False,
                         'category_name': categories[5], 'menu_role': 'sub'},
 
+    'Сделки': {'title': 'Сделки', 'url_name': 'main:leads', 'short_url': 'leads', 'display': False,
+               'category_name': categories[9], 'menu_role': 'basic'},
+
+    'Клиенты': {'title': 'Клиенты', 'url_name': 'main:clients', 'short_url': 'clients', 'display': False,
+                'category_name': categories[4], 'menu_role': 'basic'},
+
+    'Лиды': {'title': 'Лиды', 'url_name': 'main:leads', 'short_url': 'leads', 'display': True,
+             'category_name': categories[8], 'menu_role': 'basic'},
+
     'Звонки': {'title': 'Звонки', 'url_name': 'main:calls', 'short_url': 'calls', 'display': True,
                'category_name': categories[7], 'menu_role': 'basic'},
-    'Лиды': {'title': 'Лиды', 'url_name': 'main:leads', 'short_url': 'leads', 'display': True,
-             'category_name': categories[7], 'menu_role': 'sub'},
+
+    'Выкупы': {'title': 'Выкупы', 'url_name': 'main:calls', 'short_url': 'calls', 'display': False,
+               'category_name': categories[10], 'menu_role': 'basic'},
+
+
 }
 
 menu_super_admin = [
+    {
+        'name': categories[9],
+        'basic': menu['Сделки'],
+        'sub_menu': []
+    },
+    {
+        'name': categories[10],
+        'basic': menu['Выкупы'],
+        'sub_menu': []
+    },
     {
         'name': categories[0],
         'basic': menu['Курсы валют'],
@@ -76,19 +100,9 @@ menu_super_admin = [
         'sub_menu': [menu['Запросы на просчет'], menu['Калькулятор логистики'], menu['Перевозчики'], menu['Расчет объема']]
     },
     {
-        'name': categories[2],
-        'basic': menu['Мониторинг'],
-        'sub_menu': [menu['Таблица результатов']]
-    },
-    {
-        'name': categories[3],
-        'basic': menu['Сотрудники'],
-        'sub_menu': [menu['Регистрация сотрудника']]
-    },
-    {
         'name': categories[4],
         'basic': menu['Клиенты'],
-        'sub_menu': [menu['Создание клиента']]
+        'sub_menu': []
     },
     {
         'name': categories[5],
@@ -96,22 +110,15 @@ menu_super_admin = [
         'sub_menu': [menu['Создание заявки']]
     },
     {
+        'name': categories[8],
+        'basic': menu['Лиды'],
+        'sub_menu': []
+    },
+    {
         'name': categories[7],
         'basic': menu['Звонки'],
-        'sub_menu': [menu['Лиды']]
-    }
-]
-menu_rop = [
-    {
-        'name': categories[1],
-        'basic': menu['Учет грузов'],
-        'sub_menu': [menu['Запрос логисту'], menu['Расчет объема']]
+        'sub_menu': []
     },
-    # {
-    #     'name': categories[6],
-    #     'basic': menu['Запрос счетов'],
-    #     'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
-    # },
     {
         'name': categories[2],
         'basic': menu['Мониторинг'],
@@ -121,7 +128,30 @@ menu_rop = [
         'name': categories[3],
         'basic': menu['Сотрудники'],
         'sub_menu': [menu['Регистрация сотрудника']]
+    }
+
+]
+menu_rop = [
+    {
+        'name': categories[9],
+        'basic': menu['Сделки'],
+        'sub_menu': []
     },
+    {
+        'name': categories[10],
+        'basic': menu['Выкупы'],
+        'sub_menu': []
+    },
+    {
+        'name': categories[1],
+        'basic': menu['Учет грузов'],
+        'sub_menu': [menu['Запрос логисту'], menu['Расчет объема'], menu['Перевозчики']]
+    },
+    # {
+    #     'name': categories[6],
+    #     'basic': menu['Запрос счетов'],
+    #     'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
+    # },
     # {
     #     'name': categories[4],
     #     'basic': menu['Клиенты'],
@@ -133,9 +163,29 @@ menu_rop = [
     #     'sub_menu': [menu['Создание заявки']]
     # },
     {
+        'name': categories[4],
+        'basic': menu['Клиенты'],
+        'sub_menu': []
+    },
+    {
+        'name': categories[8],
+        'basic': menu['Лиды'],
+        'sub_menu': []
+    },
+    {
         'name': categories[7],
         'basic': menu['Звонки'],
-        'sub_menu': [menu['Лиды']]
+        'sub_menu': []
+    },
+    {
+        'name': categories[2],
+        'basic': menu['Мониторинг'],
+        'sub_menu': [menu['Таблица результатов']]
+    },
+    {
+        'name': categories[3],
+        'basic': menu['Сотрудники'],
+        'sub_menu': [menu['Регистрация сотрудника']]
     }
 ]
 menu_admin = [
@@ -164,6 +214,16 @@ menu_operator = [
 ]
 menu_manager = [
     {
+        'name': categories[9],
+        'basic': menu['Сделки'],
+        'sub_menu': []
+    },
+    {
+        'name': categories[10],
+        'basic': menu['Выкупы'],
+        'sub_menu': []
+    },
+    {
         'name': categories[1],
         'basic': menu['Учет грузов'],
         'sub_menu': [menu['Запрос логисту'], menu['Расчет объема']]
@@ -174,8 +234,8 @@ menu_manager = [
     #     'sub_menu': [menu['Счета клиентов'], menu['Наши Юр. лица']]
     # },
     {
-        'name': categories[2],
-        'basic': menu['Таблица результатов'],
+        'name': categories[4],
+        'basic': menu['Клиенты'],
         'sub_menu': []
     },
     # {
@@ -184,9 +244,19 @@ menu_manager = [
     #     'sub_menu': [menu['Создание заявки']]
     # },
     {
-        'name': categories[7],
-        'basic': menu['Звонки'],
-        'sub_menu': [menu['Лиды']]
+        'name': categories[8],
+        'basic': menu['Лиды'],
+        'sub_menu': []
+    },
+    # {
+    #     'name': categories[7],
+    #     'basic': menu['Звонки'],
+    #     'sub_menu': []
+    # },
+    {
+        'name': categories[2],
+        'basic': menu['Таблица результатов'],
+        'sub_menu': []
     }
 ]
 menu_buyer = [
@@ -236,10 +306,10 @@ menu_logist = [
 
 initial_user_parameters = {
     'Супер Администратор': {'login_url': 'main:home', 'menu': menu_super_admin},
-    'РОП': {'login_url': 'main:monitoring', 'menu': menu_rop},
+    'РОП': {'login_url': 'main:employees', 'menu': menu_rop},
     'Администратор': {'login_url': 'main:exchangerates', 'menu': menu_admin},
     'Логист': {'login_url': 'analytics:carrier', 'menu': menu_logist},
-    'Менеджер': {'login_url': 'main:monitoring_leaderboard', 'menu': menu_manager},
+    'Менеджер': {'login_url': 'analytics:carrier', 'menu': menu_manager},
     'Оператор': {'login_url': 'main:calls', 'menu': menu_operator},
     'Закупщик': {'login_url': 'main:appeals', 'menu': menu_buyer},
     'Клиент': {'login_url': 'main:appeals', 'menu': menu_client},
@@ -253,8 +323,8 @@ class DataMixin:
             context['menu'] = initial_user_parameters[self.request.user.role]['menu']
             if self.request.user.role == 'Логист':
                 context['badge_reports'] = RequestsForLogisticsCalculations.objects.filter(status__in=['Новый', 'Запрос на изменение']).count()
-            if self.request.user.role == 'Менеджер':
-                context['badge_calls'] = Calls.objects.filter(manager=self.request.user, status_manager='Новая').select_related('operator', 'manager').count()
+            if self.request.user.role in ['Оператор', 'Менеджер']:
+                context['badge_calls'] = Calls.get_new_calls(self.request.user)
         context['last_currency'] = self.get_last_currency_dollar_and_yuan()
         context['today'] = datetime.datetime.date(datetime.datetime.now()).strftime("%d.%m.%y")
         return context
@@ -291,6 +361,27 @@ class DataMixin:
         except IndexError:
             return False
 
+
+class PaginationMixin:
+    def paginate_queryset(self, queryset, page_size, queryset_name='objects'):
+        paginator = Paginator(queryset, page_size)
+        page = self.request.GET.get('page')
+        try:
+            paginated_queryset = paginator.page(page)
+        except PageNotAnInteger:
+            paginated_queryset = paginator.page(1)
+        except EmptyPage:
+            paginated_queryset = paginator.page(paginator.num_pages)
+
+        current_page = paginated_queryset.number
+        total_pages = paginator.num_pages
+        page_range = range(max(1, current_page - 3), min(total_pages, current_page + 3) + 1)
+
+        return {
+            f'{queryset_name}': paginated_queryset,
+            'paginator_': paginator,
+            'page_range_': page_range,
+        }
 
 class MyLoginMixin(LoginRequiredMixin):
     role_have_perm = None

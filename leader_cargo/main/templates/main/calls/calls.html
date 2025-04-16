@@ -13,9 +13,12 @@
         </div>
     </div>
 </div>
-{% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
+{% if user.role == 'Супер Администратор' or  user.role == 'РОП' or user.role == 'Оператор' %}
 <div class="container-fluid">
-    <div class="row g-2 mb-2 justify-content-left">
+    <!-- График -->
+    <!-- Кнопка для скрытия/показа графика -->
+    <div class="row">
+        {% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
         <div class="col-auto">
             <a type="button" class="btn btn-sm btn-success"
                data-bs-toggle="modal"
@@ -25,19 +28,28 @@
                 <i class="fa-solid fa-phone"></i> Добавление звонков
             </a>
         </div>
+        <!--        <div class="col-auto">-->
+        <!--            <a type="button" class="btn btn-sm btn-success"-->
+        <!--               data-bs-toggle="modal"-->
+        <!--               data-bs-target="#hx-modal"-->
+        <!--               hx-get="{% url 'main:add_calls' %}"-->
+        <!--               hx-target="#hx-modal-body">-->
+        <!--                <i class="fa-solid fa-phone"></i> Добавление звонков (в ручную)-->
+        <!--            </a>-->
+        <!--        </div>-->
+        {% endif %}
         <div class="col-auto">
-            <a type="button" class="btn btn-sm btn-success"
-               data-bs-toggle="modal"
-               data-bs-target="#hx-modal"
-               hx-get="{% url 'main:add_calls' %}"
-               hx-target="#hx-modal-body">
-                <i class="fa-solid fa-phone"></i> Добавление звонков (в ручную)
-            </a>
+            <button id="toggle-chart-btn" class="btn btn-sm btn-secondary">Скрыть график</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <canvas id="managerCallsChart" style="max-height: 400px;"></canvas>
         </div>
     </div>
 </div>
 {% endif %}
-{% if user.role == 'Супер Администратор' or user.role == 'РОП' or user.role == 'Оператор' or user.role == 'Менеджер' %}
+
 <div class="container-fluid mt-2 mb-2">
     <form hx-get="{% url 'main:calls' %}"
           hx-target="#calls-table"
@@ -46,7 +58,8 @@
           hx-push-url="true"
           id="filter-form" method="GET" action="{% url 'main:calls' %}">
         <div class="row justify-content-start gy-3">
-            <div class="col-6">
+            {% if user.role == 'Оператор' or user.role == 'Менеджер' %}
+            <div class="col-12">
                 <!--                <label for="status_call" class="form-label">Статус заявки</label>-->
                 <select id="status_call" name="status_call" class="form-select form-select-sm select2" multiple>
                     {% for value, label in form.fields.status_call.choices %}
@@ -54,17 +67,25 @@
                     {% endfor %}
                 </select>
             </div>
+            {% elif user.role == 'Супер Администратор' or user.role == 'РОП' %}
             <div class="col-6">
-                <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
-                <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
-                    {% for value, label in form.fields.status_manager.choices %}
-                    <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
+                <select id="status_call" name="status_call" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in form.fields.status_call.choices %}
+                    <option value="{{ value }}" {% if value in selected_operator_statuses %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-6">
+                <select id="managers" name="managers" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in form.fields.managers.choices %}
+                    <option value="{{ value }}" {% if value in selected_operator_statuses %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
         </div>
         <div class="row justify-content-between mt-2">
-            <div class="col-4">
+            <div class="col-auto">
                 <input type="text" id="search" name="search" class="form-control form-control-sm" placeholder="Поиск..." value="{{ search }}">
             </div>
             <div class="col-auto">
@@ -78,7 +99,6 @@
         </div>
     </form>
 </div>
-{% endif %}
 {% if messages %}
 <div class="container-fluid pl-2">
     <div class="row justify-content-left">
@@ -86,8 +106,101 @@
     </div>
 </div>
 {% endif %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const managersWithCalls = JSON.parse('{{ managers_with_calls|escapejs }}');
 
+    // Инициализация графика
+    const ctx = document.getElementById('managerCallsChart');
+    if (ctx) {
+        const managerCallsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: managersWithCalls.map(user => `${user.first_name} ${user.patronymic} ${user.last_name}`),
+                datasets: [
+                    {
+                        label: 'Новая',
+                        data: managersWithCalls.map(user => user.new_calls_count || 0),
+                        backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'В работе',
+                        data: managersWithCalls.map(user => user.in_progress_calls_count || 0),
+                        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Текущая сводка по ЛИДАМ менеджеров',
+                        font: { size: 18, weight: 'bold' },
+                        padding: { top: 10, bottom: 20 }
+                    },
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `${tooltipItem.dataset.label}: ${tooltipItem.raw}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        color: '#000',
+                        font: { weight: 'bold' },
+                        anchor: 'center',
+                        align: 'center',
+                        formatter: function(value) {
+                            return value > 0 ? value : '';
+                        }
+                    }
+                },
+                scales: {
+                    x: { beginAtZero: true, title: { display: false, text: 'Менеджер' } },
+                    y: { beginAtZero: true, title: { display: true, text: 'Лиды' } }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    // Функционал для скрытия/показа графика
+    let chartContainer = document.getElementById('managerCallsChart');
+    let toggleChartBtn = document.getElementById('toggle-chart-btn');
+
+    // Проверяем, существуют ли элементы
+    if (chartContainer && toggleChartBtn) {
+        // Загрузка состояния из localStorage
+        const isChartHidden = localStorage.getItem('isChartHidden') === 'true';
+        if (isChartHidden) {
+            chartContainer.style.display = 'none';
+            toggleChartBtn.textContent = 'Показать график';
+        }
+
+        // Переключение видимости графика
+        toggleChartBtn.addEventListener('click', () => {
+            if (chartContainer.style.display === 'none') {
+                chartContainer.style.display = 'block';
+                toggleChartBtn.textContent = 'Скрыть график';
+                localStorage.setItem('isChartHidden', 'false');
+            } else {
+                chartContainer.style.display = 'none';
+                toggleChartBtn.textContent = 'Показать график';
+                localStorage.setItem('isChartHidden', 'true');
+            }
+        });
+    }
+});
+</script>
+<script>
     $(document).ready(function() {
         $('#status_call').select2({
             placeholder: "Выбрать статус заявки",
@@ -103,9 +216,80 @@
         }).on('change', function(e) {
             document.getElementById('filter-form').dispatchEvent(new Event('submit'));
         });
+        $('#managers').select2({
+            placeholder: "Выбрать оператора",
+            allowClear: true,
+            width: '100%'
+        }).on('change', function(e) {
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
     });
 </script>
 <div id="calls-table">
     {% include "main/calls/calls_table.html"  %}
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Уникальный ключ для localStorage на основе URL
+    const storageKey = `pagination:${window.location.pathname}`;
+
+    // Получаем текущую страницу из localStorage
+    const savedPage = localStorage.getItem(storageKey);
+
+    // Проверяем, есть ли сохраненный номер страницы
+    if (savedPage) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentPage = urlParams.get('page');
+
+        // Если в URL нет параметра page или он отличается от сохраненного
+        if (!currentPage || currentPage !== savedPage) {
+            // Обновляем URL с сохраненной страницей
+            urlParams.set('page', savedPage);
+            window.location.search = urlParams.toString(); // Перезагружаем страницу
+        }
+
+        // Подставляем сохраненный номер страницы в поле ввода
+        document.getElementById('pageInput').value = savedPage;
+    }
+
+    // Обработчик кнопки "Перейти"
+    document.getElementById('goToPage').addEventListener('click', function () {
+        const pageInput = document.getElementById('pageInput');
+        const pageNumber = parseInt(pageInput.value, 10);
+
+        // Проверка на корректность введенного номера страницы
+        if (isNaN(pageNumber)) {
+            alert("Введите корректный номер страницы.");
+            return;
+        }
+
+        if (pageNumber >= 1 && pageNumber <= {{ calls.paginator.num_pages }}) {
+            // Сохраняем номер страницы в localStorage
+            localStorage.setItem(storageKey, pageNumber);
+
+            // Формируем новый URL с указанным номером страницы
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('page', pageNumber);
+            window.location.search = urlParams.toString(); // Перезагружаем страницу
+        } else {
+            alert(`Введите номер страницы от 1 до {{ calls.paginator.num_pages }}`);
+        }
+    });
+
+    // Обновляем localStorage при изменении страницы через пагинацию
+    document.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function (event) {
+            // Предотвращаем стандартное поведение ссылки
+            event.preventDefault();
+
+            const pageNumber = new URL(this.href).searchParams.get('page');
+            if (pageNumber) {
+                localStorage.setItem(storageKey, pageNumber);
+                window.location.href = this.href; // Переходим по ссылке
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
+

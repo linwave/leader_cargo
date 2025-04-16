@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import json
 import re
 import pandas as pd
 from django.contrib import messages
@@ -19,9 +20,9 @@ from django.utils.timezone import make_aware
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
-    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsManager
+    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsManager, EditCallsRop, LeadsFilterForm, EditLeadsManager, EditLeadsRop
 from .models import *
-from .utils import DataMixin, MyLoginMixin
+from .utils import DataMixin, MyLoginMixin, PaginationMixin
 from .tasks import process_excel_file
 
 from analytics.models import CargoArticle
@@ -308,8 +309,8 @@ class MonitoringLeaderboardView(MyLoginMixin, DataMixin, ListView):
             if 'year' in self.request.GET:
                 year = int(self.request.GET.get('year'))
                 now = now.replace(year=year)
-        context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=month, report_upload_date__year=year)
-        context['monitoring_cargo'] = CargoArticle.objects.filter(time_from_china__month=month, time_from_china__year=year)
+        context['monitoring_reports'] = ManagersReports.objects.filter(report_upload_date__month=month, report_upload_date__year=year).select_related('manager_id')
+        context['monitoring_cargo'] = CargoArticle.objects.filter(time_from_china__month=month, time_from_china__year=year).select_related('responsible_manager')
 
         context['month'] = months[now.month]
         context['months'] = months
@@ -319,9 +320,9 @@ class MonitoringLeaderboardView(MyLoginMixin, DataMixin, ListView):
         context['all_data'] = dict()
         context['all_net_profit'] = 0
         if self.request.user.role == 'Супер Администратор':
-            context['managers'] = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'])
+            context['managers'] = CustomUser.objects.filter(role__in=['Менеджер', 'РОП']).prefetch_related('plans')
         else:
-            context['managers'] = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], town=f'{self.request.user.town}', status=True)
+            context['managers'] = CustomUser.objects.filter(role__in=['Менеджер', 'РОП'], town=f'{self.request.user.town}', status=True).prefetch_related('plans')
         for manager in context['managers']:
             if manager.pk != 18:
 
@@ -427,7 +428,10 @@ class MonitoringLeaderboardView(MyLoginMixin, DataMixin, ListView):
                         all_work_days += 1
                     if day <= datetime.datetime.now().day and item < 5 and day != 0:
                         current_work_days += 1
-            context['prediction'] = context['prediction'] / current_work_days * all_work_days
+            try:
+                context['prediction'] = context['prediction'] / current_work_days * all_work_days
+            except ZeroDivisionError:
+                context['prediction'] = 0
         c_def = self.get_user_context(title="Таблица результатов")
         return dict(list(context.items()) + list(c_def.items()))
 
@@ -870,67 +874,51 @@ class DeleteGoodsView(MyLoginMixin, DataMixin, DeleteView):
         return redirect('main:card_appeal', appeal_id=self.kwargs['appeal_id'])
 
 
-class CallsView(MyLoginMixin, DataMixin, TemplateView):
+class CallsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
     login_url = reverse_lazy('main:login')
     role_have_perm = ['Супер Администратор', 'Менеджер', 'Оператор', 'РОП']
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Звонки")
+        # if self.request.user.role == 'Супер Администратор':
+        #     leads = Calls.create_old_leads()
+        #     print(leads)
         # Получаем данные из формы
         form = CallsFilterForm(self.request.GET or None)
+        selected_managers = self.request.GET.getlist('managers')
         selected_operator_statuses = self.request.GET.getlist('status_call')
-        selected_manager_statuses = self.request.GET.getlist('status_manager')
         page_size = self.request.GET.get('page_size', 30)  # По умолчанию 30
         search_query = self.request.GET.get('search', '')
-        # Получаем все звонки с использованием select_related для оптимизации
-        calls_query = Calls.objects.select_related('operator', 'manager').all()
-        # Фильтруем звонки по выбранным статусам
-        if self.request.user.role in ['Оператор', 'Супер Администратор', 'РОП']:
-            calls_query = Calls.objects.select_related('operator', 'manager').order_by('pk').all()
-        elif self.request.user.role == 'Менеджер':
-            calls_query = Calls.objects.filter(manager=self.request.user).select_related('operator', 'manager').order_by('pk').all()
 
-        if selected_operator_statuses:
-            calls_query = calls_query.filter(status_call__in=selected_operator_statuses)
-        if selected_manager_statuses:
-            calls_query = calls_query.filter(status_manager__in=selected_manager_statuses)
-
+        # Получаем все звонки с использованием метода модели
+        calls_query = Calls.filter_by_status(user=self.request.user, selected_operator_statuses=selected_operator_statuses, selected_managers=selected_managers)
         # Фильтрация по запросу поиска
         if search_query:
-            calls_query = calls_query.filter(
-                Q(client_phone__iregex=search_query)
-                |
-                Q(client_name__iregex=search_query)
-                |
-                Q(client_location__iregex=search_query)
-                |
-                Q(description__iregex=search_query)
-            )
-        # Устанавливаем количество элементов на странице
-        paginator = Paginator(calls_query, int(page_size))
-        page = self.request.GET.get('page')
-        try:
-            calls_paginated = paginator.page(page)
-        except PageNotAnInteger:
-            # Если 'page' не является целым числом, показываем первую страницу
-            calls_paginated = paginator.page(1)
-        except EmptyPage:
-            # Если 'page' больше максимального количества страниц, показываем последнюю страницу
-            calls_paginated = paginator.page(paginator.num_pages)
+            calls_query = Calls.search(search_query, calls_query)
 
-        # Определяем диапазон страниц для отображения
-        current_page = calls_paginated.number
-        total_pages = paginator.num_pages
-        page_range = range(max(1, current_page - 3), min(total_pages, current_page + 3) + 1)
-        context['calls'] = calls_paginated
-        context['paginator_'] = paginator
-        context['page_range_'] = page_range
+        managers_with_calls = CustomUser.get_new_in_work_leads_count_for_all_managers()
+        context['managers_with_calls'] = json.dumps([
+            {
+                'first_name': manager.first_name,
+                'patronymic': manager.patronymic,
+                'last_name': manager.last_name,
+                'new_calls_count': manager.new_calls_count,
+                'in_progress_calls_count': manager.in_progress_calls_count
+            }
+            for manager in managers_with_calls
+        ])
+
+        # Пагинация
+        pagination_context = self.paginate_queryset(calls_query, page_size, 'calls')
+        context.update(pagination_context)
+
         context['form'] = form
         context['messages'] = [message for message in messages.get_messages(self.request)]
+        context['managers'] = CustomUser.get_managers_and_operators()
+        context['selected_manager'] = selected_managers
         context['selected_operator_statuses'] = selected_operator_statuses
-        context['selected_manager_statuses'] = selected_manager_statuses
-        context['page_size'] = page_size  # Передаем значение page_size в контекст
+        context['page_size'] = str(page_size)  # Передаем значение page_size в контекст
         context['search'] = search_query  # Передаем значение search в контекст
         return dict(list(context.items()) + list(c_def.items()))
 
@@ -940,72 +928,74 @@ class CallsView(MyLoginMixin, DataMixin, TemplateView):
         return 'main/calls/calls.html'
 
 
-class LeadsView(MyLoginMixin, DataMixin, TemplateView):
+class LeadsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
     login_url = reverse_lazy('main:login')
-    role_have_perm = ['Супер Администратор', 'Менеджер', 'Оператор', 'РОП']
+    role_have_perm = ['Супер Администратор', 'Менеджер', 'РОП']
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Звонки")
-        # Получаем данные из формы
-        form = CallsFilterForm(self.request.GET or None)
-        selected_operator_statuses = self.request.GET.getlist('status_call')
+        c_def = self.get_user_context(title="Лиды")
+        form = LeadsFilterForm(self.request.GET or None)
         selected_manager_statuses = self.request.GET.getlist('status_manager')
+        selected_managers = self.request.GET.getlist('managers')
         page_size = self.request.GET.get('page_size', 30)  # По умолчанию 30
         search_query = self.request.GET.get('search', '')
-        # Получаем все звонки с использованием select_related для оптимизации
-        calls_query = Calls.objects.select_related('operator', 'manager').all()
-        # Фильтруем звонки по выбранным статусам
-        if self.request.user.role in ['Оператор', 'Супер Администратор', 'РОП']:
-            calls_query = Calls.objects.select_related('operator', 'manager').order_by('pk').all()
-        elif self.request.user.role == 'Менеджер':
-            calls_query = Calls.objects.filter(manager=self.request.user).select_related('operator', 'manager').order_by('pk').all()
 
-        if selected_operator_statuses:
-            calls_query = calls_query.filter(status_call__in=selected_operator_statuses)
-        if selected_manager_statuses:
-            calls_query = calls_query.filter(status_manager__in=selected_manager_statuses)
-
+        leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers)
         # Фильтрация по запросу поиска
         if search_query:
-            calls_query = calls_query.filter(
-                client_phone__icontains=search_query
-            ) | calls_query.filter(
-                client_name__icontains=search_query
-            )
-        # Устанавливаем количество элементов на странице
-        paginator = Paginator(calls_query, int(page_size))
-        page = self.request.GET.get('page')
-        try:
-            calls_paginated = paginator.page(page)
-        except PageNotAnInteger:
-            # Если 'page' не является целым числом, показываем первую страницу
-            calls_paginated = paginator.page(1)
-        except EmptyPage:
-            # Если 'page' больше максимального количества страниц, показываем последнюю страницу
-            calls_paginated = paginator.page(paginator.num_pages)
+            leads_query = Leads.search(search_query, leads_query)
 
-        # Определяем диапазон страниц для отображения
-        current_page = calls_paginated.number
-        total_pages = paginator.num_pages
-        page_range = range(max(1, current_page - 3), min(total_pages, current_page + 3) + 1)
-        context['calls'] = calls_paginated
-        context['paginator_'] = paginator
-        context['page_range_'] = page_range
+        # selected_managers = self.request.GET.getlist('managers')
+
+        managers_with_calls = CustomUser.get_new_in_work_leads_count_for_all_managers()
+        context['managers_with_calls'] = json.dumps([
+            {
+                'first_name': manager.first_name,
+                'patronymic': manager.patronymic,
+                'last_name': manager.last_name,
+                'new_calls_count': manager.new_calls_count,
+                'in_progress_calls_count': manager.in_progress_calls_count
+            }
+            for manager in managers_with_calls
+        ])
+        pagination_context = self.paginate_queryset(leads_query, page_size, 'leads')
+        context.update(pagination_context)
         context['form'] = form
         context['messages'] = [message for message in messages.get_messages(self.request)]
-        context['selected_operator_statuses'] = selected_operator_statuses
+        context['page_size'] = str(page_size)  # Передаем значение page_size в контекст
         context['selected_manager_statuses'] = selected_manager_statuses
-        context['page_size'] = page_size  # Передаем значение page_size в контекст
         context['search'] = search_query  # Передаем значение search в контекст
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):
-        if self.request.htmx.target == 'calls-table':
-            return 'main/calls/calls_table.html'
-        return 'main/calls/calls.html'
+        if self.request.htmx.target == 'leads-table':
+            return 'main/leads/leads_table.html'
+        return 'main/leads/leads.html'
 
-
+@login_required
+def edit_leads(request, lead_id):
+    lead = Leads.objects.get(pk=lead_id)
+    form = EditLeadsManager(instance=lead)
+    if request.user.role in ['Супер Администратор', 'РОП']:
+        form = EditLeadsRop(instance=lead)
+    if request.POST:
+        if request.POST.get('csrfmiddlewaretoken'):
+            form_edit = EditLeadsManager(request.POST, instance=lead)
+            if request.user.role in ['Супер Администратор', 'РОП']:
+                form_edit = EditLeadsRop(request.POST, instance=lead)
+            if form_edit.is_valid():
+                form_edit.save()
+                messages.success(request, f"Лид обновлен: {lead}")
+            referer = request.META.get('HTTP_REFERER', reverse('main:leads'))
+            # Добавляем якорь к URL
+            if referer:
+                referer += f'#lead_{lead_id}'
+            return redirect(referer)
+    else:
+        return render(request, 'main/leads/edit_leads.html',
+                      context={'lead': lead,
+                               'form': form})
 def find_best_matches(column_name, possible_names):
     column_name_lower = ''.join(column_name.split()).lower()
     best_match = None
@@ -1026,13 +1016,14 @@ def find_best_matches(column_name, possible_names):
 
 
 def new_calls(request):
-    # Получаем количество новых звонков
-    badge_calls = Calls.objects.filter(manager=request.user).filter(status_manager='Новая').select_related('operator', 'manager').count()
-
+    if not request.user.is_authenticated:
+        badge_calls = 0
+    else:
+        # Получаем количество новых звонков
+        badge_calls = Calls.get_new_calls(operator=request.user)
     # Проверяем наличие изменений по сравнению с предыдущим значением
     last_badge_calls = request.session.get('last_badge_calls', 0)
     has_changes = badge_calls != last_badge_calls
-
     # Сохраняем текущее значение для будущего сравнения
     request.session['last_badge_calls'] = badge_calls
     return render(request, 'main/calls/new_calls.html',
@@ -1153,19 +1144,18 @@ def add_calls(request):
 @login_required
 def edit_calls(request, call_id):
     call = Calls.objects.get(pk=call_id)
-    if request.user.role == 'Менеджер':
-        form = EditCallsManager(instance=call)
-    else:
-        form = EditCallsOperator(instance=call)
+    form = EditCallsOperator(instance=call)
+    if request.user.role in ['Супер Администратор', 'РОП']:
+        form = EditCallsRop(instance=call)
     if request.POST:
         if request.POST.get('csrfmiddlewaretoken'):
-            if request.user.role == 'Менеджер':
-                form_edit = EditCallsManager(request.POST, instance=call)
-            else:
-                form_edit = EditCallsOperator(request.POST, instance=call)
+            form_edit = EditCallsOperator(request.POST, instance=call)
+            if request.user.role in ['Супер Администратор', 'РОП']:
+                form_edit = EditCallsRop(request.POST, instance=call)
             if form_edit.is_valid():
                 form_edit.save()
-                messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone}")
+                lead = call.create_or_get_lead()
+                messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone}.\n {lead}")
             referer = request.META.get('HTTP_REFERER', reverse('main:calls'))
             # Добавляем якорь к URL
             if referer:

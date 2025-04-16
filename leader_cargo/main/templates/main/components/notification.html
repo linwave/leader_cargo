@@ -12,11 +12,11 @@
     var pageTitle = document.title.split('(')[0].trim();
     // Нажатие на скрытую кнопку для инициализации звука
     initAudioButton.click();
-
+    var oldTitle = pageTitle
     // HTMX обработчик после запроса
     document.body.addEventListener('htmx:afterRequest', function(event) {
         // Проверяем, что обновленный контент относится к блоку new-calls-badge
-        if (event.detail.target.id === 'new-calls-badge') {
+        if (event.detail.target.id === 'new-calls-badge-content') {
             const response = event.detail.xhr.response;
             if (response) {
                 var parser = new DOMParser();
@@ -24,12 +24,12 @@
                 var badgeElement = doc.querySelector('.bg-danger');
                 var badgeCalls = badgeElement ? parseInt(badgeElement.innerText) : 0;
                 var hasChanges = JSON.parse(doc.querySelector('#has-changes').innerText.toLowerCase());
-
                 // Обновляем заголовок страницы
+                var pageName = 'Звонки'
                 if (badgeCalls > 0) {
-                    document.title = `Звонки (${badgeCalls})`;
+                    document.title = `${pageName} (${badgeCalls})`;
                 } else {
-                    document.title = 'Звонки';
+                    document.title = oldTitle;
                 }
 
                 // Если количество звонков изменилось и больше 0, то воспроизводим звуковое уведомление
@@ -39,8 +39,11 @@
                     } catch (err) {
                         console.error("Playback was denied", err);
                     }
-                    animateTitle(badgeCalls);
-                }
+                    animateTitle(pageName, badgeCalls);
+                    htmx.ajax('GET', '{% url "main:calls" %}', '#calls-table');
+                }else if (!hasChanges && badgeCalls === 0) {
+                    document.title = pageTitle;
+                    }
             }
         }
     });
@@ -48,15 +51,15 @@
     var originalTitle = document.title;
     var blinkingInterval;
 
-    function animateTitle(badgeCalls) {
+    function animateTitle(pageName, badgeCalls) {
         let counter = 0;
         const messages = [
-        `${pageTitle} (${badgeCalls})`,
-        `${pageTitle}`,
-        `${pageTitle} (${badgeCalls})`,
-        `${pageTitle}`,
-        `${pageTitle} (${badgeCalls})`,
-    ];
+        `${pageName} (${badgeCalls})`,
+        `${pageName}`,
+        `${pageName} (${badgeCalls})`,
+        `${pageName}`,
+        `${pageName} (${badgeCalls})`,
+        ];
 
         blinkingInterval = setInterval(() => {
             if (counter >= messages.length) {
@@ -70,9 +73,9 @@
         setTimeout(() => {
             clearInterval(blinkingInterval);
             if (badgeCalls > 0) {
-                document.title = `Звонки (${badgeCalls})`;
+                document.title = `${pageName} (${badgeCalls})`;
             } else {
-                document.title = 'Звонки';
+                document.title = oldTitle;
             }
         }, 5000);  // Время анимации в миллисекундах
     }

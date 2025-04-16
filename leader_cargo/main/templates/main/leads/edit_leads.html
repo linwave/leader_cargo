@@ -1,0 +1,18 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="add-logistic-requests-Label">
+            Лид #{{lead.pk}}<br>{{lead.client_name}} {{lead.client_phone}}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body mb-2">
+        <form method="post" id="form_edit_leads" action="{% url 'main:edit_leads' lead.pk %}">
+            {% csrf_token %}
+            {{ form.as_p }}
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button form="form_edit_leads" type="submit" class="btn btn-success">Сохранить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    </div>
+</div>

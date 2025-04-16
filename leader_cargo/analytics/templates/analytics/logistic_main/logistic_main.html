@@ -32,21 +32,21 @@
                 Добавить вручную
             </button>
         </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-sm btn-dark">
-                <i class="fa-solid fa-file-export"></i>
-                Выгрузка отчета по грузам
-            </button>
-        </div>
-        <div class="col-auto">
+<!--        <div class="col-auto">-->
+<!--            <button type="button" class="btn btn-sm btn-dark">-->
+<!--                <i class="fa-solid fa-file-export"></i>-->
+<!--                Выгрузка отчета по грузам-->
+<!--            </button>-->
+<!--        </div>-->
+<!--        <div class="col-auto">-->
 
-            <button class="btn btn-sm btn-primary" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#collapseWithoutInsuranceArticles"
-                    aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >
-                <i class="fa-solid fa-car-burst"></i>
-                Груза без страховки: {{ count_articles_without_insurance }}
-            </button>
-        </div>
+<!--            <button class="btn btn-sm btn-primary" type="button"-->
+<!--                    data-bs-toggle="collapse" data-bs-target="#collapseWithoutInsuranceArticles"-->
+<!--                    aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >-->
+<!--                <i class="fa-solid fa-car-burst"></i>-->
+<!--                Груза без страховки: {{ count_articles_without_insurance }}-->
+<!--            </button>-->
+<!--        </div>-->
         <div class="col-auto">
 
             <button class="btn btn-sm btn-danger" type="button"
@@ -72,14 +72,14 @@
                 С пустой дорогой: {{ count_empty_path_format }}
             </button>
         </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-sm text-primary-emphasis bg-primary-subtle border border-primary-subtle"
-                    data-bs-toggle="modal" data-bs-target="#modal-main"
-                    hx-get="{% url 'analytics:amount_fund' %}" hx-target="#hx-modal-main">
-                <i class="fa-solid fa-money-bill-trend-up"></i>
-                Сумма фонда
-            </button>
-        </div>
+<!--        <div class="col-auto">-->
+<!--            <button type="button" class="btn btn-sm text-primary-emphasis bg-primary-subtle border border-primary-subtle"-->
+<!--                    data-bs-toggle="modal" data-bs-target="#modal-main"-->
+<!--                    hx-get="{% url 'analytics:amount_fund' %}" hx-target="#hx-modal-main">-->
+<!--                <i class="fa-solid fa-money-bill-trend-up"></i>-->
+<!--                Сумма фонда-->
+<!--            </button>-->
+<!--        </div>-->
     </div>
     {% include "analytics/components/collapse/collapseNotIssuedArticles.html"  %}
     {% include "analytics/components/collapse/collapseWithoutInsuranceArticles.html"  %}

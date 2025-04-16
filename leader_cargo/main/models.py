@@ -4,10 +4,12 @@ import logging
 import pandas as pd
 from django.contrib.auth.models import AbstractUser
 from django.db import models, transaction
+from django.db.models import Q, Count, Subquery, OuterRef
 from django.urls import reverse
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
 
 class CustomUser(AbstractUser):
     towns = [
@@ -18,6 +20,7 @@ class CustomUser(AbstractUser):
         ('Супер Администратор', 'Супер Администратор'),
         ('РОП', 'РОП'),
         ('Администратор', 'Администратор'),
+        ('Бухгалтер', 'Бухгалтер'),
         ('Логист', 'Логист'),
         ('Менеджер', 'Менеджер'),
         ('Оператор', 'Оператор'),
@@ -50,6 +53,39 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return f'{self.last_name} {self.first_name}'
 
+    @classmethod
+    def get_managers(cls):
+        return cls.objects.filter(role__in=['Менеджер'])
+
+    @classmethod
+    def get_managers_and_operators(cls):
+        return cls.objects.filter(role__in=['Менеджер', 'Оператор'])
+
+    @classmethod
+    def get_new_leads_count_for_all_managers(cls):
+        managers_with_new_calls = cls.objects.filter(role='Менеджер').annotate(
+            new_leads_count=Count('manager_leads', filter=models.Q(manager_leads__status_manager='Новая'))
+        )
+
+        return managers_with_new_calls
+
+    @classmethod
+    def get_new_in_work_leads_count_for_all_managers(cls):
+        managers_with_calls = cls.objects.filter(role='Менеджер').annotate(
+            new_calls_count=Count('manager_leads', filter=Q(manager_leads__status_manager='Новая')),
+            in_progress_calls_count=Count('manager_leads', filter=Q(manager_leads__status_manager='В работе'))
+        )
+
+        return managers_with_calls
+
+    @classmethod
+    def get_calls_count_for_all_managers(cls):
+        managers_with_calls = cls.objects.filter(role='Менеджер').annotate(
+            new_calls_count=Count('manager_calls', filter=models.Q(manager_leads__status_manager__in=['Новая', 'В работе']))
+        )
+
+        return managers_with_calls
+
     def get_absolute_url_client(self):
         return reverse('main:card_client', kwargs={'client_id': self.pk})
 
@@ -63,6 +99,8 @@ class CustomUser(AbstractUser):
     def get_FI(self):
         return f'{self.last_name} {self.first_name}'
 
+    def get_new_calls_count(self):
+        return Calls.objects.filter(status_call='Новая', manager=self).count()
 # class Employees(models.Model):
 #     towns = [
 #         ('Москва', 'Москва'),
@@ -100,25 +138,28 @@ class CustomUser(AbstractUser):
 #         return reverse('card_employees', kwargs={'employee_id': self.pk})
 #
 #
-# class Clients(models.Model):
-#     phone = models.CharField('Телефон', max_length=50, unique=True)
-#     name = models.CharField('ФИО', max_length=50)
-#     description = models.CharField('Описание', max_length=150)
-#     manager = models.ForeignKey('Employees', on_delete=models.PROTECT)
-#     password = models.CharField('Пароль', max_length=50)
-#     time_create = models.DateTimeField(auto_now_add=True)
-#     time_update = models.DateTimeField(auto_now=True)
-#     status = models.BooleanField(default=True)
-#
-#     def __str__(self):
-#         return f"{self.phone} {self.name}"
-#
-#     class Meta:
-#         verbose_name = 'Список клиентов'
-#         verbose_name_plural = 'Список клиентов'
-#
-#     def get_absolute_url(self):
-#         return reverse('card_client', kwargs={'client_id': self.pk})
+
+
+class Clients(models.Model):
+    phone = models.CharField('Телефон', max_length=50, unique=True)
+    name = models.CharField('ФИО', max_length=50)
+    description = models.CharField('Описание', max_length=150)
+
+    manager = models.ForeignKey(CustomUser, verbose_name='Ответственный менеджер', on_delete=models.SET_NULL, blank=True, null=True, related_name="clients")
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+    status = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.phone} {self.name}"
+
+    class Meta:
+        verbose_name = 'Список клиентов'
+        verbose_name_plural = 'Список клиентов'
+
+    def get_absolute_url(self):
+        return reverse('card_client', kwargs={'client_id': self.pk})
 
 
 class ExchangeRates(models.Model):
@@ -260,7 +301,7 @@ class ManagerPlans(models.Model):
     manager_monthly_net_profit_plan = models.CharField('План по чистой прибыли в месяц', max_length=200, blank=True, null=True)
     month = models.IntegerField('Месяц', blank=True, null=True)
     year = models.IntegerField('Год', blank=True, null=True)
-    manager_id = models.ForeignKey('CustomUser', on_delete=models.PROTECT, blank=True, null=True)
+    manager_id = models.ForeignKey('CustomUser', on_delete=models.PROTECT, blank=True, null=True, related_name='plans')
     time_create = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     time_update = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
 
@@ -335,6 +376,51 @@ class Calls(models.Model):
         ordering = ['-time_create']
 
     @classmethod
+    def filter_by_users(cls, selected_users=None, selected_operator_statuses=None, selected_manager_statuses=None):
+        calls_query = cls.objects.all()
+
+        if selected_users:
+            calls_query = calls_query.filter(
+                Q(manager__in=selected_users) | Q(operator__in=selected_users)
+            )
+
+        if selected_operator_statuses:
+            calls_query = calls_query.filter(status_call__in=selected_operator_statuses)
+
+        if selected_manager_statuses:
+            calls_query = calls_query.filter(status_manager__in=selected_manager_statuses)
+
+        return calls_query.select_related('operator', 'manager').order_by('pk')
+    @classmethod
+    def filter_by_status(cls, user, selected_operator_statuses=None, selected_manager_statuses=None, selected_managers=None):
+        if user.role in ['Супер Администратор', 'РОП']:
+            calls_query = cls.objects.select_related('operator', 'manager').order_by('pk').all()
+        elif user.role == 'Менеджер':
+            calls_query = cls.objects.filter(operator=user).select_related('operator', 'manager').order_by('pk').all()
+        elif user.role == 'Оператор':
+            calls_query = cls.objects.filter(Q(operator=user) | Q(operator__isnull=True)).select_related('operator', 'manager').order_by('pk').all()
+        if selected_operator_statuses:
+            calls_query = calls_query.filter(status_call__in=selected_operator_statuses)
+        if selected_manager_statuses:
+            calls_query = calls_query.filter(status_manager__in=selected_manager_statuses)
+        if selected_managers:
+            calls_query = calls_query.filter(operator__in=selected_managers)
+
+        return calls_query
+
+    @classmethod
+    def search(cls, query, queryset):
+        return queryset.filter(
+                Q(client_phone__iregex=query)
+                |
+                Q(client_name__iregex=query)
+                |
+                Q(client_location__iregex=query)
+                |
+                Q(description__iregex=query)
+            )
+
+    @classmethod
     def normalize_client_name(cls, row, columns):
         client_name_parts = []
         for col in columns:
@@ -362,6 +448,10 @@ class Calls(models.Model):
         )
 
     @classmethod
+    def get_new_calls(cls, operator):
+        return cls.objects.filter(operator=operator, status_call='Не обработано').select_related('operator', 'manager').count()
+
+    @classmethod
     def get_existing_phones(cls):
         return set(cls.objects.values_list('client_phone', flat=True))
     @staticmethod
@@ -369,22 +459,123 @@ class Calls(models.Model):
         with transaction.atomic():
             Calls.objects.all().delete()
 
-# class CallsFiles(models.Model):
-#     CRM = [
-#         ('Битрикс24', 'Битрикс24'),
-#         ('amoCRM', 'acoCRM'),
-#     ]
-#     name_crm = models.CharField(max_length=50, choices=carriers, verbose_name='Перевозчик')
-#     file_path = models.FileField(verbose_name='Файл CRM', upload_to='files/cargo/%Y/%m/%d/', blank=False, null=False)
-#     time_create = models.DateTimeField(auto_now_add=True)
-#     time_update = models.DateTimeField(auto_now=True)
-#     status = models.BooleanField(default=True, blank=True, null=True)
-#
-#     def __str__(self):
-#         return f"{self.name_carrier} {self.file_path}"
-#
-#     class Meta:
-#         verbose_name = 'Файлы грузов'
-#         verbose_name_plural = 'Файлы грузов'
+    def create_or_get_lead(self):
+        """
+        Создаёт новый Lead, если он не существует, или возвращает существующий.
+        """
+        try:
+            # Проверяем, существует ли уже связанный Lead
+            lead = self.leads  # Используем related_name="leads" из модели Leads
+            # # Если Lead существует, обновляем его данные
+            if lead.manager != self.manager:
+                lead.manager = self.manager
+            # lead.client_name = self.client_name
+            # lead.client_phone = self.client_phone
+            # lead.client_location = self.client_location
+            # lead.status_manager = 'Новая'
+            # lead.date_next_call_manager = self.date_next_call_manager
+            # lead.description_manager = self.description_manager
+                lead.time_new = self.date_to_manager
+                lead.save()  # Сохраняем изменения
+
+            return lead  # Возвращаем обновлённый Lead
+        except Leads.DoesNotExist:
+            # Если Lead не существует, создаём новый
+            lead = Leads.objects.create(
+                call=self,  # Связываем с текущим звонком
+                manager=self.manager,  # Переносим менеджера
+                client_name=self.client_name,  # Переносим имя клиента
+                client_phone=self.client_phone,  # Переносим телефон клиента
+                client_location=self.client_location,  # Переносим город клиента
+
+                time_new=self.date_to_manager  # Переносим дату передачи менеджеру
+            )
+            return lead
+
+    @classmethod
+    def create_old_leads(cls):
+        leads = cls.objects.filter(manager__isnull=False, leads__isnull=True).select_related('operator', 'manager', 'leads')
+        for lead in leads:
+            new_lead = Leads.objects.create(
+                call=lead,
+                manager=lead.manager,
+                client_name=lead.client_name,
+                client_phone=lead.client_phone,
+                client_location=lead.client_location,
+                status_manager=lead.status_manager,
+
+                date_next_call_manager=lead.date_next_call_manager,
+                description_manager=lead.description_manager,
+                time_new=lead.date_to_manager,
+            )
+            if new_lead.status_manager == 'В работе':
+                new_lead.time_in_work = lead.date_to_manager
+            if new_lead.status_manager == 'Утверждена':
+                new_lead.time_in_work = lead.date_to_manager
+                new_lead.time_approve = lead.date_to_manager
+            if new_lead.status_manager == 'Отказ':
+                new_lead.time_in_work = lead.date_to_manager
+                new_lead.time_no = lead.date_to_manager
+            new_lead.save()
+        return leads
 
 
+class Leads(models.Model):
+    statuses_manager = [
+        ('Новая', 'Новая'),
+        ('В работе', 'В работе'),
+        ('Утверждена', 'Утверждена'),
+        ('Отказ', 'Отказ')
+    ]
+    call = models.OneToOneField(Calls, verbose_name='Звонок', on_delete=models.SET_NULL, blank=True, null=True, related_name="leads")
+    manager = models.ForeignKey(CustomUser, verbose_name='Ответственный менеджер', on_delete=models.SET_NULL, blank=True, null=True, related_name="manager_leads")
+
+    client_name = models.CharField(verbose_name='ФИО клиента', max_length=255, blank=True, null=True)
+    client_phone = models.CharField(verbose_name='Контактный номер', max_length=50, unique=True)
+    client_location = models.CharField(verbose_name='Город клиента', max_length=50, blank=True, null=True)
+
+    status_manager = models.CharField(default="Новая", choices=statuses_manager, verbose_name='Статус заявки менеджера', max_length=50)
+    date_next_call_manager = models.DateTimeField(verbose_name='Дата следующего звонка менеджером', blank=True, null=True)
+    description_manager = models.TextField(verbose_name='Комментарий по звонку менеджером', max_length=600, blank=True, null=True)
+
+    time_new = models.DateTimeField(verbose_name='Дата передачи менеджеру', blank=True, null=True)
+    time_in_work = models.DateTimeField(verbose_name='Дата взятия В работу', blank=True, null=True)
+    time_approve = models.DateTimeField(verbose_name='Дата Утверждения', blank=True, null=True)
+    time_no = models.DateTimeField(verbose_name='Дата Отказа', blank=True, null=True)
+
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Лид {self.client_name} {self.client_phone}"
+
+    class Meta:
+        verbose_name = 'Лиды'
+        verbose_name_plural = 'Лиды'
+        ordering = ['-time_create']
+
+    @classmethod
+    def search(cls, query, queryset):
+        return queryset.filter(
+            Q(client_phone__iregex=query)
+            |
+            Q(client_name__iregex=query)
+            |
+            Q(client_location__iregex=query)
+            |
+            Q(description_manager__iregex=query)
+        )
+
+
+    @classmethod
+    def filter_by_status(cls, user, selected_manager_statuses=None, selected_managers=None):
+        if user.role in ['Супер Администратор', 'РОП']:
+            leads_query = cls.objects.select_related('call', 'manager').order_by('pk').all()
+        elif user.role == 'Менеджер':
+            leads_query = cls.objects.filter(manager=user).select_related('call', 'manager').order_by('pk').all()
+        if selected_manager_statuses:
+            leads_query = leads_query.filter(status_manager__in=selected_manager_statuses)
+        if selected_managers:
+            leads_query = leads_query.filter(manager__in=selected_managers)
+
+        return leads_query

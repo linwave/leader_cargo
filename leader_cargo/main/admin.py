@@ -3,17 +3,30 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.html import format_html
 
-from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, ExchangeRates, Calls, CallsFile
+from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, ExchangeRates, Calls, CallsFile, Leads
 from analytics.models import RequestsForLogisticsRate, RequestsForLogisticsGoods, RequestsForLogisticFiles, RoadsList, CarriersList, CargoFiles, CargoArticle, PaymentDocumentsForArticles, RequestsForLogisticsCalculations
 from bills.models import Clients, RequisitesClients, Entity, RequisitesEntity, Bills, BillsFiles
 
+@admin.register(Leads)
+class LeadsAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'call', 'manager', 'status_manager', 'client_name', 'client_phone', 'client_location',
+                    'date_next_call_manager',  'description_manager',
+                    'time_new', 'time_in_work', 'time_approve', 'time_no', 'time_create')
+    list_display_links = ('pk',)
+    actions = ['clear_all_records']
+    search_fields = ('pk', 'client_phone')
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('call', 'manager')
 
 @admin.register(Calls)
 class CallsAdmin(admin.ModelAdmin):
     list_display = ('pk', 'operator', 'status_call', 'client_name', 'client_phone', 'client_location', 'date_next_call', 'time_create',
                     'manager', 'date_to_manager', 'status_manager', 'date_next_call_manager')
     list_display_links = ('pk',)
-    actions = ['clear_all_records']
+    actions = ['clear_all_records', 'create_old_leads']
+    search_fields = ('pk', 'client_phone')
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -37,6 +50,18 @@ class CallsAdmin(admin.ModelAdmin):
         self.message_user(request, "Все звонки были удалены.", level=messages.SUCCESS)
 
     clear_all_records.short_description = "Удалить все звонки"
+
+    def create_old_leads(self, request, queryset):
+        # Проверка на наличие разрешения (если требуется)
+        if not request.user.is_superuser:
+            self.message_user(request, "У вас нет прав для выполнения этого действия.", level=messages.ERROR)
+            return
+
+        # Вызов метода clear_all
+        Calls.create_old_leads()
+        self.message_user(request, "Все звонки перенесены в лиды", level=messages.SUCCESS)
+
+    create_old_leads.short_description = "Перенос старых звонков в лиды"
 
     def clear_all_view(self, request):
         # Вызов метода clear_all

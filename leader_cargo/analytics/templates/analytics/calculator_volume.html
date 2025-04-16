@@ -129,7 +129,7 @@
 </div>
 <!-- Уведомление о копировании с использованием Toasts -->
     <div aria-live="polite" aria-atomic="true" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-        <div class="toast fade hide" role="alert" aria-live="assertive" aria-atomic="true" id="copyToast">
+        <div class="toast fade hide" role="alert" aria-live="assertive" aria-atomic="true" id="copyToast" data-bs-autohide="true" data-bs-delay="5000">
             <div class="toast-header">
                 <strong class="me-auto">Уведомление от Magistral</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
@@ -242,7 +242,7 @@
             setTimeout(() => {
                 notification.classList.remove('show');
                 notification.classList.add('d-none');
-            }, 1000); // Скрываем через 2 секунды
+            }, 3000); // Скрываем через 2 секунды
         }
         */
         // Показать уведомление о копировании
@@ -250,6 +250,10 @@
             const toast = new bootstrap.Toast(document.getElementById('copyToast'));
             document.querySelector('.toast-body').textContent = `Значение ${value} скопировано в буфер обмена!`;
             toast.show();
+
+            setTimeout(() => {
+                toast.hide();
+            }, 5000); // 5000 миллисекунд = 5 секунд
         }
         // Обновление видимости полей при изменении типа груза
         document.getElementById('cargoType').addEventListener('change', updateInputFields);

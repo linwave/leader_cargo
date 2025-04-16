@@ -19,6 +19,19 @@
     <div class="col-auto">
         <i class="fa-solid fa-truck-fast"></i><span class="d-inline-flex ms-md-auto p-2">ТАТ: ₽{{ all_tat|floatformat:"2g" }}</span>
     </div>
+<!--    <div class="col-auto">-->
+<!--        <select hx-get="{% url 'analytics:carrier' %}"-->
+<!--          hx-target="#calls-table"-->
+<!--          hx-trigger="change"-->
+<!--          hx-swap="innerHTML"-->
+<!--          hx-push-url="true"-->
+<!--                id="page_size" name="page_size" class="form-select form-select-md">-->
+<!--            <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>-->
+<!--            <option value="30" {% if page_size == '30' %}selected{% endif %}>30</option>-->
+<!--            <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>-->
+<!--            <option value="100" {% if page_size == '100' %}selected{% endif %}>100</option>-->
+<!--        </select>-->
+<!--    </div>-->
 </div>
 <div class="log-table">
     <div class="logistic-table-body" >
@@ -107,7 +120,7 @@
                 {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
                 <td data-bs-toggle="modal" data-bs-target="#edit"
                     hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
-                    {{ article.get_FI_responsible_manager|default:"" }}
+                    {{ article.responsible_manager|default:"" }}
                 </td>
                 <td data-bs-toggle="modal" data-bs-target="#edit"
                     hx-get="{% url 'analytics:edit_article' article.pk %}" hx-target="#hx-modal-edit-article-for-logist">
@@ -119,7 +132,7 @@
                 </td>
                 {% else %}
                 <td>
-                    {{ article.get_FI_responsible_manager|default:"" }}
+                    {{ article.responsible_manager|default:"" }}
                 </td>
                 <td>
                     {{ article.carrier|default:"" }}

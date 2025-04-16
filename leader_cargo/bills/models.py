@@ -56,7 +56,7 @@ class Entity(models.Model):
 
 
 class Clients(models.Model):
-    manager = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
+    manager = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name="organizations")
 
     types = [
         ('ООО', 'ООО'),

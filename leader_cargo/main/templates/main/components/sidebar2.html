@@ -8,8 +8,9 @@
     <ul class="nav-links">
         {% for cat in menu %}
         {% if cat.basic.display %}
+        {% if cat.sub_menu %}
         <li {% if cat.basic.short_url in request.path  %} class="back-hover"{%endif%}>
-            <div class="icon-link {% if cat.basic.short_url in request.path %} back-hover{%endif%}">
+            <div class="icon-link">
                 <a href="{% url cat.basic.url_name %}">
                     {% if cat.name == 'Логистика' %}
                     <i class="fa-solid fa-truck-arrow-right"></i>
@@ -25,16 +26,11 @@
                     <i class="fa-solid fa-clipboard-user"></i>
                     {% elif cat.name == 'Заявки' %}
                     <i class="fa-solid fa-clipboard-list"></i>
-                    {% elif cat.name == 'Звонки' %}
-                    <i class="fa-solid fa-phone-volume"></i>
-                    {% elif cat.name == 'Лиды' %}
-                    <i class="fa-solid fa-people-roof"></i>
-                    {% elif cat.name == 'Сделки' %}
-                    <i class="fa-solid fa-handshake"></i>
-                    {% elif cat.name == 'Выкупы' %}
-                    <i class="fa-solid fa-circle-dollar-to-slot"></i>
                     {% endif %}
-                    <span class="link_name">{{cat.name|truncatechars:12}}</span>
+                    {% if cat.name == 'Звонки' %}
+                    <i class="fa-solid fa-phone-volume"></i>
+                    {% endif %}
+                    <span class="link_name">{{cat.name}}</span>
                     {% if cat.name == 'Звонки' %}
                     <div hx-get="{% url 'main:new_calls' %}"
                          hx-trigger="every 10s"
@@ -51,11 +47,9 @@
                     <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_reports}}</span>
                     {% endif %}
                 </a>
-                {% if cat.sub_menu %}
                 <i class="fa-solid fa-chevron-down arrow"></i>
-                {% endif %}
             </div>
-            <ul class="sub-menu {% if not cat.sub_menu %} blank {% endif %}">
+            <ul class="sub-menu">
                 {% if cat.basic %}
                 <li><a class="link_name" href="{% url cat.basic.url_name %}">{{cat.name}}</a></li>
                 {% else %}
@@ -63,7 +57,7 @@
                 {% endif %}
                 {% for sub in cat.sub_menu %}
                 <li>
-                    <a class="sub_menu" href="{% url sub.url_name %}">{{sub.title}}
+                    <a href="{% url sub.url_name %}">{{sub.title}}
                         {% if sub.title == 'Обработка запросов' %}
                         <span class="badge badge-in-sub rounded-pill bg-danger">{{badge_reports}}</span>
                         {% endif %}
@@ -73,6 +67,55 @@
                 {% endfor %}
             </ul>
         </li>
+        {% else %}
+        <li {% if cat.basic.short_url in request.path %} class="back-hover"{%endif%}>
+            <a href="{% url cat.basic.url_name %}">
+                {% if cat.name == 'Логистика' %}
+                <i class="fa-solid fa-truck-arrow-right"></i>
+                {% elif cat.name == 'Запрос счетов' %}
+                <i class="fa-solid fa-file-invoice"></i>
+                {% elif cat.name == 'Курсы валют' %}
+                <i class="fa-solid fa-coins"></i>
+                {% elif cat.name == 'Мониторинг' %}
+                <i class="fa-solid fa-chart-simple"></i>
+                {% elif cat.name == 'Сотрудники' %}
+                <i class="fa-solid fa-user-plus"></i>
+                {% elif cat.name == 'Клиенты' %}
+                <i class="fa-solid fa-address-card"></i>
+                {% elif cat.name == 'Заявки' %}
+                <i class="fa-solid fa-clipboard-list"></i>
+                {% endif %}
+                {% if cat.name == 'Звонки' %}
+                <i class="fa-solid fa-phone-volume"></i>
+                {% endif %}
+                {% if cat.name == 'Лиды' %}
+                <i class="fa-solid fa-people-roof"></i>
+                {% endif %}
+                {% if cat.name == 'Сделки' %}
+                <i class="fa-solid fa-handshake"></i>
+                {% endif %}
+                {% if cat.name == 'Выкупы' %}
+                <i class="fa-solid fa-circle-dollar-to-slot"></i>
+                {% endif %}
+                <span class="link_name">{{cat.name}}</span>
+                {% if cat.name == 'Звонки' %}
+                <div hx-get="{% url 'main:new_calls' %}"
+                     hx-trigger="every 10s"
+                     hx-swap="innerHTML"
+                     hx-target="#new-calls-badge-content">
+                    <div id="new-calls-badge-content">
+                        {% if badge_calls != 0 %}
+                        <span class="badge badge-in-icon rounded-pill bg-danger">{{badge_calls}}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </a>
+            <ul class="sub-menu blank">
+                <li><a class="link_name" href="{% url cat.basic.url_name %}">{{cat.name}}</a></li>
+            </ul>
+        </li>
+        {% endif %}
         {% endif %}
         {% endfor %}
         <li>
@@ -90,40 +133,19 @@
     </ul>
 </div>
 <script>
-    // Получаем элементы DOM
-    let arrow = document.querySelectorAll(".arrow");
-    let sidebar = document.querySelector(".sidebar");
-    let sidebarBtn = document.getElementById("sidebarBtn");
+let arrow = document.querySelectorAll(".arrow");
 
-    // Функция для загрузки состояния из localStorage
-    function loadSidebarState() {
-        const isClosed = localStorage.getItem('sidebarClosed');
-        if (isClosed === 'true') {
-            sidebar.classList.add("close");
-        } else {
-            sidebar.classList.remove("close");
-        }
+for (var i=0; i < arrow.length; i++) {
+    arrow[i].addEventListener("click", (e)=>{
+    let arrowParent = e.target.parentElement.parentElement;
+    arrowParent.classList.toggle("showMenu");
+    });
     }
-
-    // Функция для сохранения состояния в localStorage
-    function saveSidebarState(isClosed) {
-        localStorage.setItem('sidebarClosed', isClosed);
-    }
-
-    // Загружаем состояние при загрузке страницы
-    loadSidebarState();
-
-    // Добавляем обработчик клика для кнопки открытия/закрытия боковой панели
-    sidebarBtn.addEventListener("click", () => {
-        const isClosed = sidebar.classList.toggle("close");
-        saveSidebarState(isClosed); // Сохраняем новое состояние
+let sidebar = document.querySelector(".sidebar");
+let sidebarBtn = document.getElementById("sidebarBtn");
+console.log(sidebarBtn);
+sidebarBtn.addEventListener("click", ()=>{
+    sidebar.classList.toggle("close");
     });
 
-    // Добавляем обработчики для стрелок выпадающего меню
-    for (var i = 0; i < arrow.length; i++) {
-        arrow[i].addEventListener("click", (e) => {
-            let arrowParent = e.target.parentElement.parentElement;
-            arrowParent.classList.toggle("showMenu");
-        });
-    }
 </script>

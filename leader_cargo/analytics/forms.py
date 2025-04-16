@@ -1,5 +1,6 @@
 import django.forms
-from django.forms import ModelForm, TextInput, Select, FileInput, NumberInput, DateInput
+from django import forms
+from django.forms import ModelForm, TextInput, Select, FileInput, NumberInput, DateInput, ClearableFileInput, FileField
 
 from .models import CargoFiles, CargoArticle, CarriersList, RoadsList, RequestsForLogisticsCalculations, RequestsForLogisticsGoods, CarriersRoadParameters
 
@@ -266,7 +267,20 @@ class AddCargo(ModelForm):
                 'type': 'date',
             }),
         }
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
 
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = [single_file_clean(data, initial)]
+        return result
 
 class AddCarrierFilesForm(ModelForm):
 
@@ -284,8 +298,7 @@ class AddCarrierFilesForm(ModelForm):
                 'id': 'name_carrier',
             }),
         }
-
-
+    file_path = MultipleFileField()
 class UpdateStatusArticleForm(ModelForm):
 
     def __init__(self, *args, **kwargs):

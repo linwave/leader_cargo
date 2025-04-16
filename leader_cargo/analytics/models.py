@@ -252,7 +252,7 @@ class CargoArticle(models.Model):
             managers_choices.append((f'{manager.pk}', f'{manager.last_name} {manager.first_name}'))
 
     article = models.CharField(max_length=50, verbose_name='Артикул')
-    responsible_manager = models.CharField(max_length=100, verbose_name='Ответственный менеджер', choices=managers_choices, blank=True, null=True)
+    responsible_manager = models.ForeignKey(CustomUser, verbose_name='Ответственный менеджер', on_delete=models.SET_NULL, blank=True, null=True)
 
     carrier = models.CharField(max_length=100, verbose_name='Перевозчик', choices=carriers, blank=True, null=True)
 

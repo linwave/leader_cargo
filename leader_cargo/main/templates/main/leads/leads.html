@@ -1,0 +1,238 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="modal fade" id="hx-modal" tabindex="-1"
+     aria-labelledby="modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div id="hx-modal-body">
+        </div>
+    </div>
+</div>
+<!--<div class="container-fluid">-->
+<!--    <div class="row g-2 mb-2 justify-content-left">-->
+<!--        <div class="col-auto">-->
+<!--            <a type="button" class="btn btn-sm btn-success"-->
+<!--               data-bs-toggle="modal"-->
+<!--               data-bs-target="#hx-modal"-->
+
+<!--               hx-target="#hx-modal-body">-->
+<!--                <i class="fa-solid fa-phone"></i> Добавление Лида-->
+<!--            </a>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+{% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
+<div class="container-fluid">
+    <!-- График -->
+    <!-- Кнопка для скрытия/показа графика -->
+    <div class="row">
+        {% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
+<!--        <div class="col-auto">-->
+<!--            <a type="button" class="btn btn-sm btn-success"-->
+<!--               data-bs-toggle="modal"-->
+<!--               data-bs-target="#hx-modal"-->
+<!--               hx-target="#hx-modal-body">-->
+<!--                <i class="fa-solid fa-phone"></i> Добавление Лида-->
+<!--            </a>-->
+<!--        </div>-->
+        {% endif %}
+        <div class="col-auto">
+            <button id="toggle-chart-btn" class="btn btn-sm btn-secondary">Скрыть график</button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <canvas id="managerCallsChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% if user.role == 'Супер Администратор' or user.role == 'РОП' or user.role == 'Оператор' or user.role == 'Менеджер' %}
+<div class="container-fluid mt-2 mb-2">
+    <form hx-get="{% url 'main:leads' %}"
+          hx-target="#leads-table"
+          hx-trigger="change, submit, keyup delay:0.3s"
+          hx-swap="innerHTML"
+          hx-push-url="true"
+          id="filter-form" method="GET" action="{% url 'main:leads' %}">
+        {% if user.role == 'Оператор' or user.role == 'Менеджер' %}
+        <div class="row justify-content-start gy-3">
+            <div class="col-12">
+                <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
+                <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in form.fields.status_manager.choices %}
+                    <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        {% elif user.role == 'Супер Администратор' or user.role == 'РОП' %}
+        <div class="row justify-content-start gy-3">
+            <div class="col-6">
+                <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
+                <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in form.fields.status_manager.choices %}
+                    <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6">
+                <select id="managers" name="managers" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in form.fields.managers.choices %}
+                    <option value="{{ value }}" {% if value in selected_operator_statuses %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        {% endif %}
+        <div class="row justify-content-between mt-2">
+            <div class="col-4">
+                <input type="text" id="search" name="search" class="form-control form-control-sm" placeholder="Поиск..." value="{{ search }}">
+            </div>
+            <div class="col-auto">
+                <select id="page_size" name="page_size" class="form-select form-select-sm">
+                    <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
+                    <option value="30" {% if page_size == '30' %}selected{% endif %}>30</option>
+                    <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
+                    <option value="100" {% if page_size == '100' %}selected{% endif %}>100</option>
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
+{% endif %}
+{% if messages %}
+<div class="container-fluid pl-2">
+    <div class="row justify-content-left">
+        {% include "main/components/messages.html"  %}
+    </div>
+</div>
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const managersWithCalls = JSON.parse('{{ managers_with_calls|escapejs }}');
+
+    // Инициализация графика
+    const ctx = document.getElementById('managerCallsChart');
+    if (ctx) {
+        const managerCallsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: managersWithCalls.map(user => `${user.first_name} ${user.patronymic} ${user.last_name}`),
+                datasets: [
+                    {
+                        label: 'Новая',
+                        data: managersWithCalls.map(user => user.new_calls_count || 0),
+                        backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'В работе',
+                        data: managersWithCalls.map(user => user.in_progress_calls_count || 0),
+                        backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Текущая сводка по ЛИДАМ менеджеров',
+                        font: { size: 18, weight: 'bold' },
+                        padding: { top: 10, bottom: 20 }
+                    },
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `${tooltipItem.dataset.label}: ${tooltipItem.raw}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        color: '#000',
+                        font: { weight: 'bold' },
+                        anchor: 'center',
+                        align: 'center',
+                        formatter: function(value) {
+                            return value > 0 ? value : '';
+                        }
+                    }
+                },
+                scales: {
+                    x: { beginAtZero: true, title: { display: false, text: 'Менеджер' } },
+                    y: { beginAtZero: true, title: { display: true, text: 'Лиды' } }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    // Функционал для скрытия/показа графика
+    let chartContainer = document.getElementById('managerCallsChart');
+    let toggleChartBtn = document.getElementById('toggle-chart-btn');
+
+    // Проверяем, существуют ли элементы
+    if (chartContainer && toggleChartBtn) {
+        // Загрузка состояния из localStorage
+        const isChartHidden = localStorage.getItem('isChartHidden') === 'true';
+        if (isChartHidden) {
+            chartContainer.style.display = 'none';
+            toggleChartBtn.textContent = 'Показать график';
+        }
+
+        // Переключение видимости графика
+        toggleChartBtn.addEventListener('click', () => {
+            if (chartContainer.style.display === 'none') {
+                chartContainer.style.display = 'block';
+                toggleChartBtn.textContent = 'Скрыть график';
+                localStorage.setItem('isChartHidden', 'false');
+            } else {
+                chartContainer.style.display = 'none';
+                toggleChartBtn.textContent = 'Показать график';
+                localStorage.setItem('isChartHidden', 'true');
+            }
+        });
+    }
+});
+</script>
+<script>
+    $(document).ready(function() {
+        $('#status_call').select2({
+            placeholder: "Выбрать статус",
+            allowClear: true,
+            width: '100%'
+        }).on('change', function(e) {
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
+        $('#status_manager').select2({
+            placeholder: "Выбрать статус",
+            allowClear: true,
+            width: '100%'
+        }).on('change', function(e) {
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
+        $('#managers').select2({
+            placeholder: "Выбрать менеджера",
+            allowClear: true,
+            width: '100%'
+        }).on('change', function(e) {
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
+    });
+</script>
+<div id="leads-table">
+    {% include "main/leads/leads_table.html"  %}
+</div>
+{% endblock %}

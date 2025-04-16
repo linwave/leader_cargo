@@ -16,6 +16,12 @@ urlpatterns = [
     path('calls/edit_calls/<int:call_id>', views.edit_calls, name='edit_calls'),
 
     path('leads/', views.LeadsView.as_view(), name='leads'),
+    # path('leads/add_leads', views.LeadsView.as_view(), name='add_leads'),
+    path('leads/edit_leads/<int:lead_id>', views.edit_leads, name='edit_leads'),
+
+    path('clients/', views.ClientsView.as_view(), name='clients'),
+    path('clients/create-client/', views.AddClientView.as_view(), name='create_client'),
+    path('clients/card-client/<int:client_id>/', views.CardClientsView.as_view(), name='card_client'),
 
     path('monitoring/', views.MonitoringSystemView.as_view(), name='monitoring'),
     path('monitoring/manager/<int:manager_id>/', views.MonitoringManagerReportView.as_view(), name='monitoring_manager_report'),
@@ -31,10 +37,6 @@ urlpatterns = [
 
     path('exchangerates/', views.ExchangeRatesView.as_view(), name='exchangerates'),
     path('exchangerates/create-exchangerates/', views.AddExchangeRatesView.as_view(), name='create_exchangerates'),
-
-    path('clients/', views.ClientsView.as_view(), name='clients'),
-    path('clients/create-client/', views.AddClientView.as_view(), name='create_client'),
-    path('clients/card-client/<int:client_id>/', views.CardClientsView.as_view(), name='card_client'),
 
     path('appeals/', views.AppealsView.as_view(), name='appeals'),
     path('appeals/new-appeal/', views.AddAppealsView.as_view(), name='create_appeal'),

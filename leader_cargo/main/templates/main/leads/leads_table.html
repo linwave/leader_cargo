@@ -3,41 +3,51 @@
     <div class="row">
         <div class="col-12">
             <div class="table-responsive" style="border: 1px solid #000;
-            overflow-y: auto;overflow-x: auto;height: 68vh;">
-                <table class="table align-middle table-hover g-1"
+            overflow-y: auto;overflow-x: auto;height: 72vh;">
+                <table class="table align-middle  table-hover g-1"
                        style="font-size: 0.8rem;">
                     <thead class="table-dark " style="position: sticky;top: 0;left: 0;z-index: 10;">
                     <tr style="vertical-align: middle;">
                         <th width="10" scope="col">#</th>
-                        <th scope="col">Оператор</th>
+                        <th scope="col">Менеджер</th>
                         <th scope="col">Статус</th>
                         <th scope="col">Имя клиента</th>
                         <th scope="col">Контактный номер</th>
                         <th scope="col">Город клиента</th>
+                        <th scope="col">Комментарий по звонку от оператора</th>
                         <th scope="col">Комментарий по звонку</th>
                         <th scope="col">Дата следующего звонка</th>
-                        <th scope="col">Ответственный менеджер</th>
                         <th scope="col">Дата передачи менеджеру</th>
+                        {% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
+                        <th scope="col">Дата взятия В работу</th>
+                        <th scope="col">Дата Утверждения</th>
+                        <th scope="col">Дата Отказа</th>
+                        {% endif %}
                     </tr>
                     </thead>
                     <tbody class="table-light">
-                    {% for call in calls %}
+                    {% for lead in leads %}
                     <tr data-bs-toggle="modal"
                         data-bs-target="#hx-modal"
-                        hx-get="{% url 'main:edit_calls' call.pk %}"
+                        hx-get="{% url 'main:edit_leads' lead.pk %}"
                         hx-target="#hx-modal-body"
-                        id="call_{{ call.id }}"
+                        id="lead_{{ lead.id }}"
                         style="cursor: pointer;">
-                        <th scope="row">{{ call.pk }}</th>
-                        <td>{{ call.operator.get_FI|default:"" }}</td>
-                        <td>{{ call.status_call|default:"" }}</td>
-                        <td>{{ call.client_name|default:"" }}</td>
-                        <td>{{ call.client_phone|default:"" }}</td>
-                        <td>{{ call.client_location|default:"" }}</td>
-                        <td>{{ call.description|default:"" }}</td>
-                        <td>{{ call.date_next_call|default:"" }}</td>
-                        <td>{{ call.manager.get_FI|default:"" }}</td>
-                        <td>{{ call.date_to_manager|default:"" }}</td>
+                        <th scope="row">{{ lead.pk }}</th>
+                        <td>{{ lead.manager|default:"" }}</td>
+                        <td>{{ lead.status_manager|default:"" }}</td>
+                        <td>{{ lead.client_name|default:"" }}</td>
+                        <td>{{ lead.client_phone|default:"" }}</td>
+                        <td>{{ lead.client_location|default:"" }}</td>
+                        <td>{{ lead.call.description|default:"" }}</td>
+                        <td>{{ lead.description_manager|default:"" }}</td>
+                        <td>{{ lead.date_next_call_manager|default:"" }}</td>
+                        <td>{{ lead.time_new|default:"" }}</td>
+                        {% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
+                        <td>{{ lead.time_in_work|default:"" }}</td>
+                        <td>{{ lead.time_approve|default:"" }}</td>
+                        <td>{{ lead.time_no|default:"" }}</td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                     </tbody>
@@ -48,7 +58,7 @@
 </div>
 <!-- Пагинация -->
 {% if calls.paginator.num_pages != 1 %}
-<div class="pagination mb-3">
+<div class="pagination">
         <span class="page-links">
             {% if calls.has_previous %}
                 <a href="?page=1&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">&laquo; 1</a>
@@ -65,8 +75,6 @@
                 <a href="?page={{ calls.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
                 <a href="?page={{ calls.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ calls.paginator.num_pages }} &raquo;</a>
             {% endif %}
-            <input type="number" id="pageInput" min="1" max="{{ calls.paginator.num_pages }}" value="{{ calls.number }}" class="form-control form-control-sm d-inline-block p-2" style="width: 65px;">
-            <button id="goToPage" class="btn btn-sm btn-primary">Перейти</button>
         </span>
 </div>
 {% endif %}

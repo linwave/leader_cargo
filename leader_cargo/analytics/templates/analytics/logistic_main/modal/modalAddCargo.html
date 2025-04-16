@@ -6,7 +6,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="add_cargo" method="post" action="{% url 'analytics:add_cargo' %}">
+                <form id="add_cargo" method="post" action="{% url 'analytics:add_cargo' %}" enctype="multipart/form-data">
                     {% csrf_token %}
                     {% for line in form_add_cargo %}
                     {{ line.label }}

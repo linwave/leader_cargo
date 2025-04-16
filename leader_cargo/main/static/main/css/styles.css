@@ -6,10 +6,14 @@
 :root {
   --main-bg-color: #131412;
   --main-hover-color: #38deec;
+  --main-sidebar-hover-color: #00a693;
   --main-green-color: #66FF00;
   --main-red-color: #ff1f1f;
   --border-quality-width: 2px;
   --sidebar--transition--speed: 0.3s;
+}
+:target {
+    scroll-margin-top: 50px; /* Отступ сверху */
 }
 body{
     background: #E4E9F7;
@@ -214,7 +218,9 @@ body{
 
 
 
-
+.back-hover{
+    background: var(--main-sidebar-hover-color);
+}
 
 .sidebar{
     position: fixed;
@@ -341,8 +347,8 @@ body{
     pointer-events: none;
 }
 .sidebar .nav-links li .sub-menu{
-    padding: 6px 6px 14px 80px;
-    margin-top: -10px;
+    padding: 6px 6px 6px 70px;
+    margin-top: 0px;
     background: #1d1b31;
     display: none;
 }
