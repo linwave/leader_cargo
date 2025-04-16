@@ -70,3 +70,32 @@
         </span>
 </div>
 {% endif %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Обработчик кнопки "Перейти"
+    document.getElementById('goToPage').addEventListener('click', function () {
+        let pageInput = document.getElementById('pageInput');
+        let pageNumber = parseInt(pageInput.value, 10);
+        if (isNaN(pageNumber)) {
+            alert("Введите корректный номер страницы.");
+            return;
+        }
+        if (pageNumber >= 1 && pageNumber <= {{ calls.paginator.num_pages }}) {
+            let urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('page', pageNumber);
+            window.location.search = urlParams.toString();
+        } else {
+            alert(`Введите номер страницы от 1 до {{ calls.paginator.num_pages }}`);
+        }
+    });
+    document.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+            const pageNumber = new URL(this.href).searchParams.get('page');
+            if (pageNumber) {
+                window.location.href = this.href;
+            }
+        });
+    });
+});
+</script>
