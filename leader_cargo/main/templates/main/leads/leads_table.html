@@ -57,24 +57,55 @@
     </div>
 </div>
 <!-- Пагинация -->
-{% if calls.paginator.num_pages != 1 %}
+{% if leads.paginator.num_pages != 1 %}
 <div class="pagination">
         <span class="page-links">
-            {% if calls.has_previous %}
+            {% if leads.has_previous %}
                 <a href="?page=1&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">&laquo; 1</a>
-                <a href="?page={{ calls.previous_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link"><</a>
+                <a href="?page={{ leads.previous_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link"><</a>
             {% endif %}
             {% for i in page_range_ %}
-                {% if calls.number == i %}
+                {% if leads.number == i %}
                     <span class="current-page page-link">{{ i }}</span>
                 {% else %}
                     <a href="?page={{ i }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ i }}</a>
                 {% endif %}
             {% endfor %}
-            {% if calls.has_next %}
-                <a href="?page={{ calls.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
-                <a href="?page={{ calls.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ calls.paginator.num_pages }} &raquo;</a>
+            {% if leads.has_next %}
+                <a href="?page={{ leads.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
+                <a href="?page={{ leads.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ leads.paginator.num_pages }} &raquo;</a>
             {% endif %}
+            <input type="number" id="pageInput" min="1" max="{{ leads.paginator.num_pages }}" value="{{ leads.number }}" class="form-control form-control-sm d-inline-block p-2" style="width: 65px;">
+            <button id="goToPage" class="btn btn-sm btn-primary">Перейти</button>
         </span>
 </div>
 {% endif %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Обработчик кнопки "Перейти"
+    document.getElementById('goToPage').addEventListener('click', function () {
+        let pageInput = document.getElementById('pageInput');
+        let pageNumber = parseInt(pageInput.value, 10);
+        if (isNaN(pageNumber)) {
+            alert("Введите корректный номер страницы.");
+            return;
+        }
+        if (pageNumber >= 1 && pageNumber <= {{ leads.paginator.num_pages }}) {
+            let urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('page', pageNumber);
+            window.location.search = urlParams.toString();
+        } else {
+            alert(`Введите номер страницы от 1 до {{ leads.paginator.num_pages }}`);
+        }
+    });
+    document.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+            const pageNumber = new URL(this.href).searchParams.get('page');
+            if (pageNumber) {
+                window.location.href = this.href;
+            }
+        });
+    });
+});
+</script>

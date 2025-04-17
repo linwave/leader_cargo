@@ -556,7 +556,7 @@ class Leads(models.Model):
     class Meta:
         verbose_name = 'Лиды'
         verbose_name_plural = 'Лиды'
-        ordering = ['-time_create']
+        ordering = ['-time_new']
 
     @classmethod
     def search(cls, query, queryset):
