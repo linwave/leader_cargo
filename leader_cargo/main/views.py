@@ -942,7 +942,7 @@ class LeadsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         page_size = self.request.GET.get('page_size', 30)  # По умолчанию 30
         search_query = self.request.GET.get('search', '')
 
-        leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers)
+        leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers).order_by('-time_new')
         # Фильтрация по запросу поиска
         if search_query:
             leads_query = Leads.search(search_query, leads_query)
