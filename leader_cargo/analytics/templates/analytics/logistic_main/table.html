@@ -176,7 +176,7 @@
                 {% if user.role == 'Логист' %}
                 <td style="background: #3dad32;">{{ article.transportation_tariff_for_clients|default:"" }}</td>
                 {% else %}
-                {% if user_pk_string == article.responsible_manager or user.role == 'Супер Администратор' %}
+                {% if request.user == article.responsible_manager or user.role == 'Супер Администратор' %}
                 <td data-bs-toggle="modal" data-bs-target="#modal-main"
                     hx-get="{% url 'analytics:edit_transportation_tariff_for_clients' article.pk %}"
                     hx-target="#hx-modal-main"
