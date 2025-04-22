@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'analytics.apps.AnalyticsConfig',
     'api.apps.ApiConfig',
     'bills.apps.BillsConfig',
+    'telegram_bot.apps.TelegramBotConfig',
     'simple_history',
     'rest_framework',
     'django_htmx',
@@ -162,3 +163,6 @@ LOGGING = {
         'level': 'DEBUG',                    # Уровень логирования
     },
 }
+
+TELEGRAM_BOT_TOKEN = "7437043774:AAH51LtcPYRjCAJSF4No1T663Fi2XcS8Rv4"
+TELEGRAM_BOT_USERNAME = "magistral_import_bot"

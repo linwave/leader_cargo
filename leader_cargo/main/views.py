@@ -2,7 +2,10 @@ import calendar
 import datetime
 import json
 import re
+import uuid
+
 import pandas as pd
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout, authenticate, login, update_session_auth_hash, get_user_model
 from django.contrib.auth.decorators import login_required
@@ -19,6 +22,7 @@ from django.urls import reverse_lazy
 from django.utils.timezone import make_aware
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 
+from telegram_bot.models import TelegramProfile
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
     UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsRop, LeadsFilterForm, EditLeadsManager, EditLeadsRop
 from .models import *
@@ -91,6 +95,34 @@ class ProfileUser(MyLoginMixin, DataMixin, TemplateView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Профиль пользователя")
+
+        # Генерация ссылки для привязки Telegram
+        user = self.request.user
+        try:
+            telegram_profile = user.telegram_profile
+            if not telegram_profile.is_verified:
+                # Генерация уникального токена
+                token = str(uuid.uuid4())
+                self.request.session['telegram_link_token'] = token
+                self.request.session['telegram_user_id'] = user.id
+
+                # Формируем ссылку
+                bot_username = settings.TELEGRAM_BOT_USERNAME
+                telegram_link = f"https://t.me/{bot_username}?start={token}"
+                context['telegram_link'] = telegram_link
+            else:
+                context['telegram_link'] = None  # Telegram уже привязан
+        except TelegramProfile.DoesNotExist:
+            # Если профиль Telegram не существует, создаем его
+            telegram_profile = TelegramProfile.objects.create(user=user)
+            token = str(uuid.uuid4())
+            self.request.session['telegram_link_token'] = token
+            self.request.session['telegram_user_id'] = user.id
+
+            bot_username = settings.TELEGRAM_BOT_USERNAME
+            telegram_link = f"https://t.me/{bot_username}?start={token}"
+            context['telegram_link'] = telegram_link
+
         return dict(list(context.items()) + list(c_def.items()))
 
 

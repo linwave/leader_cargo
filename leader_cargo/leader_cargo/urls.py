@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('logistic/', include('analytics.urls')),
     path('bills/', include('bills.urls')),
+    path('telegram/', include('telegram_bot.urls')),
 ]
 
 if settings.DEBUG:

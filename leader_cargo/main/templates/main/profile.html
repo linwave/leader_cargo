@@ -7,16 +7,43 @@
 {% block content %}
 <div class="container mt-5 mb-5">
     <div class="row no-gutters">
-        <div class="col-md-4"><img src="{% static 'main/images/user-large-solid.svg' %}" alt="profile" style="width: 100%;height: 100%;">
+        <!-- Левая часть: фото -->
+        <div class="col-md-4">
+            <img src="{% static 'main/images/user-large-solid.svg' %}" alt="profile" style="width: 100%; height: 100%;">
         </div>
+
+        <!-- Правая часть: информация о пользователе -->
         <div class="col-md-8">
             <div class="d-flex flex-column">
+                <!-- Заголовок с именем пользователя -->
                 <div class="d-flex flex-row justify-content-between align-items-center p-5 bg-dark text-white">
-                    <h3 class="display-5">{{ request.user.get_FI }}</h3></div>
-                <div class="p-3 bg-black text-white">
-                    <h6>{{request.user.phone}} {{request.user.role}}</h6>
+                    <h3 class="display-5">{{ request.user.get_FI }}</h3>
                 </div>
 
+                <!-- Дополнительная информация -->
+                <div class="p-3 bg-black text-white">
+                    <h6>{{ request.user.phone }} {{ request.user.role }}</h6>
+                </div>
+
+                <!-- Блок привязки Telegram -->
+                <div class="p-3 bg-light">
+                    <h5>Привязка Telegram</h5>
+                    {% if request.user.telegram_profile.is_verified %}
+                        <p>Telegram успешно привязан!</p>
+                        <form method="post" action="{% url 'unlink_telegram' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Отвязать Telegram</button>
+                        </form>
+                    {% elif telegram_link %}
+                        <p>Чтобы привязать Telegram:</p>
+                        <ol>
+                            <li>Нажмите на ссылку: <a href="{{ telegram_link }}" target="_blank">{{ telegram_link }}</a>.</li>
+                            <li>Откройте чат с ботом и нажмите "Start".</li>
+                        </ol>
+                    {% else %}
+                        <p>Произошла ошибка при привязке Telegram.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
