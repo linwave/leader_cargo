@@ -231,5 +231,71 @@ document.addEventListener("DOMContentLoaded", function () {
 <div id="calls-table">
     {% include "main/calls/calls_table.html"  %}
 </div>
+<script>
+// Функция для инициализации логики пагинации
+function initializePaginationLogic(totalPages) {
+    // Проверка наличия кнопки "Перейти"
+    let goToPageButton = document.getElementById('goToPage');
+    let pageInput = document.getElementById('pageInput');
+
+    if (goToPageButton && pageInput) {
+        // Удаляем предыдущие обработчики, чтобы избежать дублирования
+        goToPageButton.removeEventListener('click', handleGoToPageClick);
+        goToPageButton.addEventListener('click', function () {
+            handleGoToPageClick(totalPages);
+        });
+    }
+
+    // Обработчики для ссылок пагинации
+    const pageLinks = document.querySelectorAll('.page-link');
+    if (pageLinks.length > 0) {
+        pageLinks.forEach(link => {
+            link.removeEventListener('click', handlePageLinkClick);
+            link.addEventListener('click', handlePageLinkClick);
+        });
+    }
+}
+
+// Обработчик для кнопки "Перейти"
+function handleGoToPageClick(totalPages) {
+    let pageInput = document.getElementById('pageInput');
+    let pageNumber = parseInt(pageInput.value, 10);
+    if (isNaN(pageNumber)) {
+        alert("Введите корректный номер страницы.");
+        return;
+    }
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+        let urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('page', pageNumber);
+        window.location.search = urlParams.toString();
+    } else {
+        alert(`Введите номер страницы от 1 до ${totalPages}`);
+    }
+}
+
+// Обработчик для ссылок пагинации
+function handlePageLinkClick(event) {
+    event.preventDefault();
+    const pageNumber = new URL(this.href).searchParams.get('page');
+    if (pageNumber) {
+        window.location.href = this.href;
+    }
+}
+
+// Инициализация логики при первой загрузке страницы
+document.addEventListener("DOMContentLoaded", function () {
+    const totalPages = parseInt(document.getElementById('total-pages').value, 10);
+    initializePaginationLogic(totalPages);
+});
+
+// Инициализация логики после обновления контента через HTMX
+document.body.addEventListener('htmx:afterSwap', function (event) {
+    const leadsTable = document.getElementById('calls-table');
+    if (leadsTable) {
+        const totalPages = parseInt(document.getElementById('total-pages').value, 10);
+        initializePaginationLogic(totalPages);
+    }
+});
+</script>
 {% endblock %}
 

@@ -1,25 +1,89 @@
 from django.contrib import admin, messages
 from django.http import HttpResponseRedirect
 from django.urls import path
+from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html
 
-from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, ExchangeRates, Calls, CallsFile, Leads
+from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, ExchangeRates, Calls, CallsFile, Leads, MaintenanceMode
 from analytics.models import RequestsForLogisticsRate, RequestsForLogisticsGoods, RequestsForLogisticFiles, RoadsList, CarriersList, CargoFiles, CargoArticle, PaymentDocumentsForArticles, RequestsForLogisticsCalculations
 from bills.models import Clients, RequisitesClients, Entity, RequisitesEntity, Bills, BillsFiles
+
+@admin.register(MaintenanceMode)
+class MaintenanceModeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'is_enabled', 'message')
+    list_editable = ('is_enabled', 'message' )
+    fields = ('is_enabled', 'message')
+
 
 @admin.register(Leads)
 class LeadsAdmin(admin.ModelAdmin):
     list_display = ('pk', 'call', 'manager', 'status_manager', 'client_name', 'client_phone', 'client_location',
                     'date_next_call_manager',  'description_manager',
-                    'time_new', 'time_in_work', 'time_approve', 'time_no', 'time_create')
+                    'time_new', 'time_in_work', 'time_approve_no_other', 'time_create')
     list_display_links = ('pk',)
-    actions = ['clear_all_records']
+    list_filter = ('manager', )
+    actions = ['delete_empty_manager', 'save_current_state_to_history', 'save_all_leads_to_history']
     search_fields = ('pk', 'client_phone')
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('call', 'manager')
 
+    def delete_empty_manager(self, request, queryset):
+        # Проверка на наличие разрешения (если требуется)
+        if not request.user.is_superuser:
+            self.message_user(request, "У вас нет прав для выполнения этого действия.", level=messages.ERROR)
+            return
+
+        # Вызов метода clear_all
+        Leads.delete_empty_manager()
+        self.message_user(request, "Все лиды с пустым значение менеджера были удалены.", level=messages.SUCCESS)
+
+    delete_empty_manager.short_description = "Удалить лиды с пустым значение менеджера"
+
+    def save_current_state_to_history(self, request, queryset):
+        """
+        Сохраняет текущее состояние выбранных лидов в историю.
+        """
+        if not request.user.is_superuser:
+            self.message_user(request, "У вас нет прав для выполнения этого действия.", level=messages.ERROR)
+            return
+
+        # Сохраняем текущее состояние выбранных лидов
+        updated_count = 0
+        for lead in queryset:
+            lead.save()  # Это создаст запись в истории благодаря HistoricalRecords
+            updated_count += 1
+
+        self.message_user(
+            request,
+            f"Текущее состояние {updated_count} лидов сохранено в историю.",
+            level=messages.SUCCESS
+        )
+
+    save_current_state_to_history.short_description = _("Сохранить текущее состояние лидов в историю")
+
+    def save_all_leads_to_history(self, request, queryset):
+        """
+        Сохраняет текущее состояние всех лидов в историю.
+        """
+        if not request.user.is_superuser:
+            self.message_user(request, _("У вас нет прав для выполнения этого действия."), level=messages.ERROR)
+            return
+
+        # Сохраняем текущее состояние всех лидов
+        updated_count = 0
+        for lead in Leads.objects.all():
+            lead.save()
+            updated_count += 1
+
+        self.message_user(
+            request,
+            _(f"Текущее состояние {updated_count} лидов сохранено в историю."),
+            level=messages.SUCCESS
+        )
+
+    save_all_leads_to_history.short_description = _("Сохранить текущее состояние ВСЕХ лидов в историю")
 @admin.register(Calls)
 class CallsAdmin(admin.ModelAdmin):
     list_display = ('pk', 'operator', 'status_call', 'client_name', 'client_phone', 'client_location', 'date_next_call', 'time_create',

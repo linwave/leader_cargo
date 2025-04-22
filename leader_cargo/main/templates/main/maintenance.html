@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Технические работы</title>
+    <!-- Подключение Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8d7da; /* Светло-красный фон */
+        }
+        .maintenance-container {
+            margin-top: 10%;
+            text-align: center;
+        }
+        .maintenance-icon {
+            font-size: 5rem;
+            color: #dc3545; /* Красный цвет */
+        }
+        .maintenance-message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container maintenance-container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <i class="bi bi-exclamation-triangle-fill maintenance-icon"></i>
+                <h1 class="mt-4">Технические работы</h1>
+                <p class="maintenance-message">{{ message }}</p>
+            </div>
+        </div>
+    </div>
+    <!-- Подключение иконок Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

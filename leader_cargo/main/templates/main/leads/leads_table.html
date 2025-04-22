@@ -1,4 +1,5 @@
 {% load custom_filters %}
+<input type="hidden" id="total-pages" value="{{ paginated_queryset.paginator.num_pages }}">
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -14,19 +15,19 @@
                         <th scope="col">Имя клиента</th>
                         <th scope="col">Контактный номер</th>
                         <th scope="col">Город клиента</th>
+                        <th scope="col">Лояльность</th>
                         <th scope="col">Комментарий по звонку от оператора</th>
                         <th scope="col">Комментарий по звонку</th>
                         <th scope="col">Дата следующего звонка</th>
                         <th scope="col">Дата передачи менеджеру</th>
                         {% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
                         <th scope="col">Дата взятия В работу</th>
-                        <th scope="col">Дата Утверждения</th>
-                        <th scope="col">Дата Отказа</th>
+                        <th scope="col">Дата Утверждения/Отказа/Другое</th>
                         {% endif %}
                     </tr>
                     </thead>
                     <tbody class="table-light">
-                    {% for lead in leads %}
+                    {% for lead in paginated_queryset %}
                     <tr data-bs-toggle="modal"
                         data-bs-target="#hx-modal"
                         hx-get="{% url 'main:edit_leads' lead.pk %}"
@@ -39,14 +40,14 @@
                         <td>{{ lead.client_name|default:"" }}</td>
                         <td>{{ lead.client_phone|default:"" }}</td>
                         <td>{{ lead.client_location|default:"" }}</td>
+                        <td>{{ lead.get_loyalty_display|default:"" }}</td>
                         <td>{{ lead.call.description|default:"" }}</td>
                         <td>{{ lead.description_manager|default:"" }}</td>
                         <td>{{ lead.date_next_call_manager|default:"" }}</td>
                         <td>{{ lead.time_new|default:"" }}</td>
                         {% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
                         <td>{{ lead.time_in_work|default:"" }}</td>
-                        <td>{{ lead.time_approve|default:"" }}</td>
-                        <td>{{ lead.time_no|default:"" }}</td>
+                        <td>{{ lead.time_approve_no_other|default:"" }}</td>
                         {% endif %}
                     </tr>
                     {% endfor %}
@@ -57,55 +58,26 @@
     </div>
 </div>
 <!-- Пагинация -->
-{% if leads.paginator.num_pages != 1 %}
+{% if paginated_queryset.paginator.num_pages != 1 %}
 <div class="pagination">
         <span class="page-links">
-            {% if leads.has_previous %}
+            {% if paginated_queryset.has_previous %}
                 <a href="?page=1&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">&laquo; 1</a>
-                <a href="?page={{ leads.previous_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link"><</a>
+                <a href="?page={{ paginated_queryset.previous_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link"><</a>
             {% endif %}
             {% for i in page_range_ %}
-                {% if leads.number == i %}
+                {% if paginated_queryset.number == i %}
                     <span class="current-page page-link">{{ i }}</span>
                 {% else %}
                     <a href="?page={{ i }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ i }}</a>
                 {% endif %}
             {% endfor %}
-            {% if leads.has_next %}
-                <a href="?page={{ leads.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
-                <a href="?page={{ leads.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ leads.paginator.num_pages }} &raquo;</a>
+            {% if paginated_queryset.has_next %}
+                <a href="?page={{ paginated_queryset.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
+                <a href="?page={{ paginated_queryset.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ paginated_queryset.paginator.num_pages }} &raquo;</a>
             {% endif %}
-            <input type="number" id="pageInput" min="1" max="{{ leads.paginator.num_pages }}" value="{{ leads.number }}" class="form-control form-control-sm d-inline-block p-2" style="width: 65px;">
+            <input type="number" id="pageInput" min="1" max="{{ paginated_queryset.paginator.num_pages }}" value="{{ paginated_queryset.number }}" class="form-control form-control-sm d-inline-block p-2" style="width: 65px;">
             <button id="goToPage" class="btn btn-sm btn-primary">Перейти</button>
         </span>
 </div>
 {% endif %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    // Обработчик кнопки "Перейти"
-    document.getElementById('goToPage').addEventListener('click', function () {
-        let pageInput = document.getElementById('pageInput');
-        let pageNumber = parseInt(pageInput.value, 10);
-        if (isNaN(pageNumber)) {
-            alert("Введите корректный номер страницы.");
-            return;
-        }
-        if (pageNumber >= 1 && pageNumber <= {{ leads.paginator.num_pages }}) {
-            let urlParams = new URLSearchParams(window.location.search);
-            urlParams.set('page', pageNumber);
-            window.location.search = urlParams.toString();
-        } else {
-            alert(`Введите номер страницы от 1 до {{ leads.paginator.num_pages }}`);
-        }
-    });
-    document.querySelectorAll('.page-link').forEach(link => {
-        link.addEventListener('click', function (event) {
-            event.preventDefault();
-            const pageNumber = new URL(this.href).searchParams.get('page');
-            if (pageNumber) {
-                window.location.href = this.href;
-            }
-        });
-    });
-});
-</script>

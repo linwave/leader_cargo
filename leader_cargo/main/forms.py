@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.timezone import now
 
 from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, Calls, CallsFile, Leads
 from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
@@ -545,24 +546,24 @@ class CardEmployeesForm(ModelForm):
             })
         }
 
-class EditCallsRop(ModelForm):
-
+class BaseEditCallsForm(forms.ModelForm):
+    """
+    Базовый класс для форм редактирования звонков.
+    Содержит общую логику для EditCallsOperator и EditCallsRop.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Фильтруем менеджеров по ролям "РОП" и "Менеджер"
         self.fields['manager'].queryset = CustomUser.objects.filter(role__in=['РОП', 'Менеджер'])
         for field in self.fields:
             self.fields[field].widget.attrs.update({'class': 'form-control'})
-            # if field == 'weight':
-            #     self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        # Логика установки date_to_manager
         if self.cleaned_data.get('manager') and not instance.date_to_manager:
-            # Устанавливаем текущую дату и время, если выбран менеджер и date_to_manager пустой
             instance.date_to_manager = timezone.now()
         if self.cleaned_data.get('manager') != instance.manager:
-            # Устанавливаем текущую дату и время, если выбран менеджер и date_to_manager пустой
             instance.date_to_manager = timezone.now()
         if not self.cleaned_data.get('manager'):
             instance.date_to_manager = None
@@ -572,29 +573,52 @@ class EditCallsRop(ModelForm):
 
     class Meta:
         model = Calls
-        fields = ["operator", "status_call", "date_call", "client_name", "client_phone", "client_location", "description", 'date_next_call', 'manager']
+        fields = ["status_call", "date_call", "client_name", "client_phone", "client_location", "loyalty", "description", 'date_next_call', 'manager']
         widgets = {
-            "date_call": TextInput(attrs={
+            "date_call": forms.TextInput(attrs={
                 'class': 'form-control',
                 'type': 'datetime-local',
             }),
-            "date_next_call": TextInput(attrs={
+            "date_next_call": forms.TextInput(attrs={
                 'class': 'form-control',
                 'type': 'datetime-local',
             }),
-            "client_phone": TextInput(attrs={
+            "client_phone": forms.TextInput(attrs={
                 'class': 'form-control',
                 'type': 'text',
                 'autocomplete': 'off',
             }),
-            "description": Textarea(attrs={
+            "description": forms.Textarea(attrs={
                 'class': 'form-control',
                 'maxlength': 250,
             }),
         }
 
+class EditCallsRop(BaseEditCallsForm):
+    """
+    Форма для РОПа.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Фильтруем операторов по ролям "Оператор" и "Менеджер"
+        self.fields['operator'].queryset = CustomUser.objects.filter(role__in=['Оператор', 'Менеджер', 'РОП'])
 
-class EditLeadsRop(ModelForm):
+    class Meta(BaseEditCallsForm.Meta):
+        # Включаем все поля из базового класса + поле "operator"
+        fields = ["operator"] + BaseEditCallsForm.Meta.fields
+class EditCallsOperator(BaseEditCallsForm):
+    """
+    Форма для оператора.
+    """
+    class Meta(BaseEditCallsForm.Meta):
+        # Убираем поле "operator" из списка полей
+        exclude = ['operator']
+
+class BaseEditLeadsForm(forms.ModelForm):
+    """
+    Базовый класс для форм редактирования лидов.
+    Содержит общую логику для EditLeadsRop и EditLeadsManager.
+    """
     call_description = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={
@@ -607,155 +631,39 @@ class EditLeadsRop(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Фильтруем менеджеров по ролям "РОП" и "Менеджер"
-        self.fields['manager'].queryset = CustomUser.objects.filter(role__in=['РОП', 'Менеджер'])
+        # Добавляем класс 'form-control' ко всем полям
         for field in self.fields:
             self.fields[field].widget.attrs.update({'class': 'form-control'})
-            # if field == 'weight':
-            #     self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
 
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-
-        # Получаем старое значение статуса (если объект уже существует)
-        old_status = instance.status_manager if instance.pk else None
-
-        # Проверяем, изменился ли статус
-        new_status = self.cleaned_data.get('status_manager')
-
-        # Логика установки дат в зависимости от нового статуса
-        if new_status == 'В работе' and (not old_status or old_status != 'В работе'):
-            instance.time_in_work = timezone.now()
-        elif new_status == 'Утверждена' and (not old_status or old_status != 'Утверждена'):
-            instance.time_approve = timezone.now()
-        elif new_status == 'Отказ' and (not old_status or old_status != 'Отказ'):
-            instance.time_no = timezone.now()
-
-        # Если статус сброшен обратно на "Новая", сбрасываем все даты
-        if new_status == 'Новая':
-            instance.time_in_work = None
-            instance.time_approve = None
-            instance.time_no = None
-
-        if commit:
-            instance.save()
-        return instance
-
-    class Meta:
-        model = Leads
-        fields = ["manager", "status_manager", "client_name", "client_phone", "client_location", "call_description", "description_manager", "date_next_call_manager"]
-        widgets = {
-            "date_call": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local',
-            }),
-            "date_next_call_manager": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local',
-            }),
-            "client_phone": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'text',
-                'autocomplete': 'off',
-            }),
-            "description_manager": Textarea(attrs={
-                'class': 'form-control',
-                'maxlength': 250,
-            }),
-        }
-
-class EditCallsOperator(ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Фильтруем менеджеров по ролям "РОП" и "Менеджер"
-        self.fields['manager'].queryset = CustomUser.objects.filter(role__in=['РОП', 'Менеджер'])
-        for field in self.fields:
-            self.fields[field].widget.attrs.update({'class': 'form-control'})
-            # if field == 'weight':
-            #     self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if self.cleaned_data.get('manager') and not instance.date_to_manager:
-            # Устанавливаем текущую дату и время, если выбран менеджер и date_to_manager пустой
-            instance.date_to_manager = timezone.now()
-        if self.cleaned_data.get('manager') != instance.manager:
-            # Устанавливаем текущую дату и время, если выбран менеджер и date_to_manager пустой
-            instance.date_to_manager = timezone.now()
-        if not self.cleaned_data.get('manager'):
-            instance.date_to_manager = None
-        if commit:
-            instance.save()
-        return instance
-
-    class Meta:
-        model = Calls
-        fields = ["status_call", "date_call", "client_name", "client_phone", "client_location", "description", 'date_next_call', 'manager']
-        widgets = {
-            "date_call": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local',
-            }),
-            "date_next_call": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local',
-            }),
-            "client_phone": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'text',
-                'autocomplete': 'off',
-            }),
-            "description": Textarea(attrs={
-                'class': 'form-control',
-                'maxlength': 250,
-            }),
-        }
-
-
-class EditLeadsManager(ModelForm):
-    call_description = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'maxlength': 250,
-            'readonly': 'readonly',
-        }),
-        label="Комментарий оператора"
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields:
-            self.fields[field].widget.attrs.update({'class': 'form-control'})
-            # if field == 'weight':
-            #     self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
-            # Если объект уже существует, заполняем значение call_description
+        # Если объект уже существует, заполняем значение call_description
         if self.instance and self.instance.call:
             self.fields['call_description'].initial = self.instance.call.description
+        # Устанавливаем атрибут data-is-warning для date_next_call_manager
+        if self.instance.status_manager in ['В работе', 'Отложено']:
+            if self.instance.date_next_call_manager is not None and self.instance.date_next_call_manager <= now():
+                self.fields['date_next_call_manager'].widget.attrs.update({'class': 'form-control invalid-date'})
+            elif self.instance.date_next_call_manager is None:
+                # Если дата не установлена, также можно пометить поле как недействительное
+                self.fields['date_next_call_manager'].widget.attrs.update({'class': 'form-control invalid-date'})
 
     def save(self, commit=True):
+        # Получаем старое значение статуса ДО применения данных формы
+        old_status = self.initial.get('status_manager') if self.instance.pk else None
+        # Применяем данные формы к экземпляру модели
         instance = super().save(commit=False)
-
-        # Получаем старое значение статуса (если объект уже существует)
-        old_status = instance.status_manager if instance.pk else None
-
         # Проверяем, изменился ли статус
         new_status = self.cleaned_data.get('status_manager')
 
         # Логика установки дат в зависимости от нового статуса
         if new_status == 'В работе' and (not old_status or old_status != 'В работе'):
             instance.time_in_work = timezone.now()
-        elif new_status == 'Утверждена' and (not old_status or old_status != 'Утверждена'):
-            instance.time_approve = timezone.now()
-        elif new_status == 'Отказ' and (not old_status or old_status != 'Отказ'):
-            instance.time_no = timezone.now()
+        elif new_status != 'Новая' and new_status != 'В работе':
+            instance.time_approve_no_other = timezone.now()
 
         # Если статус сброшен обратно на "Новая", сбрасываем все даты
         if new_status == 'Новая':
             instance.time_in_work = None
-            instance.time_approve = None
-            instance.time_no = None
+            instance.time_approve_no_other = None
 
         if commit:
             instance.save()
@@ -763,60 +671,86 @@ class EditLeadsManager(ModelForm):
 
     class Meta:
         model = Leads
-        fields = ["status_manager", "client_name", "client_phone", "client_location", "call_description", "description_manager", "date_next_call_manager"]
+        fields = ["status_manager", "client_name", "client_phone", "client_location", "loyalty", "call_description", "description_manager", "date_next_call_manager"]
         widgets = {
-            "date_call": TextInput(attrs={
+            "date_next_call_manager": forms.TextInput(attrs={
                 'class': 'form-control',
                 'type': 'datetime-local',
             }),
-            "date_next_call_manager": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local',
-            }),
-            "client_phone": TextInput(attrs={
+            "client_phone": forms.TextInput(attrs={
                 'class': 'form-control',
                 'type': 'text',
                 'autocomplete': 'off',
             }),
-            "description_manager": Textarea(attrs={
+            "description_manager": forms.Textarea(attrs={
                 'class': 'form-control',
                 'maxlength': 250,
             }),
         }
 
-class EditCallsManager(ModelForm):
 
+class EditLeadsRop(BaseEditLeadsForm):
+    """
+    Форма для РОПа.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Фильтруем менеджеров по ролям "РОП" и "Менеджер"
-        for field in self.fields:
-            self.fields[field].widget.attrs.update({'class': 'form-control'})
+        self.fields['manager'].queryset = CustomUser.objects.filter(role__in=['РОП', 'Менеджер'])
 
-        if 'description' in self.fields:
-            self.fields['description'].widget.attrs['readonly'] = True
+    class Meta(BaseEditLeadsForm.Meta):
+        # Включаем поле "manager" в список полей
+        fields = ["manager"] + BaseEditLeadsForm.Meta.fields
 
-    class Meta:
-        model = Calls
-        fields = ["status_manager", "client_name", "client_phone", "client_location", "description", "description_manager", 'date_next_call_manager']
-        widgets = {
-            "date_next_call_manager": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local',
-            }),
-            "client_phone": TextInput(attrs={
-                'class': 'form-control',
-                'type': 'text',
-                'autocomplete': 'off',
-            }),
-            "description": Textarea(attrs={
-                'class': 'form-control',
-                'maxlength': 250,
-            }),
-            "description_manager": Textarea(attrs={
-                'class': 'form-control',
-                'maxlength': 250,
-            }),
-        }
+
+class EditLeadsManager(BaseEditLeadsForm):
+    """
+    Форма для менеджера.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Определяем доступные статусы в зависимости от текущего значения status_manager
+        current_status = self.instance.status_manager if self.instance.pk else None
+        statuses_manager = Leads.statuses_manager
+
+        if current_status == 'В работе':
+            # Если статус "В работе", разрешены все статусы, кроме "Новая"
+            allowed_statuses = [status for status in statuses_manager if status[0] not in ['Новая']]
+        elif current_status in ['Утверждена', 'Отказ', 'Не подходит под критерии']:
+            # Если статус "Утверждена", "Отказ" или "Не подходит под критерии", статус нельзя менять
+            allowed_statuses = [(current_status, dict(statuses_manager).get(current_status))]
+        else:
+            # По умолчанию разрешены все статусы
+            allowed_statuses = statuses_manager
+        # Устанавливаем доступные варианты для поля status_manager
+        self.fields['status_manager'].choices = allowed_statuses
+
+    # def clean(self):
+    #     """
+    #     Дополнительная валидация формы.
+    #     """
+    #     cleaned_data = super().clean()
+    #     status_manager = cleaned_data.get("status_manager")
+    #     date_next_call_manager = cleaned_data.get("date_next_call_manager")
+    #
+    #     # Проверка для статусов "В работе" и "Связаться позже"
+    #     if status_manager in ['В работе', 'Связаться позже']:
+    #         if not date_next_call_manager:
+    #             raise ValidationError(
+    #                 "При выборе статуса 'В работе' или 'Связаться позже' необходимо указать дату следующего звонка."
+    #             )
+    #         elif date_next_call_manager <= now():
+    #             raise ValidationError(
+    #                 "Дата следующего звонка не может быть меньше или равна текущей дате и времени."
+    #             )
+    #
+    #     return cleaned_data
+
+    class Meta(BaseEditLeadsForm.Meta):
+        # Исключаем поле "manager" из списка полей
+        exclude = ['manager']
+
 class CallsFileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

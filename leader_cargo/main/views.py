@@ -20,7 +20,7 @@ from django.utils.timezone import make_aware
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
-    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsManager, EditCallsRop, LeadsFilterForm, EditLeadsManager, EditLeadsRop
+    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsRop, LeadsFilterForm, EditLeadsManager, EditLeadsRop
 from .models import *
 from .utils import DataMixin, MyLoginMixin, PaginationMixin
 from .tasks import process_excel_file
@@ -941,7 +941,6 @@ class LeadsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         selected_managers = self.request.GET.getlist('managers')
         page_size = self.request.GET.get('page_size', 30)  # По умолчанию 30
         search_query = self.request.GET.get('search', '')
-
         leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers).order_by('-time_new')
         # Фильтрация по запросу поиска
         if search_query:
@@ -1156,7 +1155,10 @@ def edit_calls(request, call_id):
             if form_edit.is_valid():
                 form_edit.save()
                 lead = call.create_or_get_lead()
-                messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone}.\n {lead}")
+                if lead:
+                    messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone}.\n {lead}")
+                else:
+                    messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone} изменена")
             referer = request.META.get('HTTP_REFERER', reverse('main:calls'))
             # Добавляем якорь к URL
             if referer:

@@ -1,4 +1,5 @@
 {% load custom_filters %}
+<input type="hidden" id="total-pages" value="{{ paginated_queryset.paginator.num_pages }}">
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -14,6 +15,7 @@
                         <th scope="col">Имя клиента</th>
                         <th scope="col">Контактный номер</th>
                         <th scope="col">Город клиента</th>
+                        <th scope="col">Лояльность</th>
                         <th scope="col">Комментарий по звонку</th>
                         <th scope="col">Дата следующего звонка</th>
                         <th scope="col">Ответственный менеджер</th>
@@ -21,7 +23,7 @@
                     </tr>
                     </thead>
                     <tbody class="table-light">
-                    {% for call in calls %}
+                    {% for call in paginated_queryset %}
                     <tr data-bs-toggle="modal"
                         data-bs-target="#hx-modal"
                         hx-get="{% url 'main:edit_calls' call.pk %}"
@@ -34,6 +36,7 @@
                         <td>{{ call.client_name|default:"" }}</td>
                         <td>{{ call.client_phone|default:"" }}</td>
                         <td>{{ call.client_location|default:"" }}</td>
+                        <td>{{ call.get_loyalty_display|default:"" }}</td>
                         <td>{{ call.description|default:"" }}</td>
                         <td>{{ call.date_next_call|default:"" }}</td>
                         <td>{{ call.manager.get_FI|default:"" }}</td>
@@ -47,55 +50,26 @@
     </div>
 </div>
 <!-- Пагинация -->
-{% if calls.paginator.num_pages != 1 %}
-<div class="pagination mb-3">
+{% if paginated_queryset.paginator.num_pages != 1 %}
+<div class="pagination">
         <span class="page-links">
-            {% if calls.has_previous %}
+            {% if paginated_queryset.has_previous %}
                 <a href="?page=1&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">&laquo; 1</a>
-                <a href="?page={{ calls.previous_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link"><</a>
+                <a href="?page={{ paginated_queryset.previous_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link"><</a>
             {% endif %}
             {% for i in page_range_ %}
-                {% if calls.number == i %}
+                {% if paginated_queryset.number == i %}
                     <span class="current-page page-link">{{ i }}</span>
                 {% else %}
                     <a href="?page={{ i }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ i }}</a>
                 {% endif %}
             {% endfor %}
-            {% if calls.has_next %}
-                <a href="?page={{ calls.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
-                <a href="?page={{ calls.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ calls.paginator.num_pages }} &raquo;</a>
+            {% if paginated_queryset.has_next %}
+                <a href="?page={{ paginated_queryset.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
+                <a href="?page={{ paginated_queryset.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ paginated_queryset.paginator.num_pages }} &raquo;</a>
             {% endif %}
-            <input type="number" id="pageInput" min="1" max="{{ calls.paginator.num_pages }}" value="{{ calls.number }}" class="form-control form-control-sm d-inline-block p-2" style="width: 65px;">
+            <input type="number" id="pageInput" min="1" max="{{ paginated_queryset.paginator.num_pages }}" value="{{ paginated_queryset.number }}" class="form-control form-control-sm d-inline-block p-2" style="width: 65px;">
             <button id="goToPage" class="btn btn-sm btn-primary">Перейти</button>
         </span>
 </div>
 {% endif %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    // Обработчик кнопки "Перейти"
-    document.getElementById('goToPage').addEventListener('click', function () {
-        let pageInput = document.getElementById('pageInput');
-        let pageNumber = parseInt(pageInput.value, 10);
-        if (isNaN(pageNumber)) {
-            alert("Введите корректный номер страницы.");
-            return;
-        }
-        if (pageNumber >= 1 && pageNumber <= {{ calls.paginator.num_pages }}) {
-            let urlParams = new URLSearchParams(window.location.search);
-            urlParams.set('page', pageNumber);
-            window.location.search = urlParams.toString();
-        } else {
-            alert(`Введите номер страницы от 1 до {{ calls.paginator.num_pages }}`);
-        }
-    });
-    document.querySelectorAll('.page-link').forEach(link => {
-        link.addEventListener('click', function (event) {
-            event.preventDefault();
-            const pageNumber = new URL(this.href).searchParams.get('page');
-            if (pageNumber) {
-                window.location.href = this.href;
-            }
-        });
-    });
-});
-</script>

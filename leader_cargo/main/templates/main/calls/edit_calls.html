@@ -9,12 +9,6 @@
         <form method="post" id="form_edit_calls" action="{% url 'main:edit_calls' call.pk %}">
             {% csrf_token %}
             {{ form.as_p }}
-            <!--            <div class="row mb-2">-->
-            <!--                <div class="col-12">-->
-            <!--                    <label for="date_call" class="form-label">Дата звонка</label>-->
-            <!--                    <input name="date_call" type="datetime-local" class="form-control" id="date_call">-->
-            <!--                </div>-->
-            <!--            </div>-->
         </form>
     </div>
     <div class="modal-footer">

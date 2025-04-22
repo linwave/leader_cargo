@@ -378,9 +378,10 @@ class PaginationMixin:
         page_range = range(max(1, current_page - 3), min(total_pages, current_page + 3) + 1)
 
         return {
-            f'{queryset_name}': paginated_queryset,
             'paginator_': paginator,
             'page_range_': page_range,
+            'total_pages': total_pages,
+            'paginated_queryset': paginated_queryset,
         }
 
 class MyLoginMixin(LoginRequiredMixin):

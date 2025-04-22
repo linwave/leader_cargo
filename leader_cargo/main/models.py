@@ -7,9 +7,25 @@ from django.db import models, transaction
 from django.db.models import Q, Count, Subquery, OuterRef
 from django.urls import reverse
 from django.utils import timezone
+from simple_history.models import HistoricalRecords
 
 logger = logging.getLogger(__name__)
 
+from django.db import models
+
+class MaintenanceMode(models.Model):
+    is_enabled = models.BooleanField(default=False, verbose_name="Включить режим обслуживания")
+    message = models.TextField(
+        default="Идут технические работы, пожалуйста, подождите.",
+        verbose_name="Сообщение для пользователей"
+    )
+
+    def __str__(self):
+        return "Режим обслуживания" if self.is_enabled else "Режим обслуживания выключен"
+
+    class Meta:
+        verbose_name = "Режим обслуживания"
+        verbose_name_plural = "Режимы обслуживания"
 
 class CustomUser(AbstractUser):
     towns = [
@@ -97,7 +113,10 @@ class CustomUser(AbstractUser):
             return reports
 
     def get_FI(self):
-        return f'{self.last_name} {self.first_name}'
+        if self.last_name and self.first_name:
+            return f'{self.last_name} {self.first_name}'
+        return ""
+
 
     def get_new_calls_count(self):
         return Calls.objects.filter(status_call='Новая', manager=self).count()
@@ -347,6 +366,11 @@ class Calls(models.Model):
         ('Утверждена', 'Утверждена'),
         ('Отказ', 'Отказ')
     ]
+    statuses_loyalty = [
+        (1, 'Холодный'),
+        (2, 'Теплый'),
+        (3, 'Горячий'),
+    ]
     operator = models.ForeignKey(CustomUser, verbose_name='Ответственный оператор', on_delete=models.SET_NULL, blank=True, null=True, related_name="operator_calls")
     date_call = models.DateTimeField(verbose_name='Дата звонка', blank=True, null=True)
     client_name = models.CharField(verbose_name='ФИО клиента', max_length=255, blank=True, null=True)
@@ -355,6 +379,7 @@ class Calls(models.Model):
     description = models.TextField(verbose_name='Комментарий по звонку оператор', max_length=600, blank=True, null=True)
     status_call = models.CharField(default="Не обработано", choices=statuses_operator, verbose_name='Статус заявки', max_length=50)
     date_next_call = models.DateTimeField(verbose_name='Дата следующего звонка', blank=True, null=True)
+    loyalty = models.IntegerField(choices=statuses_loyalty, verbose_name='Статус лояльности', blank=True, null=True)
 
     manager = models.ForeignKey(CustomUser, verbose_name='Ответственный менеджер', on_delete=models.SET_NULL, blank=True, null=True, related_name="manager_calls")
     date_to_manager = models.DateTimeField(verbose_name='Дата передачи менеджеру', blank=True, null=True)
@@ -467,34 +492,38 @@ class Calls(models.Model):
         """
         Создаёт новый Lead, если он не существует, или возвращает существующий.
         """
-        try:
-            # Проверяем, существует ли уже связанный Lead
-            lead = self.leads  # Используем related_name="leads" из модели Leads
-            # # Если Lead существует, обновляем его данные
-            if lead.manager != self.manager:
-                lead.manager = self.manager
-            # lead.client_name = self.client_name
-            # lead.client_phone = self.client_phone
-            # lead.client_location = self.client_location
-            # lead.status_manager = 'Новая'
-            # lead.date_next_call_manager = self.date_next_call_manager
-            # lead.description_manager = self.description_manager
-                lead.time_new = self.date_to_manager
-                lead.save()  # Сохраняем изменения
+        if self.manager:
+            try:
+                # Проверяем, существует ли уже связанный Lead
+                lead = self.leads  # Используем related_name="leads" из модели Leads
+                # # Если Lead существует, обновляем его данные
+                if lead.manager != self.manager:
+                    lead.manager = self.manager
+                    # lead.client_name = self.client_name
+                    # lead.client_phone = self.client_phone
+                    # lead.client_location = self.client_location
+                    # lead.status_manager = 'Новая'
+                    # lead.date_next_call_manager = self.date_next_call_manager
+                    # lead.description_manager = self.description_manager
+                    lead.time_new = self.date_to_manager
+                    lead.save()  # Сохраняем изменения
 
-            return lead  # Возвращаем обновлённый Lead
-        except Leads.DoesNotExist:
-            # Если Lead не существует, создаём новый
-            lead = Leads.objects.create(
-                call=self,  # Связываем с текущим звонком
-                manager=self.manager,  # Переносим менеджера
-                client_name=self.client_name,  # Переносим имя клиента
-                client_phone=self.client_phone,  # Переносим телефон клиента
-                client_location=self.client_location,  # Переносим город клиента
+                return lead  # Возвращаем обновлённый Lead
+            except Leads.DoesNotExist:
+                # Если Lead не существует, создаём новый
+                lead = Leads.objects.create(
+                    call=self,  # Связываем с текущим звонком
+                    manager=self.manager,  # Переносим менеджера
+                    client_name=self.client_name,  # Переносим имя клиента
+                    client_phone=self.client_phone,  # Переносим телефон клиента
+                    client_location=self.client_location,  # Переносим город клиента
+                    loyalty=self.loyalty,  # Переносим город клиента
 
-                time_new=self.date_to_manager  # Переносим дату передачи менеджеру
-            )
-            return lead
+                    time_new=self.date_to_manager  # Переносим дату передачи менеджеру
+                )
+                return lead
+        else:
+            return None
 
     @classmethod
     def create_old_leads(cls):
@@ -528,8 +557,15 @@ class Leads(models.Model):
     statuses_manager = [
         ('Новая', 'Новая'),
         ('В работе', 'В работе'),
+        ('Отложено', 'Отложено'),
         ('Утверждена', 'Утверждена'),
-        ('Отказ', 'Отказ')
+        ('Отказ', 'Отказ'),
+        ('Не подходит под критерии', 'Не подходит под критерии')
+    ]
+    statuses_loyalty = [
+        (1, 'Холодный'),
+        (2, 'Теплый'),
+        (3, 'Горячий'),
     ]
     call = models.OneToOneField(Calls, verbose_name='Звонок', on_delete=models.SET_NULL, blank=True, null=True, related_name="leads")
     manager = models.ForeignKey(CustomUser, verbose_name='Ответственный менеджер', on_delete=models.SET_NULL, blank=True, null=True, related_name="manager_leads")
@@ -537,6 +573,7 @@ class Leads(models.Model):
     client_name = models.CharField(verbose_name='ФИО клиента', max_length=255, blank=True, null=True)
     client_phone = models.CharField(verbose_name='Контактный номер', max_length=50, unique=True)
     client_location = models.CharField(verbose_name='Город клиента', max_length=50, blank=True, null=True)
+    loyalty = models.IntegerField(choices=statuses_loyalty, verbose_name='Статус лояльности', blank=True, null=True)
 
     status_manager = models.CharField(default="Новая", choices=statuses_manager, verbose_name='Статус заявки менеджера', max_length=50)
     date_next_call_manager = models.DateTimeField(verbose_name='Дата следующего звонка менеджером', blank=True, null=True)
@@ -544,12 +581,12 @@ class Leads(models.Model):
 
     time_new = models.DateTimeField(verbose_name='Дата передачи менеджеру', blank=True, null=True)
     time_in_work = models.DateTimeField(verbose_name='Дата взятия В работу', blank=True, null=True)
-    time_approve = models.DateTimeField(verbose_name='Дата Утверждения', blank=True, null=True)
-    time_no = models.DateTimeField(verbose_name='Дата Отказа', blank=True, null=True)
+    time_approve_no_other = models.DateTimeField(verbose_name='Дата Утверждения/Отказа/Другое', blank=True, null=True)
 
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
 
+    history = HistoricalRecords()
     def __str__(self):
         return f"Лид {self.client_name} {self.client_phone}"
 
@@ -557,6 +594,34 @@ class Leads(models.Model):
         verbose_name = 'Лиды'
         verbose_name_plural = 'Лиды'
         ordering = ['-time_new']
+
+    @staticmethod
+    def get_status_change_dates_qs(target_statuses):
+        """
+        Возвращает QuerySet с лидами и их датами смены статусов.
+        :param target_statuses: Список статусов, для которых нужно найти даты.
+        :return: QuerySet с дополнительными аннотированными полями.
+        """
+        # Подзапрос для получения первой даты смены статуса
+        subqueries = {}
+        for status in target_statuses:
+            subquery = Leads.history.filter(
+                id=OuterRef('id'),  # Связываем с основной таблицей
+                status_manager=status
+            ).order_by('history_date').values('history_date')[:1]  # Берем первую запись
+            subqueries[status] = Subquery(subquery)
+
+        # Аннотируем основной QuerySet датами смены статусов
+        leads_with_dates = Leads.objects.annotate(**subqueries)
+        return leads_with_dates
+
+    @staticmethod
+    def delete_empty_manager():
+        """
+                Удаляет все лиды, у которых пустое значение менеджера.
+        """
+        with transaction.atomic():
+            Leads.objects.filter(manager__isnull=True).delete()
 
     @classmethod
     def search(cls, query, queryset):

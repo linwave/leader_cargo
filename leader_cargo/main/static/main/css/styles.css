@@ -18,6 +18,9 @@
 body{
     background: #E4E9F7;
 }
+.invalid-date {
+    border-color: red;
+}
 .select2-container--default .select2-selection--multiple{
     font-size: .875rem;
     border: none;
@@ -417,6 +420,9 @@ body{
 }
 .sidebar.close .profile-details {
     background: none;
+}
+.sidebar.close .profile-hover {
+    background: var(--main-sidebar-hover-color);
 }
 .sidebar.close .profile-details {
     width: 76px;

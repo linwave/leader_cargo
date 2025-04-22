@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'analytics.apps.AnalyticsConfig',
     'api.apps.ApiConfig',
     'bills.apps.BillsConfig',
+    'simple_history',
     'rest_framework',
     'django_htmx',
 ]
@@ -42,7 +43,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'main.middleware.MaintenanceModeMiddleware'
 ]
 
 ROOT_URLCONF = 'leader_cargo.urls'
@@ -141,3 +144,21 @@ CELERY_WORKER_CONCURRENCY = 4  # Установите количество по�
 # Дополнительные настройки для Celery
 CELERY_BROKER_CONNECTION_RETRY = True
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',  # Выводит логи в консоль
+        },
+        'file': {
+            'class': 'logging.FileHandler',  # Записывает логи в файл
+            'filename': 'debug.log',         # Имя файла для записи
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],     # Используемые обработчики
+        'level': 'DEBUG',                    # Уровень логирования
+    },
+}
