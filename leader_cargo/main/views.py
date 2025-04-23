@@ -98,30 +98,19 @@ class ProfileUser(MyLoginMixin, DataMixin, TemplateView):
 
         # Генерация ссылки для привязки Telegram
         user = self.request.user
-        try:
-            telegram_profile = user.telegram_profile
-            if not telegram_profile.is_verified:
-                # Генерация уникального токена
-                token = str(uuid.uuid4())
-                self.request.session['telegram_link_token'] = token
-                self.request.session['telegram_user_id'] = user.id
+        telegram_profile, created = TelegramProfile.objects.get_or_create(user=user)
 
-                # Формируем ссылку
-                bot_username = settings.TELEGRAM_BOT_USERNAME
-                telegram_link = f"https://t.me/{bot_username}?start={token}"
-                context['telegram_link'] = telegram_link
-            else:
-                context['telegram_link'] = None  # Telegram уже привязан
-        except TelegramProfile.DoesNotExist:
-            # Если профиль Telegram не существует, создаем его
-            telegram_profile = TelegramProfile.objects.create(user=user)
-            token = str(uuid.uuid4())
-            self.request.session['telegram_link_token'] = token
-            self.request.session['telegram_user_id'] = user.id
+        if not telegram_profile.is_verified:
+            # Генерация уникального токена
+            if not telegram_profile.token:
+                telegram_profile.generate_token()
 
+            # Формируем ссылку
             bot_username = settings.TELEGRAM_BOT_USERNAME
-            telegram_link = f"https://t.me/{bot_username}?start={token}"
+            telegram_link = f"https://t.me/{bot_username}?start={telegram_profile.token}"
             context['telegram_link'] = telegram_link
+        else:
+            context['telegram_link'] = None  # Telegram уже привязан
 
         return dict(list(context.items()) + list(c_def.items()))
 

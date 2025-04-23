@@ -174,3 +174,4 @@ leader_cargo/db_24.01.2025.sqlite3
 *.sqlite3
 leader_cargo/leader_cargo/__pycache__
 .idea
+leader_cargo/telegram_bot/migrations

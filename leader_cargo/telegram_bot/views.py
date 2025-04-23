@@ -1,3 +1,5 @@
+import logging
+
 from django.core.checks import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -60,14 +62,11 @@ def unlink_telegram(request):
     """
     Отвязывает Telegram-аккаунт от пользователя.
     """
-    try:
-        telegram_profile = request.user.telegram_profile
-        telegram_profile.chat_id = None
-        telegram_profile.is_verified = False
-        telegram_profile.save()
-        messages.success(request, "Telegram успешно отвязан.")
-    except TelegramProfile.DoesNotExist:
-        messages.error(request, "Telegram не был привязан.")
+    telegram_profile = request.user.telegram_profile
+    telegram_profile.chat_id = None
+    telegram_profile.is_verified = False
+    telegram_profile.token = None
+    telegram_profile.save()
 
     return redirect('main:home')  # Перенаправляем обратно на страницу профиля
 
@@ -80,32 +79,31 @@ def telegram_webhook(request):
         try:
             body = request.body.decode('utf-8')
             data = json.loads(body)
+
             chat_id = data['message']['chat']['id']
             text = data['message']['text']
+
             # Проверяем команду /start с параметром
             if text.startswith('/start'):
                 token = text.split(' ')[1]  # Извлекаем токен из команды
 
-                # Находим сессию по токену
-                sessions = Session.objects.filter(session_data__contains=f'telegram_link_token|{token}')
-                if sessions.exists():
-                    session = sessions.first()
-                    session_data = session.get_decoded()
+                # Находим профиль по токену
+                try:
+                    telegram_profile = TelegramProfile.objects.get(token=token)
 
-                    user_id = session_data.get('telegram_user_id')
-                    if user_id:
-                        # Привязываем chat_id к пользователю
-                        user = get_user_model().objects.get(id=user_id)
-                        telegram_profile, created = TelegramProfile.objects.get_or_create(user=user)
-                        telegram_profile.chat_id = chat_id
-                        telegram_profile.is_verified = True
-                        telegram_profile.save()
+                    # Привязываем chat_id к пользователю
+                    telegram_profile.chat_id = chat_id
+                    telegram_profile.is_verified = True
+                    telegram_profile.token = None  # Очищаем токен после использования
+                    telegram_profile.save()
 
-                        send_telegram_message(chat_id, "Ваш аккаунт успешно привязан!", BOT_TOKEN)
-                        return JsonResponse({'status': 'ok'})
+                    send_telegram_message(chat_id, "Ваш аккаунт успешно привязан!", BOT_TOKEN)
+                    return JsonResponse({'status': 'ok'})
 
-            send_telegram_message(chat_id, "Ошибка привязки. Попробуйте снова.", BOT_TOKEN)
-            return JsonResponse({'status': 'error', 'message': 'Invalid token'})
+                except TelegramProfile.DoesNotExist:
+                    send_telegram_message(chat_id, "Ошибка привязки. Неверный токен.", BOT_TOKEN)
+
+            return JsonResponse({'status': 'error', 'message': 'Invalid command'})
 
         except Exception as e:
             print(f"Ошибка: {e}")

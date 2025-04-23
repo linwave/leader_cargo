@@ -17,7 +17,7 @@ class MaintenanceModeAdmin(admin.ModelAdmin):
 
 @admin.register(TelegramProfile)
 class TelegramProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'is_verified', 'chat_id')
+    list_display = ('user', 'is_verified', 'chat_id', 'token')
     list_editable = ('is_verified', 'chat_id', )
 
 
