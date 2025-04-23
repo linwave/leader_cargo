@@ -1182,7 +1182,7 @@ def edit_calls(request, call_id):
                     if lead.manager:
                         if lead.manager.telegram_profile:
                             if lead.manager.telegram_profile.is_verified:
-                                send_telegram_message(lead.manager.telegram_profile.chat_id, f"{lead.manager}\n{ lead.pk } - ({ lead.call.pk }) - Новый {lead} ", settings.BOT_TOKEN)
+                                send_telegram_message(lead.manager.telegram_profile.chat_id, f"{lead.manager}\n{ lead.pk } - ({ lead.call.pk }) - Новый {lead} ", settings.TELEGRAM_BOT_TOKEN)
                 else:
                     messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone} изменена")
             referer = request.META.get('HTTP_REFERER', reverse('main:calls'))
