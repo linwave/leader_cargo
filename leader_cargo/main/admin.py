@@ -218,7 +218,7 @@ class CustomUserAdmin(admin.ModelAdmin):
 class CustomCargoArticleAdmin(admin.ModelAdmin):
     list_display = ('id', 'article', 'responsible_manager', 'time_from_china', 'status', 'total_cost', 'weight', 'volume', 'cargo_id', 'time_create')
     list_display_links = ('id', 'article')
-    search_fields = ('article', 'responsible_manager')
+    search_fields = ('article', 'responsible_manager__last_name', 'responsible_manager__first_name')
     list_editable = ('responsible_manager', 'status', )
     list_filter = ('status', 'time_from_china', 'responsible_manager')
 

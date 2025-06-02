@@ -237,32 +237,34 @@ class DeleteCarriersListForm(ModelForm):
         fields = []
 
 
-class AddCargo(ModelForm):
-
+class AddCargo(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields:
             if field == 'time_from_china':
                 continue
             self.fields[field].widget.attrs.update({'class': 'form-control'})
-            if field == 'weight':
+            if field in ['weight', 'volume', 'number_of_seats', 'cost_goods', 'insurance_cost', 'packaging_cost']:
                 self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
-            elif field == 'volume':
-                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
-            elif field == 'number_of_seats':
-                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
-            elif field == 'cost_goods':
-                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
-            elif field == 'insurance_cost':
-                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
-            elif field == 'packaging_cost':
-                self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
+
+    def clean_volume(self):
+        value = self.cleaned_data.get('volume')
+        if isinstance(value, str):
+            value = value.replace(',', '.')
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Введите корректное значение объема.")
 
     class Meta:
         model = CargoArticle
-        fields = ["article", "responsible_manager", "carrier", "path_format", "status", "name_goods", "number_of_seats", "weight", "volume", "transportation_tariff", "cost_goods", "insurance_cost", "packaging_cost", "time_from_china", "total_cost"]
+        fields = [
+            "article", "responsible_manager", "carrier", "path_format", "status",
+            "name_goods", "number_of_seats", "weight", "volume", "transportation_tariff",
+            "cost_goods", "insurance_cost", "packaging_cost", "time_from_china", "total_cost"
+        ]
         widgets = {
-            "time_from_china": TextInput(attrs={
+            "time_from_china": forms.TextInput(attrs={
                 'class': 'form-control',
                 'type': 'date',
             }),
