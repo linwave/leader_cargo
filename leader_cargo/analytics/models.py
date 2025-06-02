@@ -233,10 +233,10 @@ class CargoArticle(models.Model):
     ]
     carriers = [
         ('Ян', 'Ян'),
-        ('Валька', 'Валька'),
+        ('Байкал', 'Байкал'),
+        ('URAL', 'URAL'),
         ('Мурад', 'Мурад'),
-        ('Гелик', 'Гелик'),
-        ('Склад №5', 'Склад №5')
+        ('Дин', 'Дин'),
     ]
     path_formats = [
         ('Быстрое авто', 'Быстрое авто'),
@@ -255,6 +255,7 @@ class CargoArticle(models.Model):
     responsible_manager = models.ForeignKey(CustomUser, verbose_name='Ответственный менеджер', on_delete=models.SET_NULL, blank=True, null=True)
 
     carrier = models.CharField(max_length=100, verbose_name='Перевозчик', choices=carriers, blank=True, null=True)
+    # carrier_fk = models.ForeignKey('CarriersList', verbose_name='Перевозчик ', on_delete=models.SET_NULL, blank=True, null=True)
 
     path_format = models.CharField(max_length=100, verbose_name='Формат пути', choices=path_formats, blank=True, null=True)
     name_goods = models.CharField(max_length=50, verbose_name='Наименование товара', blank=True, null=True)
