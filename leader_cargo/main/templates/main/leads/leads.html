@@ -115,40 +115,75 @@
 {% endif %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+{{ all_statuses|json_script:"status-list" }}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const managersWithCalls = JSON.parse('{{ managers_with_calls|escapejs }}');
+    const allStatuses = JSON.parse(document.getElementById('status-list').textContent);
+    const statusKeys = allStatuses.map(s => s.toLowerCase().replace(/\s+/g, '_') + '_count');
 
-    // Инициализация графика
+    const statusColors = [
+        'rgba(75, 192, 192, 0.8)',     // Новая
+        'rgba(255, 99, 132, 0.8)',     // В работе
+        'rgba(255, 206, 86, 0.8)',     // Отложено
+        'rgba(54, 162, 235, 0.8)',     // Утверждена
+        'rgba(153, 102, 255, 0.8)',    // Отказ
+        'rgba(255, 159, 64, 0.8)'      // Не подходит под критерии
+    ];
+
     const ctx = document.getElementById('managerCallsChart');
     if (ctx) {
+        // Датасеты по статусам
+        const datasets = statusKeys.map((key, index) => ({
+            label: allStatuses[index],
+            data: managersWithCalls.map(m => m[key] || 0),
+            backgroundColor: statusColors[index % statusColors.length],
+            borderColor: statusColors[index % statusColors.length].replace('0.8', '1'),
+            borderWidth: 1,
+            datalabels: {
+                color: '#666',
+                font: { weight: 'normal' },
+                anchor: 'end',
+                align: 'start',
+                formatter: (value) => value > 0 ? value : ''
+            }
+        }));
+
+        // Датасет "Итого"
+        const totalCounts = managersWithCalls.map(m =>
+            statusKeys.reduce((sum, key) => sum + (m[key] || 0), 0)
+        );
+
+        datasets.push({
+            label: 'Итого',
+            data: totalCounts,
+            backgroundColor: 'rgba(0,0,0,0)',
+            borderWidth: 0,
+            order: 999,
+            barPercentage: 0.0,
+            datalabels: {
+                color: '#555',
+                font: { weight: 'normal', size: 12 },
+                anchor: 'end',
+                align: 'center',
+                offset: -12,
+                formatter: (value) => value > 0 ? `Всего: ${value}` : ''
+            }
+        });
+
+        // Создание графика
         const managerCallsChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: managersWithCalls.map(user => `${user.first_name} ${user.patronymic} ${user.last_name}`),
-                datasets: [
-                    {
-                        label: 'Новая',
-                        data: managersWithCalls.map(user => user.new_calls_count || 0),
-                        backgroundColor: 'rgba(75, 192, 192, 0.8)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'В работе',
-                        data: managersWithCalls.map(user => user.in_progress_calls_count || 0),
-                        backgroundColor: 'rgba(255, 99, 132, 0.8)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }
-                ]
+                labels: managersWithCalls.map(user => user.name),
+                datasets: datasets
             },
             options: {
                 responsive: true,
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Текущая сводка по ЛИДАМ менеджеров',
+                        text: 'Лиды по менеджерам и статусам',
                         font: { size: 18, weight: 'bold' },
                         padding: { top: 10, bottom: 20 }
                     },
@@ -159,40 +194,35 @@ document.addEventListener("DOMContentLoaded", function () {
                                 return `${tooltipItem.dataset.label}: ${tooltipItem.raw}`;
                             }
                         }
-                    },
-                    datalabels: {
-                        color: '#000',
-                        font: { weight: 'bold' },
-                        anchor: 'center',
-                        align: 'center',
-                        formatter: function(value) {
-                            return value > 0 ? value : '';
-                        }
                     }
                 },
                 scales: {
-                    x: { beginAtZero: true, title: { display: false, text: 'Менеджер' } },
-                    y: { beginAtZero: true, title: { display: true, text: 'Лиды' } }
+                    x: {
+                        stacked: false,
+                        title: { display: false }
+                    },
+                    y: {
+                        stacked: false,
+                        beginAtZero: true,
+                        title: { display: true, text: 'Количество лидов' }
+                    }
                 }
             },
             plugins: [ChartDataLabels]
         });
     }
 
-    // Функционал для скрытия/показа графика
-    let chartContainer = document.getElementById('managerCallsChart');
-    let toggleChartBtn = document.getElementById('toggle-chart-btn');
+    // Логика скрытия/показа графика
+    const chartContainer = document.getElementById('managerCallsChart');
+    const toggleChartBtn = document.getElementById('toggle-chart-btn');
 
-    // Проверяем, существуют ли элементы
     if (chartContainer && toggleChartBtn) {
-        // Загрузка состояния из localStorage
         const isChartHidden = localStorage.getItem('isChartHidden') === 'true';
         if (isChartHidden) {
             chartContainer.style.display = 'none';
             toggleChartBtn.textContent = 'Показать график';
         }
 
-        // Переключение видимости графика
         toggleChartBtn.addEventListener('click', () => {
             if (chartContainer.style.display === 'none') {
                 chartContainer.style.display = 'block';
@@ -207,6 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 </script>
+
 <script>
     $(document).ready(function() {
         $('#status_call').select2({

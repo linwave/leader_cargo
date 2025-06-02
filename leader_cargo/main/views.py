@@ -943,6 +943,7 @@ class CallsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         context['page_size'] = str(page_size)  # Передаем значение page_size в контекст
         context['search'] = search_query  # Передаем значение search в контекст
         context['calls_done'] = Calls.all_calls_done()
+        context['leads_with_managers'] = Leads.objects.exclude(manager=None).count()
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):
@@ -959,36 +960,77 @@ class LeadsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Лиды")
         form = LeadsFilterForm(self.request.GET or None)
+
         selected_manager_statuses = self.request.GET.getlist('status_manager')
         selected_managers = self.request.GET.getlist('managers')
-        page_size = self.request.GET.get('page_size', 30)  # По умолчанию 30
+        page_size = self.request.GET.get('page_size', 30)
         search_query = self.request.GET.get('search', '')
+
         leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers).order_by('-time_new')
-        # Фильтрация по запросу поиска
         if search_query:
             leads_query = Leads.search(search_query, leads_query)
 
-        # selected_managers = self.request.GET.getlist('managers')
+        managers_with_calls = CustomUser.get_all_status_leads_count_for_all_managers()
 
-        managers_with_calls = CustomUser.get_new_in_work_leads_count_for_all_managers()
+        # Список всех статусов
+        all_statuses = [status for status, _ in Leads.statuses_manager]
+
         context['managers_with_calls'] = json.dumps([
             {
-                'first_name': manager.first_name,
-                'patronymic': manager.patronymic,
-                'last_name': manager.last_name,
-                'new_calls_count': manager.new_calls_count,
-                'in_progress_calls_count': manager.in_progress_calls_count
-            }
-            for manager in managers_with_calls
+                'name': f"{m.first_name} {m.patronymic} {m.last_name}",
+                **{
+                    status.lower().replace(' ', '_') + '_count': getattr(m, status.lower().replace(' ', '_') + '_count', 0)
+                    for status in all_statuses
+                }
+            } for m in managers_with_calls
         ])
+        context['all_statuses'] = [label for _, label in Leads.statuses_manager]
+
         pagination_context = self.paginate_queryset(leads_query, page_size, 'leads')
         context.update(pagination_context)
-        context['form'] = form
-        context['messages'] = [message for message in messages.get_messages(self.request)]
-        context['page_size'] = str(page_size)  # Передаем значение page_size в контекст
-        context['selected_manager_statuses'] = selected_manager_statuses
-        context['search'] = search_query  # Передаем значение search в контекст
+        context.update({
+            'form': form,
+            'messages': [m for m in messages.get_messages(self.request)],
+            'page_size': str(page_size),
+            'selected_manager_statuses': selected_manager_statuses,
+            'search': search_query,
+        })
+        context['all_statuses'] = [label for _, label in Leads.statuses_manager]
         return dict(list(context.items()) + list(c_def.items()))
+    # def get_context_data(self, *, object_list=None, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     c_def = self.get_user_context(title="Лиды")
+    #     form = LeadsFilterForm(self.request.GET or None)
+    #     selected_manager_statuses = self.request.GET.getlist('status_manager')
+    #     selected_managers = self.request.GET.getlist('managers')
+    #     page_size = self.request.GET.get('page_size', 30)  # По умолчанию 30
+    #     search_query = self.request.GET.get('search', '')
+    #     leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers).order_by('-time_new')
+    #     # Фильтрация по запросу поиска
+    #     if search_query:
+    #         leads_query = Leads.search(search_query, leads_query)
+    #
+    #     # selected_managers = self.request.GET.getlist('managers')
+    #
+    #     managers_with_calls = CustomUser.get_new_in_work_leads_count_for_all_managers()
+    #     context['managers_with_calls'] = json.dumps([
+    #         {
+    #             'first_name': manager.first_name,
+    #             'patronymic': manager.patronymic,
+    #             'last_name': manager.last_name,
+    #             'new_calls_count': manager.new_calls_count,
+    #             'in_progress_calls_count': manager.in_progress_calls_count
+    #         }
+    #         for manager in managers_with_calls
+    #     ])
+    #     pagination_context = self.paginate_queryset(leads_query, page_size, 'leads')
+    #     context.update(pagination_context)
+    #     context['form'] = form
+    #     context['messages'] = [message for message in messages.get_messages(self.request)]
+    #     context['page_size'] = str(page_size)  # Передаем значение page_size в контекст
+    #     context['selected_manager_statuses'] = selected_manager_statuses
+    #     context['search'] = search_query  # Передаем значение search в контекст
+    #     return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):
         if self.request.htmx.target == 'leads-table':
