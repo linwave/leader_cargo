@@ -133,7 +133,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const ctx = document.getElementById('managerCallsChart');
     if (ctx) {
-        // Датасеты по статусам
         const datasets = statusKeys.map((key, index) => ({
             label: allStatuses[index],
             data: managersWithCalls.map(m => m[key] || 0),
@@ -149,29 +148,10 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }));
 
-        // Датасет "Итого"
         const totalCounts = managersWithCalls.map(m =>
             statusKeys.reduce((sum, key) => sum + (m[key] || 0), 0)
         );
 
-        datasets.push({
-            label: 'Итого',
-            data: totalCounts,
-            backgroundColor: 'rgba(0,0,0,0)',
-            borderWidth: 0,
-            order: 999,
-            barPercentage: 0.0,
-            datalabels: {
-                color: '#555',
-                font: { weight: 'normal', size: 12 },
-                anchor: 'end',
-                align: 'center',
-                offset: -12,
-                formatter: (value) => value > 0 ? `Всего: ${value}` : ''
-            }
-        });
-
-        // Создание графика
         const managerCallsChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -185,9 +165,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         display: true,
                         text: 'Лиды по менеджерам и статусам',
                         font: { size: 18, weight: 'bold' },
-                        padding: { top: 10, bottom: 20 }
+                        padding: { top: 10, bottom: 30 }
                     },
-                    legend: { position: 'top' },
+                    legend: {
+                        position: 'bottom',
+
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(tooltipItem) {
@@ -208,11 +191,32 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             },
-            plugins: [ChartDataLabels]
+            plugins: [
+                ChartDataLabels,
+                {
+                    id: 'totalsOverlay',
+                    afterDatasetsDraw(chart) {
+                        const { ctx, chartArea: { top }, scales: { x, y } } = chart;
+
+                        managersWithCalls.forEach((manager, index) => {
+                            const total = totalCounts[index];
+                            const xCenter = x.getPixelForValue(index);
+                            const yTop = y.getPixelForValue(y.max) + 20;
+
+                            ctx.save();
+                            ctx.font = '12px sans-serif';
+                            ctx.fillStyle = '#666';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(`Всего: ${total}`, xCenter, top - 10);
+                            ctx.restore();
+                        });
+                    }
+                }
+            ]
         });
     }
 
-    // Логика скрытия/показа графика
+    // Скрытие/показ графика
     const chartContainer = document.getElementById('managerCallsChart');
     const toggleChartBtn = document.getElementById('toggle-chart-btn');
 
@@ -237,6 +241,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 </script>
+
 
 <script>
     $(document).ready(function() {

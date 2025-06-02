@@ -175,3 +175,6 @@ leader_cargo/db_24.01.2025.sqlite3
 leader_cargo/leader_cargo/__pycache__
 .idea
 leader_cargo/telegram_bot/migrations
+leader_cargo/celerybeat-schedule.bak
+leader_cargo/celerybeat-schedule.dat
+leader_cargo/celerybeat-schedule.dir
