@@ -7,7 +7,8 @@ from PIL import Image
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import F, Q
+from django.db.models import F, Q, FloatField, Sum
+from django.db.models.functions import Cast
 from django.http import HttpResponse, Http404, FileResponse
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect, render
@@ -1759,6 +1760,25 @@ class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
                     context['all_prr'] = context['all_prr'] + float(article.prr.replace(" ", "").replace(",", "."))
                 if article.tat_cost:
                     context['all_tat'] = context['all_tat'] + float(article.tat_cost.replace(" ", "").replace(",", "."))
+        carrier_stats = (
+            context['all_articles']
+            .exclude(carrier__isnull=True)
+            .exclude(carrier='')
+            .annotate(
+                weight_float=Cast('weight', FloatField()),
+                volume_float=Cast('volume', FloatField())
+            )
+            .values('carrier')
+            .annotate(
+                total_weight=Sum('weight_float'),
+                total_volume=Sum('volume_float')
+            )
+            .order_by('carrier')  # на всякий случай
+        )
+        context['carrier_chart_data'] = list(carrier_stats)
+        context['sum_all_weight'] = round(sum(item['total_weight'] or 0 for item in carrier_stats), 2)
+        context['sum_all_volume'] = round(sum(item['total_volume'] or 0 for item in carrier_stats), 2)
+
         context['table_paginator'] = Paginator(context['all_articles'], 50)
         page_number = self.request.GET.get('page', 1)
         context['table_paginator_obj'] = context['table_paginator'].get_page(page_number)

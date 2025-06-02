@@ -11,7 +11,40 @@
         </div>
     </div>
 </div>
+<div class="collapse mt-3" id="collapseCarrierStats">
+    <div class="d-flex flex-wrap gap-4 justify-content-center">
+        <div style="width: 500px; height: 500px;">
+  <canvas id="weightPieChart"></canvas>
+</div>
+<div style="width: 500px; height: 500px;">
+  <canvas id="volumePieChart"></canvas>
+</div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+
+
+
+
+
+
+
 <div class="container-fluid">
+    {% if user.role == 'Логист' or user.role == 'Супер Администратор' or user.role == 'РОП' %}
+    <div class="col-auto mb-2">
+        <button class="btn btn-primary"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapseCarrierStats"
+        aria-expanded="false"
+        aria-controls="collapseCarrierStats">
+    График по перевозчикам
+</button>
+    </div>
+    {% endif %}
     {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
     {% include "analytics/components/modal/modalInputCarrierFile.html"  %}
     {% include "analytics/components/modal/modalEditArticleForLogist.html"  %}
@@ -32,21 +65,21 @@
                 Добавить вручную
             </button>
         </div>
-<!--        <div class="col-auto">-->
-<!--            <button type="button" class="btn btn-sm btn-dark">-->
-<!--                <i class="fa-solid fa-file-export"></i>-->
-<!--                Выгрузка отчета по грузам-->
-<!--            </button>-->
-<!--        </div>-->
-<!--        <div class="col-auto">-->
+        <!--        <div class="col-auto">-->
+        <!--            <button type="button" class="btn btn-sm btn-dark">-->
+        <!--                <i class="fa-solid fa-file-export"></i>-->
+        <!--                Выгрузка отчета по грузам-->
+        <!--            </button>-->
+        <!--        </div>-->
+        <!--        <div class="col-auto">-->
 
-<!--            <button class="btn btn-sm btn-primary" type="button"-->
-<!--                    data-bs-toggle="collapse" data-bs-target="#collapseWithoutInsuranceArticles"-->
-<!--                    aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >-->
-<!--                <i class="fa-solid fa-car-burst"></i>-->
-<!--                Груза без страховки: {{ count_articles_without_insurance }}-->
-<!--            </button>-->
-<!--        </div>-->
+        <!--            <button class="btn btn-sm btn-primary" type="button"-->
+        <!--                    data-bs-toggle="collapse" data-bs-target="#collapseWithoutInsuranceArticles"-->
+        <!--                    aria-expanded="false" aria-controls="collapseWithoutInsuranceArticles" >-->
+        <!--                <i class="fa-solid fa-car-burst"></i>-->
+        <!--                Груза без страховки: {{ count_articles_without_insurance }}-->
+        <!--            </button>-->
+        <!--        </div>-->
         <div class="col-auto">
 
             <button class="btn btn-sm btn-danger" type="button"
@@ -72,14 +105,14 @@
                 С пустой дорогой: {{ count_empty_path_format }}
             </button>
         </div>
-<!--        <div class="col-auto">-->
-<!--            <button type="button" class="btn btn-sm text-primary-emphasis bg-primary-subtle border border-primary-subtle"-->
-<!--                    data-bs-toggle="modal" data-bs-target="#modal-main"-->
-<!--                    hx-get="{% url 'analytics:amount_fund' %}" hx-target="#hx-modal-main">-->
-<!--                <i class="fa-solid fa-money-bill-trend-up"></i>-->
-<!--                Сумма фонда-->
-<!--            </button>-->
-<!--        </div>-->
+        <!--        <div class="col-auto">-->
+        <!--            <button type="button" class="btn btn-sm text-primary-emphasis bg-primary-subtle border border-primary-subtle"-->
+        <!--                    data-bs-toggle="modal" data-bs-target="#modal-main"-->
+        <!--                    hx-get="{% url 'analytics:amount_fund' %}" hx-target="#hx-modal-main">-->
+        <!--                <i class="fa-solid fa-money-bill-trend-up"></i>-->
+        <!--                Сумма фонда-->
+        <!--            </button>-->
+        <!--        </div>-->
     </div>
     {% include "analytics/components/collapse/collapseNotIssuedArticles.html"  %}
     {% include "analytics/components/collapse/collapseWithoutInsuranceArticles.html"  %}
@@ -138,5 +171,102 @@ for (let i = 0; i < element.length; i++){
     }
 }
 integer_mask("imask_float");
+</script>
+<script>
+Chart.register(ChartDataLabels);
+
+    let weightChartInstance = null;
+let volumeChartInstance = null;
+
+function renderCharts() {
+    const data = {{ carrier_chart_data|safe }};
+    const labels = data.map(item => item.carrier);
+    const weightValues = data.map(item => Math.round(item.total_weight || 0));
+    const volumeValues = data.map(item => Math.round(item.total_volume || 0));
+    const totalWeight = weightValues.reduce((a, b) => a + b, 0);
+    const totalVolume = volumeValues.reduce((a, b) => a + b, 0);
+    const colors = labels.map(getColor);
+
+    const ctxWeight = document.getElementById('weightPieChart');
+    const ctxVolume = document.getElementById('volumePieChart');
+
+    if (weightChartInstance) weightChartInstance.destroy();
+    if (volumeChartInstance) volumeChartInstance.destroy();
+
+    weightChartInstance = new Chart(ctxWeight, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Вес (кг)',
+                data: weightValues,
+                backgroundColor: colors
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: {
+                    display: true,
+                    text: `Распределение веса по перевозчикам (всего ${totalWeight.toLocaleString()} кг)`
+                },
+                datalabels: {
+                    color: '#000',
+                    font: { weight: 'bold' },
+                    formatter: (value, context) => {
+                        const percent = (value / totalWeight) * 100;
+                        return percent.toFixed(1) + '%';
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    volumeChartInstance = new Chart(ctxVolume, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Объем (м³)',
+                data: volumeValues,
+                backgroundColor: colors
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: {
+                    display: true,
+                    text: `Распределение объема по перевозчикам (всего ${totalVolume.toLocaleString()} м³)`
+                },
+                datalabels: {
+                    color: '#000',
+                    font: { weight: 'bold' },
+                    formatter: (value, context) => {
+                        const percent = (value / totalVolume) * 100;
+                        return percent.toFixed(1) + '%';
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    function getColor(seed) {
+        const hash = [...seed].reduce((a, c) => a + c.charCodeAt(0), 0);
+        const r = (hash * 123) % 255;
+        const g = (hash * 321) % 255;
+        const b = (hash * 213) % 255;
+        return `rgba(${r}, ${g}, ${b}, 0.7)`;
+    }
+}
+
+// Запуск отрисовки при открытии блока
+document.getElementById('collapseCarrierStats').addEventListener('shown.bs.collapse', renderCharts);
+
+
 </script>
 {% endblock %}
