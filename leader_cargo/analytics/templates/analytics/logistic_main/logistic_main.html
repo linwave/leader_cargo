@@ -14,13 +14,20 @@
 <div class="collapse mt-3" id="collapseCarrierStats">
     <div class="d-flex flex-wrap gap-4 justify-content-center">
         <div style="width: 500px; height: 500px;">
-  <canvas id="weightPieChart"></canvas>
+            <canvas id="weightPieChart"></canvas>
+        </div>
+        <div style="width: 500px; height: 500px;">
+            <canvas id="volumePieChart"></canvas>
+        </div>
+    </div>
+    <div class="d-flex flex-wrap gap-4 justify-content-center">
+        <div class="w-100">
+    <canvas id="carrierStackedWeightChart" height="100"></canvas>
 </div>
-<div style="width: 500px; height: 500px;">
-  <canvas id="volumePieChart"></canvas>
+<div class="w-100">
+    <canvas id="carrierStackedVolumeChart" height="100"></canvas>
 </div>
     </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -32,17 +39,16 @@
 
 
 
-
 <div class="container-fluid">
     {% if user.role == 'Логист' or user.role == 'Супер Администратор' or user.role == 'РОП' %}
     <div class="col-auto mb-2">
         <button class="btn btn-primary"
-        data-bs-toggle="collapse"
-        data-bs-target="#collapseCarrierStats"
-        aria-expanded="false"
-        aria-controls="collapseCarrierStats">
-    График по перевозчикам
-</button>
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseCarrierStats"
+                aria-expanded="false"
+                aria-controls="collapseCarrierStats">
+            График по перевозчикам
+        </button>
     </div>
     {% endif %}
     {% if user.role == 'Логист' or user.role == 'Супер Администратор' %}
@@ -175,10 +181,57 @@ integer_mask("imask_float");
 <script>
 Chart.register(ChartDataLabels);
 
-    let weightChartInstance = null;
+const renderTotalLabels = {
+    id: 'renderTotalLabels',
+    afterDatasetsDraw(chart) {
+    const { ctx, chartArea, data, scales } = chart;
+    if (!scales?.x || !scales?.y) return;
+
+    const { x } = scales;
+
+    ctx.save();
+    data.labels.forEach((month, i) => {
+        let sum = 0;
+        let count = 0;
+        data.datasets.forEach(ds => {
+            if (!ds.hidden && typeof ds.data[i] === 'number') {
+                sum += ds.data[i];
+                if (ds.counts) count += ds.counts[i] || 0;
+            }
+        });
+
+        const xPos = x.getPixelForValue(i);
+        const yPos = chartArea.top + 2;
+
+        if (sum > 0) {
+            ctx.font = 'bold 13px sans-serif';
+            ctx.fillStyle = '#222';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${sum.toLocaleString()} / ${count} шт.`, xPos, yPos);
+        }
+    });
+    ctx.restore();
+}
+
+};
+
+
+
+Chart.register(renderTotalLabels); // ← теперь правильно
+
+
+
+let weightChartInstance = null;
 let volumeChartInstance = null;
 
 function renderCharts() {
+    function getColor(seed) {
+        const hash = [...seed].reduce((a, c) => a + c.charCodeAt(0), 0);
+        const r = (hash * 123) % 255;
+        const g = (hash * 321) % 255;
+        const b = (hash * 213) % 255;
+        return `rgba(${r}, ${g}, ${b}, 0.7)`;
+    }
     const data = {{ carrier_chart_data|safe }};
     const labels = data.map(item => item.carrier);
     const weightValues = data.map(item => Math.round(item.total_weight || 0));
@@ -194,7 +247,7 @@ function renderCharts() {
     if (volumeChartInstance) volumeChartInstance.destroy();
 
     weightChartInstance = new Chart(ctxWeight, {
-        type: 'doughnut',
+        type: 'pie',
         data: {
             labels: labels,
             datasets: [{
@@ -215,9 +268,10 @@ function renderCharts() {
                     color: '#000',
                     font: { weight: 'bold' },
                     formatter: (value, context) => {
-                        const percent = (value / totalWeight) * 100;
-                        return percent.toFixed(1) + '%';
-                    }
+    const count = data[context.dataIndex]?.total_articles || 0;
+    const percent = (value / totalWeight) * 100;
+    return `${percent.toFixed(1)}% (${count})`;
+}
                 }
             }
         },
@@ -225,7 +279,7 @@ function renderCharts() {
     });
 
     volumeChartInstance = new Chart(ctxVolume, {
-        type: 'doughnut',
+        type: 'pie',
         data: {
             labels: labels,
             datasets: [{
@@ -246,23 +300,137 @@ function renderCharts() {
                     color: '#000',
                     font: { weight: 'bold' },
                     formatter: (value, context) => {
-                        const percent = (value / totalVolume) * 100;
-                        return percent.toFixed(1) + '%';
-                    }
+    const count = data[context.dataIndex]?.total_articles || 0;
+    const percent = (value / totalVolume) * 100;
+    return `${percent.toFixed(1)}% (${count})`;
+}
+
                 }
             }
         },
         plugins: [ChartDataLabels]
     });
 
-    function getColor(seed) {
-        const hash = [...seed].reduce((a, c) => a + c.charCodeAt(0), 0);
-        const r = (hash * 123) % 255;
-        const g = (hash * 321) % 255;
-        const b = (hash * 213) % 255;
-        return `rgba(${r}, ${g}, ${b}, 0.7)`;
-    }
+
+
+    const stackedData = {{ carrier_stacked_data|safe }};
+    const months = Object.keys(stackedData);
+    const stackedCarriers = [...new Set(Object.values(stackedData).flatMap(m => Object.keys(m)))];
+
+    const getStackedDataset = (field) => {
+    return stackedCarriers.map(carrier => {
+        const values = months.map(month => stackedData[month][carrier]?.[field] || 0);
+        const counts = months.map(month => stackedData[month][carrier]?.count || 0);
+        return {
+            label: carrier,
+            data: values,
+            counts: counts,  // <- вот это для рендера
+            backgroundColor: getColor(carrier)
+        };
+    });
+};
+    const getMonthTotals = (field) => {
+    return months.map(month =>
+        stackedCarriers.reduce((sum, carrier) => {
+            return sum + (stackedData[month][carrier]?.[field] || 0);
+        }, 0)
+    );
+};
+
+    const stackedWeightChart = new Chart(document.getElementById('carrierStackedWeightChart'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: getStackedDataset('weight')
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Вес по месяцам (stacked)' },
+                datalabels: {
+    // Встроенные метки на каждом блоке
+    color: '#222',
+    anchor: 'center',
+    align: 'center',
+    offset: 1,
+    font: {
+        weight: 'bold',
+        size: 11
+    },
+    formatter: (value, context) => {
+    const datasetLabel = context.dataset.label;
+    const monthLabel = context.chart.data.labels[context.dataIndex];
+    const articles = stackedData[monthLabel]?.[datasetLabel]?.count || 0;
+
+    return value > 50 ? `${Math.round(value).toLocaleString()} (${articles} шт.)` : '';
+},
+    clamp: true,
+    display: 'true'
 }
+
+
+
+            },
+            scales: {
+                x: { stacked: true },
+                y: {
+                    stacked: true,
+                    title: { display: true, text: 'Вес (кг)' }
+                }
+            }
+        },
+        plugins: [ChartDataLabels, renderTotalLabels]
+    });
+
+    const stackedVolumeChart = new Chart(document.getElementById('carrierStackedVolumeChart'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: getStackedDataset('volume')
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Объем по месяцам (stacked)' },
+                datalabels: {
+    color: '#222',
+    anchor: 'center',
+    align: 'center',
+    offset: 1,
+    font: {
+        weight: 'bold',
+        size: 11
+    },
+    formatter: (value, context) => {
+    const datasetLabel = context.dataset.label;
+    const monthLabel = context.chart.data.labels[context.dataIndex];
+    const articles = stackedData[monthLabel]?.[datasetLabel]?.count || 0;
+
+    return value > 0 ? `${Math.round(value).toLocaleString()} (${articles} шт.)` : '';
+}
+,
+    clamp: true,
+    display: 'true'  // отключает отображение, если не влезает
+}
+
+
+            },
+            scales: {
+                x: { stacked: true },
+                y: {
+                    stacked: true,
+                    title: { display: true, text: 'Объем (м³)' }
+                }
+            }
+        },
+        plugins: [ChartDataLabels, renderTotalLabels]
+    });
+
+}
+
+
 
 // Запуск отрисовки при открытии блока
 document.getElementById('collapseCarrierStats').addEventListener('shown.bs.collapse', renderCharts);

@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -7,9 +8,10 @@ from PIL import Image
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import F, Q, FloatField, Sum
-from django.db.models.functions import Cast
+from django.db.models import F, Q, FloatField, Sum, Count
+from django.db.models.functions import Cast, TruncMonth
 from django.http import HttpResponse, Http404, FileResponse
+from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
@@ -1771,13 +1773,48 @@ class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
             .values('carrier')
             .annotate(
                 total_weight=Sum('weight_float'),
-                total_volume=Sum('volume_float')
+                total_volume=Sum('volume_float'),
+                total_articles=Count('id')  # ← добавляем
             )
             .order_by('carrier')  # на всякий случай
         )
         context['carrier_chart_data'] = list(carrier_stats)
         context['sum_all_weight'] = round(sum(item['total_weight'] or 0 for item in carrier_stats), 2)
         context['sum_all_volume'] = round(sum(item['total_volume'] or 0 for item in carrier_stats), 2)
+
+        carrier_month_data = context['all_articles'] \
+            .exclude(carrier__isnull=True) \
+            .exclude(weight__isnull=True) \
+            .annotate(month=TruncMonth('time_from_china')) \
+            .values('month', 'carrier') \
+            .annotate(
+            total_weight=Sum(Cast('weight', FloatField())),
+            total_volume=Sum(Cast('volume', FloatField())),
+            count=Count('id')  # ← добавляем
+        ) \
+            .order_by('month')
+        # Сборка в формат: { 'Янв': { 'Ян': 1234, 'Байкал': 567 }, ... }
+        from collections import OrderedDict
+
+        monthly_data = OrderedDict()
+        MONTHS_RU = {
+            1: 'Янв', 2: 'Фев', 3: 'Мар', 4: 'Апр', 5: 'Май', 6: 'Июн',
+            7: 'Июл', 8: 'Авг', 9: 'Сен', 10: 'Окт', 11: 'Ноя', 12: 'Дек'
+        }
+        for entry in carrier_month_data:
+            if not entry['month']: continue
+            month_label = f"{MONTHS_RU[entry['month'].month]} {entry['month'].year}"  # напр. 'Янв 2024'
+            carrier = entry['carrier']
+            if month_label not in monthly_data:
+                monthly_data[month_label] = {}
+            monthly_data[month_label][carrier] = {
+                'weight': round(entry['total_weight'] or 0, 2),
+                'volume': round(entry['total_volume'] or 0, 2),
+                'count': entry['count']  # ← включаем в данные
+            }
+
+        # Преобразуем в список для передачи в шаблон
+        context['carrier_stacked_data'] = mark_safe(json.dumps(monthly_data, ensure_ascii=False))
 
         context['table_paginator'] = Paginator(context['all_articles'], 50)
         page_number = self.request.GET.get('page', 1)
