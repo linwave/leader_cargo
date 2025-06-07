@@ -599,6 +599,7 @@ class EditCallsRop(BaseEditCallsForm):
     Форма для РОПа.
     """
     def __init__(self, *args, **kwargs):
+        self.is_superuser = kwargs.pop('is_superuser', None)
         super().__init__(*args, **kwargs)
         # Фильтруем операторов по ролям "Оператор" и "Менеджер"
         self.fields['operator'].queryset = CustomUser.objects.filter(role__in=['Оператор', 'Менеджер', 'РОП'])
@@ -606,6 +607,8 @@ class EditCallsRop(BaseEditCallsForm):
     class Meta(BaseEditCallsForm.Meta):
         # Включаем все поля из базового класса + поле "operator"
         fields = ["operator"] + BaseEditCallsForm.Meta.fields
+
+
 class EditCallsOperator(BaseEditCallsForm):
     """
     Форма для оператора.

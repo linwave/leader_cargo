@@ -146,6 +146,13 @@ CELERY_WORKER_CONCURRENCY = 4  # Установите количество по�
 CELERY_BROKER_CONNECTION_RETRY = True
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
+CELERY_BEAT_SCHEDULE = {
+    'send-scheduled-notifications': {
+        'task': 'telegram_bot.tasks.send_scheduled_telegram_notifications',  # Путь к задаче
+        'schedule': 60.0,  # Проверка каждую минуту
+    },
+}
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

@@ -7,7 +7,10 @@ from django.db import models, transaction
 from django.db.models import Q, Count, Subquery, OuterRef
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.timezone import localtime, now
 from simple_history.models import HistoricalRecords
+
+from telegram_bot.models import TelegramNotification
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +96,19 @@ class CustomUser(AbstractUser):
         )
 
         return managers_with_calls
+
+    @classmethod
+    def get_all_status_leads_count_for_all_managers(cls):
+        statuses = [status for status, _ in Leads.statuses_manager]
+
+        annotations = {
+            f"{status.lower().replace(' ', '_')}_count": Count(
+                'manager_leads',
+                filter=Q(manager_leads__status_manager=status)
+            ) for status in statuses
+        }
+
+        return cls.objects.filter(role='Менеджер').annotate(**annotations)
 
     @classmethod
     def get_calls_count_for_all_managers(cls):
@@ -594,6 +610,38 @@ class Leads(models.Model):
         verbose_name = 'Лиды'
         verbose_name_plural = 'Лиды'
         ordering = ['-time_new']
+
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #     self.create_or_update_notifications()
+    #
+    # def create_or_update_notifications(self):
+    #     """
+    #     Создаёт или обновляет уведомления для текущего лида.
+    #     """
+    #     if self.status_manager in ['В работе', 'Отложено'] and self.date_next_call_manager:
+    #         # Очистить старые уведомления
+    #         self.notifications.all().delete()
+    #
+    #         # Первое уведомление: за 30 минут до звонка
+    #         first_notification_time = self.date_next_call_manager - datetime.timedelta(minutes=30)
+    #         TelegramNotification.objects.create(
+    #             lead=self,
+    #             manager=self.manager,
+    #             notification_type='30_min_before',
+    #             scheduled_time=first_notification_time
+    #         )
+    #
+    #         # Второе уведомление: в 9:00 следующего дня, если дата звонка меньше полуночи
+    #         if self.date_next_call_manager < localtime(now()).replace(hour=0, minute=0, second=0, microsecond=0):
+    #             next_day_9am = localtime(now()).replace(hour=9, minute=0, second=0, microsecond=0) + datetime.timedelta(days=1)
+    #             TelegramNotification.objects.create(
+    #                 lead=self,
+    #                 manager=self.manager,
+    #                 notification_type='next_day_9am',
+    #                 scheduled_time=next_day_9am
+    #             )
+
 
     @staticmethod
     def get_status_change_dates_qs(target_statuses):
