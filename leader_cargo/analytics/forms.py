@@ -247,6 +247,15 @@ class AddCargo(forms.ModelForm):
             if field in ['weight', 'volume', 'number_of_seats', 'cost_goods', 'insurance_cost', 'packaging_cost']:
                 self.fields[field].widget.attrs.update({'class': 'form-control imask_float'})
 
+    def clean_weight(self):
+        value = self.cleaned_data.get('weight')
+        if isinstance(value, str):
+            value = value.replace(',', '.')
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Введите корректное значение веса.")
+
     def clean_volume(self):
         value = self.cleaned_data.get('volume')
         if isinstance(value, str):
@@ -255,6 +264,42 @@ class AddCargo(forms.ModelForm):
             return float(value)
         except (ValueError, TypeError):
             raise forms.ValidationError("Введите корректное значение объема.")
+
+    def clean_cost_goods(self):
+        value = self.cleaned_data.get('cost_goods')
+        if isinstance(value, str):
+            value = value.replace(',', '.')
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Введите корректное значение стоимости товара.")
+
+    def clean_insurance_cost(self):
+        value = self.cleaned_data.get('insurance_cost')
+        if isinstance(value, str):
+            value = value.replace(',', '.')
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Введите корректное значение страховки.")
+
+    def clean_packaging_cost(self):
+        value = self.cleaned_data.get('packaging_cost')
+        if isinstance(value, str):
+            value = value.replace(',', '.')
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Введите корректное значение стоимости упаковки.")
+
+    def clean_total_cost(self):
+        value = self.cleaned_data.get('total_cost')
+        if isinstance(value, str):
+            value = value.replace(',', '.')
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise forms.ValidationError("Введите корректное значение общей стоимости.")
 
     class Meta:
         model = CargoArticle
