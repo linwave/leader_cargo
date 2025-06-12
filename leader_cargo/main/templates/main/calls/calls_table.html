@@ -11,6 +11,8 @@
                     <tr style="vertical-align: middle;">
                         <th width="10" scope="col">#</th>
                         <th scope="col">Оператор</th>
+                        <th scope="col">CRM</th>
+                        <th scope="col">Лет на рынке</th>
                         <th scope="col">Статус</th>
                         <th scope="col">Имя клиента</th>
                         <th scope="col">Контактный номер</th>
@@ -32,8 +34,25 @@
                         style="cursor: pointer;">
                         <th scope="row">{{ call.pk }}</th>
                         <td>{{ call.operator.get_FI|default:"" }}</td>
+                        <td>{{ call.call_file.get_crm_display }}</td>
+                        <td>
+                            {% if call.work_years %}
+                            {{ call.work_years }} {{ call.work_years|pluralize_ru:"год,года,лет" }}
+                            {% if call.date_registration %}
+                            <br><small class="text-muted">с {{ call.date_registration|date:"d.m.Y" }}</small>
+                            {% endif %}
+                            {% endif %}
+                        </td>
                         <td>{{ call.status_call|default:"" }}</td>
-                        <td>{{ call.client_name|default:"" }}</td>
+                        <td>
+                            {{ call.client_name|default:"" }}
+                            {% if call.seller_page %}
+                            <br><a href="{{ call.seller_page }}" target="_blank" class="text-primary small" style="word-break: break-all;">
+                            {{ call.seller_page }}
+                        </a>
+                            {% endif %}
+                        </td>
+
                         <td>{{ call.client_phone|default:"" }}</td>
                         <td>{{ call.client_location|default:"" }}</td>
                         <td>{{ call.get_loyalty_display|default:"" }}</td>

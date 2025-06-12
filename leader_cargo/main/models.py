@@ -1,5 +1,7 @@
 import datetime
 import logging
+import re
+import sqlite3
 
 import pandas as pd
 from django.contrib.auth.models import AbstractUser
@@ -16,6 +18,11 @@ logger = logging.getLogger(__name__)
 
 from django.db import models
 
+
+def find_best_matches(col_name, possible_names):
+    return any(name.lower() in col_name.lower() for name in possible_names)
+
+
 class MaintenanceMode(models.Model):
     is_enabled = models.BooleanField(default=False, verbose_name="Включить режим обслуживания")
     message = models.TextField(
@@ -29,6 +36,7 @@ class MaintenanceMode(models.Model):
     class Meta:
         verbose_name = "Режим обслуживания"
         verbose_name_plural = "Режимы обслуживания"
+
 
 class CustomUser(AbstractUser):
     towns = [
@@ -133,9 +141,10 @@ class CustomUser(AbstractUser):
             return f'{self.last_name} {self.first_name}'
         return ""
 
-
     def get_new_calls_count(self):
         return Calls.objects.filter(status_call='Новая', manager=self).count()
+
+
 # class Employees(models.Model):
 #     towns = [
 #         ('Москва', 'Москва'),
@@ -277,7 +286,7 @@ class Goods(models.Model):
     def get_result_yuan(self):
         result = 0
         if self.price_rmb and self.quantity:
-            result = result + float(self.price_rmb.replace(' ', '').replace(',', '.'))*float(self.quantity.replace(' ', '').replace(',', '.'))
+            result = result + float(self.price_rmb.replace(' ', '').replace(',', '.')) * float(self.quantity.replace(' ', '').replace(',', '.'))
         if self.price_delivery:
             result = result + float(self.price_delivery.replace(' ', '').replace(',', '.'))
         return result
@@ -285,7 +294,7 @@ class Goods(models.Model):
     def get_result_self_yuan(self):
         result = 0
         if self.price_purchase and self.quantity:
-            result = result + float(self.price_purchase.replace(' ', '').replace(',', '.'))*float(self.quantity.replace(' ', '').replace(',', '.'))
+            result = result + float(self.price_purchase.replace(' ', '').replace(',', '.')) * float(self.quantity.replace(' ', '').replace(',', '.'))
         if self.price_delivery_real:
             result = result + float(self.price_delivery_real.replace(' ', '').replace(',', '.'))
         return result
@@ -324,7 +333,7 @@ class ManagersReports(models.Model):
     time_update = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Отчетность менеджера {self.manager_id} на дату {(self.report_upload_date+datetime.timedelta(hours=3))}"
+        return f"Отчетность менеджера {self.manager_id} на дату {(self.report_upload_date + datetime.timedelta(hours=3))}"
 
     class Meta:
         verbose_name = 'Отчетность менеджеров'
@@ -348,11 +357,19 @@ class ManagerPlans(models.Model):
         verbose_name_plural = 'Планы менеджеров'
         ordering = ['-time_create']
 
+def calculate_work_years(date_reg):
+    if pd.isnull(date_reg):
+        return None, None
+    today = datetime.datetime.today()
+    years = today.year - date_reg.year - ((today.month, today.day) < (date_reg.month, date_reg.day))
+    return max(years, 1), date_reg.date()
 
 class CallsFile(models.Model):
     CRM = [
-            ('Битрикс24', 'Битрикс24'),
-            ('amoCRM', 'acoCRM'),
+        ('Битрикс24', 'Битрикс24'),
+        ('amoCRM', 'acoCRM'),
+        ('Росаккредитация', 'Росаккредитация'),
+        ('Ozon', 'Ozon'),
     ]
     crm = models.CharField(max_length=50, choices=CRM, verbose_name='CRM')
     user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, verbose_name='Пользователь')
@@ -365,6 +382,156 @@ class CallsFile(models.Model):
     class Meta:
         verbose_name = 'Загруженный файл Call'
         verbose_name_plural = 'Загруженные файлы Calls'
+
+    def _parse_rosaccreditation(self, user):
+        db_path = self.file.path
+        conn = sqlite3.connect(db_path)
+        df_company = pd.read_sql_query("SELECT * FROM company", conn)
+        df_decl = pd.read_sql_query("SELECT id_company, date_registration FROM declaration", conn)
+
+        # Преобразуем даты
+        df_decl['date_registration'] = pd.to_datetime(df_decl['date_registration'], format="%d.%m.%Y", errors='coerce')
+
+        # Оставим по одной записи на компанию (самую раннюю дату)
+        df_decl = df_decl.sort_values('date_registration').drop_duplicates('id_company')
+
+        # Соединяем по id_company
+        df = df_company.merge(df_decl, on='id_company', how='left')
+        conn.close()
+
+        operators = list(CustomUser.objects.filter(role='Оператор'))
+        current_operator_index = 0
+        existing_phones = Calls.get_existing_phones()
+        calls_to_create = []
+
+        created_calls_count = 0
+        duplicate_phone_count = 0
+        total_rows = len(df)
+
+        for _, row in df.iterrows():
+            name_parts = [row.get('last_name_director'), row.get('name_director'), row.get('otch_director')]
+            client_name = ' '.join(filter(lambda x: x and x != '-' and x != ' ', name_parts)).strip()
+
+            client_phone = str(row.get('phone')).strip()
+            if not client_name or not client_phone:
+                continue
+
+            if client_phone in existing_phones:
+                duplicate_phone_count += 1
+                continue
+
+            operator = operators[current_operator_index] if operators else None
+            current_operator_index = (current_operator_index + 1) % len(operators) if operators else 0
+
+            company_type = row.get('type_company') or ''
+            client_location = row.get('address') or ''
+            raw_date = row.get('date_registration')
+            work_years, date_registration = calculate_work_years(raw_date)
+
+            call = Calls(
+                client_name=client_name,
+                client_phone=client_phone,
+                status_call='Не обработано',
+                date_call=timezone.now(),
+                operator=operator,
+                call_file=self,
+                company_type=company_type,
+                client_location=client_location,
+                work_years=work_years,
+                date_registration=date_registration
+            )
+            calls_to_create.append(call)
+            existing_phones.add(client_phone)
+
+        if calls_to_create:
+            Calls.objects.bulk_create(calls_to_create)
+            created_calls_count += len(calls_to_create)
+
+        return {
+            'created': created_calls_count,
+            'duplicates': duplicate_phone_count,
+            'total': total_rows
+        }
+
+    def parse_and_generate_calls(self, user):
+        if self.crm == 'Росаккредитация':
+            return self._parse_rosaccreditation(user)
+        else:
+            BATCH_SIZE = 10000
+            excel_file = self.file
+            df = pd.read_excel(excel_file)
+
+            column_mapping = {
+                'client_name': ['название лида', 'имя', 'фамилия', 'имя клиента', 'компания', 'название продавца'],
+                'client_phone': ['телефон', 'телефоны', 'номер телефона', 'контактный номер', 'рабочий телефон', 'мобильные телефоны', 'городские телефоны'],
+                'company_type': ['тип компании', 'организационно-правовая форма', 'форма собственности'],
+                'seller_page': ['страница продавца', 'сайт', 'url', 'адрес сайта'],
+                'work_years': ['работает с ', 'работает с ozon', 'лет с озон', 'опыт работы'],
+                'date_registration': ['дата создания'],
+                'client_location': ['город клиента', 'адрес продавца', 'юридический адрес']
+            }
+
+            normalized_columns = {key: [] for key in column_mapping}
+            for col in df.columns:
+                for key, aliases in column_mapping.items():
+                    if find_best_matches(col, aliases):
+                        normalized_columns[key].append(col)
+                        break
+
+            missing_columns = [key for key in ['client_name', 'client_phone'] if not normalized_columns[key]]
+            if missing_columns:
+                raise ValueError(f'Отсутствуют необходимые колонки: {", ".join(missing_columns)}.')
+
+            operators = list(CustomUser.objects.filter(role='Оператор'))
+            current_operator_index = 0
+            existing_phones = Calls.get_existing_phones()
+            calls_to_create = []
+
+            total_rows = len(df)
+            created_calls_count = 0
+            duplicate_phone_count = 0
+
+            for index, row in df.iterrows():
+                if operators:
+                    current_operator = operators[current_operator_index]
+                    current_operator_index = (current_operator_index + 1) % len(operators)
+                else:
+                    current_operator = None
+
+                call = Calls.create_from_row(row, normalized_columns, current_operator, self)
+
+                # Альтернатива: вычисление work_years по дате создания, если нет значения
+                if call and not call.work_years and normalized_columns.get('date_registration'):
+                    raw_date = row[normalized_columns['date_registration'][0]]
+                    if pd.notnull(raw_date):
+                        try:
+                            parsed_date = pd.to_datetime(raw_date, errors='coerce')
+                            if not pd.isnull(parsed_date):
+                                call.work_years, call.date_registration = calculate_work_years(parsed_date)
+                        except Exception:
+                            pass
+
+                if call:
+                    if call.client_phone in existing_phones:
+                        duplicate_phone_count += 1
+                        continue
+                    calls_to_create.append(call)
+                    existing_phones.add(call.client_phone)
+
+                if len(calls_to_create) >= BATCH_SIZE:
+                    Calls.objects.bulk_create(calls_to_create)
+                    created_calls_count += len(calls_to_create)
+                    calls_to_create = []
+
+            if calls_to_create:
+                Calls.objects.bulk_create(calls_to_create)
+                created_calls_count += len(calls_to_create)
+
+            return {
+                'created': created_calls_count,
+                'duplicates': duplicate_phone_count,
+                'total': total_rows
+            }
 
 
 class Calls(models.Model):
@@ -391,7 +558,12 @@ class Calls(models.Model):
     date_call = models.DateTimeField(verbose_name='Дата звонка', blank=True, null=True)
     client_name = models.CharField(verbose_name='ФИО клиента', max_length=255, blank=True, null=True)
     client_phone = models.CharField(verbose_name='Контактный номер', max_length=50, unique=True)
-    client_location = models.CharField(verbose_name='Город клиента', max_length=50, blank=True, null=True)
+    company_type = models.CharField(max_length=50, verbose_name='Тип компании', blank=True, null=True)
+    seller_page = models.URLField(verbose_name='Страница продавца', blank=True, null=True)
+    work_years = models.PositiveIntegerField(verbose_name='Сколько лет работает', blank=True, null=True)
+    date_registration = models.DateField(verbose_name='Дата регистрации в CRM', blank=True, null=True)
+
+    client_location = models.CharField(verbose_name='Город клиента', max_length=150, blank=True, null=True)
     description = models.TextField(verbose_name='Комментарий по звонку оператор', max_length=600, blank=True, null=True)
     status_call = models.CharField(default="Не обработано", choices=statuses_operator, verbose_name='Статус заявки', max_length=50)
     date_next_call = models.DateTimeField(verbose_name='Дата следующего звонка', blank=True, null=True)
@@ -432,21 +604,23 @@ class Calls(models.Model):
             calls_query = calls_query.filter(status_manager__in=selected_manager_statuses)
 
         return calls_query.select_related('operator', 'manager').order_by('pk')
+
     @classmethod
-    def filter_by_status(cls, user, selected_operator_statuses=None, selected_manager_statuses=None, selected_managers=None):
+    def filter_by_status(cls, user, selected_operator_statuses=None, selected_manager_statuses=None, selected_managers=None, selected_crms=None):
         if user.role in ['Супер Администратор', 'РОП']:
-            calls_query = cls.objects.select_related('operator', 'manager').order_by('pk').all()
+            calls_query = cls.objects.select_related('operator', 'manager', 'call_file').order_by('pk').all()
         elif user.role == 'Менеджер':
-            calls_query = cls.objects.filter(operator=user).select_related('operator', 'manager').order_by('pk').all()
+            calls_query = cls.objects.filter(operator=user).select_related('operator', 'manager', 'call_file').order_by('pk').all()
         elif user.role == 'Оператор':
-            calls_query = cls.objects.filter(Q(operator=user) | Q(operator__isnull=True)).select_related('operator', 'manager').order_by('pk').all()
+            calls_query = cls.objects.filter(Q(operator=user) | Q(operator__isnull=True)).select_related('operator', 'manager', 'call_file').order_by('pk').all()
         if selected_operator_statuses:
             calls_query = calls_query.filter(status_call__in=selected_operator_statuses)
         if selected_manager_statuses:
             calls_query = calls_query.filter(status_manager__in=selected_manager_statuses)
         if selected_managers:
             calls_query = calls_query.filter(operator__in=selected_managers)
-
+        if selected_crms:
+            calls_query = calls_query.filter(call_file__crm__in=selected_crms)
         return calls_query
 
     @classmethod
@@ -456,14 +630,14 @@ class Calls(models.Model):
     @classmethod
     def search(cls, query, queryset):
         return queryset.filter(
-                Q(client_phone__iregex=query)
-                |
-                Q(client_name__iregex=query)
-                |
-                Q(client_location__iregex=query)
-                |
-                Q(description__iregex=query)
-            )
+            Q(client_phone__iregex=query)
+            |
+            Q(client_name__iregex=query)
+            |
+            Q(client_location__iregex=query)
+            |
+            Q(description__iregex=query)
+        )
 
     @classmethod
     def normalize_client_name(cls, row, columns):
@@ -477,15 +651,60 @@ class Calls(models.Model):
     @classmethod
     def create_from_row(cls, row, columns, operator, call_file):
         client_name = cls.normalize_client_name(row, columns['client_name'])
-        client_phone = str(row[columns['client_phone'][0]]).strip() if pd.notnull(row[columns['client_phone'][0]]) else None
 
-        if not client_name or not client_phone:
-            # logger.warning(f'Пропущена строка: client_name={client_name}, client_phone={client_phone}')
+        phones = []
+        for phone_col in columns['client_phone']:
+            raw_phone = row.get(phone_col)
+            if pd.isnull(raw_phone):
+                continue
+            phone = str(raw_phone).strip()
+            if phone:
+                phones.append(phone)
+
+        if not client_name or not phones:
             return None
+
+        combined_phones = ', '.join(phones)
+
+        company_type = None
+        seller_page = None
+
+        client_location = None
+        if 'client_location' in columns and columns['client_location']:
+            for col in columns['client_location']:
+                val = row.get(col)
+                if pd.notnull(val):
+                    client_location = str(val).strip()
+                    if client_location:
+                        break
+
+        if 'company_type' in columns and columns['company_type']:
+            company_type = str(row[columns['company_type'][0]]).strip() if pd.notnull(row[columns['company_type'][0]]) else None
+
+        if 'seller_page' in columns and columns['seller_page']:
+            seller_page = str(row[columns['seller_page'][0]]).strip() if pd.notnull(row[columns['seller_page'][0]]) else None
+
+        work_years = None
+        if 'work_years' in columns and columns['work_years']:
+            raw = str(row[columns['work_years'][0]]).lower().strip()
+            match = re.search(r'(\d+)', raw)
+            if match:
+                years = int(match.group(1))
+                # если упоминаются "дней", "день", "месяц" — считаем как 1 год
+                if any(keyword in raw for keyword in ['дн', 'день', 'дней', 'месяц', 'месяцев', 'мес']):
+                    work_years = 1
+                else:
+                    work_years = max(years, 1)
+            else:
+                work_years = None
 
         return cls(
             client_name=client_name,
-            client_phone=client_phone,
+            client_phone=combined_phones,
+            client_location=client_location,
+            company_type=company_type,
+            seller_page=seller_page,
+            work_years=work_years,
             status_call='Не обработано',
             date_call=timezone.now(),
             operator=operator,
@@ -499,6 +718,7 @@ class Calls(models.Model):
     @classmethod
     def get_existing_phones(cls):
         return set(cls.objects.values_list('client_phone', flat=True))
+
     @staticmethod
     def clear_all():
         with transaction.atomic():
@@ -603,6 +823,7 @@ class Leads(models.Model):
     time_update = models.DateTimeField(auto_now=True)
 
     history = HistoricalRecords()
+
     def __str__(self):
         return f"Лид {self.client_name} {self.client_phone}"
 
@@ -641,7 +862,6 @@ class Leads(models.Model):
     #                 notification_type='next_day_9am',
     #                 scheduled_time=next_day_9am
     #             )
-
 
     @staticmethod
     def get_status_change_dates_qs(target_statuses):
@@ -682,7 +902,6 @@ class Leads(models.Model):
             |
             Q(description_manager__iregex=query)
         )
-
 
     @classmethod
     def filter_by_status(cls, user, selected_manager_statuses=None, selected_managers=None):

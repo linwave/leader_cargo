@@ -61,9 +61,9 @@
           hx-swap="innerHTML"
           hx-push-url="true"
           id="filter-form" method="GET" action="{% url 'main:calls' %}">
-        <div class="row justify-content-start gy-3">
+        <div class="row justify-content-start gy-2">
             {% if user.role == 'Оператор' or user.role == 'Менеджер' %}
-            <div class="col-12">
+            <div class="col-6">
                 <!--                <label for="status_call" class="form-label">Статус заявки</label>-->
                 <select id="status_call" name="status_call" class="form-select form-select-sm select2" multiple>
                     {% for value, label in form.fields.status_call.choices %}
@@ -71,7 +71,23 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-6">
+                <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
+                    <option value="Битрикс24" {% if 'Битрикс24' in selected_crms %}selected{% endif %}>Битрикс24</option>
+                    <option value="amoCRM" {% if 'amoCRM' in selected_crms %}selected{% endif %}>amoCRM</option>
+                    <option value="Росаккредитация" {% if 'Росаккредитация' in selected_crms %}selected{% endif %}>Росаккредитация</option>
+                    <option value="Ozon" {% if 'Ozon' in selected_crms %}selected{% endif %}>Ozon</option>
+                </select>
+            </div>
             {% elif user.role == 'Супер Администратор' or user.role == 'РОП' %}
+            <div class="col-12">
+                <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
+                    <option value="Битрикс24" {% if 'Битрикс24' in selected_crms %}selected{% endif %}>Битрикс24</option>
+                    <option value="amoCRM" {% if 'amoCRM' in selected_crms %}selected{% endif %}>amoCRM</option>
+                    <option value="Росаккредитация" {% if 'Росаккредитация' in selected_crms %}selected{% endif %}>Росаккредитация</option>
+                    <option value="Ozon" {% if 'Ozon' in selected_crms %}selected{% endif %}>Ozon</option>
+                </select>
+            </div>
             <div class="col-6">
                 <select id="status_call" name="status_call" class="form-select form-select-sm select2" multiple>
                     {% for value, label in form.fields.status_call.choices %}
@@ -93,12 +109,31 @@
                 <input type="text" id="search" name="search" class="form-control form-control-sm" placeholder="Поиск..." value="{{ search }}">
             </div>
             <div class="col-auto">
-                <select id="page_size" name="page_size" class="form-select form-select-sm">
-                    <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
-                    <option value="30" {% if page_size == '30' %}selected{% endif %}>30</option>
-                    <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
-                    <option value="100" {% if page_size == '100' %}selected{% endif %}>100</option>
-                </select>
+                <div class="row">
+                    <div class="col-auto">
+                        <select id="order_by" name="order_by" class="form-select form-select-sm">
+                            <option value="time_create" {% if order_by == 'time_create' %}selected{% endif %}>Дата создания</option>
+                            <option value="client_name" {% if order_by == 'client_name' %}selected{% endif %}>Имя клиента</option>
+                            <option value="client_phone" {% if order_by == 'client_phone' %}selected{% endif %}>Телефон</option>
+                            <option value="status_call" {% if order_by == 'status_call' %}selected{% endif %}>Статус</option>
+                            <option value="work_years" {% if order_by == 'work_years' %}selected{% endif %}>Лет на рынке</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <select id="order_dir" name="order_dir" class="form-select form-select-sm">
+                            <option value="asc" {% if order_dir == 'asc' %}selected{% endif %}>↑ По возрастанию</option>
+                            <option value="desc" {% if order_dir == 'desc' %}selected{% endif %}>↓ По убыванию</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <select id="page_size" name="page_size" class="form-select form-select-sm">
+                            <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
+                            <option value="30" {% if page_size == '30' %}selected{% endif %}>30</option>
+                            <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
+                            <option value="100" {% if page_size == '100' %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
     </form>
@@ -205,7 +240,15 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 <script>
+
     $(document).ready(function() {
+        $('#crm').select2({
+            placeholder: "Источник CRM",
+            allowClear: true,
+            width: '100%'
+        }).on('change', function(e) {
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
         $('#status_call').select2({
             placeholder: "Выбрать статус заявки",
             allowClear: true,
@@ -220,6 +263,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }).on('change', function(e) {
             document.getElementById('filter-form').dispatchEvent(new Event('submit'));
         });
+        $('#order_by, #order_dir').on('change', function () {
+    document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+});
         $('#managers').select2({
             placeholder: "Выбрать оператора",
             allowClear: true,

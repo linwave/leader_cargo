@@ -26,3 +26,21 @@ def urlencode_after_remove(query_dict, param_to_remove):
     if param_to_remove in new_query_dict:
         del new_query_dict[param_to_remove]
     return new_query_dict.urlencode()
+
+@register.filter
+def pluralize_ru(value, forms):
+    # "год,года,лет"
+    one, few, many = forms.split(',')
+    n = abs(int(value))
+    if n % 10 == 1 and n % 100 != 11:
+        return one
+    elif 2 <= n % 10 <= 4 and not (12 <= n % 100 <= 14):
+        return few
+    else:
+        return many
+
+@register.filter
+def split_by_comma(value):
+    if not value:
+        return []
+    return [v.strip() for v in value.split(',')]
