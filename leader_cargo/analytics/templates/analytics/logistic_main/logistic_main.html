@@ -1,5 +1,5 @@
 {% extends 'main/base.html' %}
-
+{% load static %}
 {% block title %}
 {{ title }}
 {% endblock %}
@@ -31,8 +31,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-
+<script src="{% static 'main/js/chartjs-plugin-datalabels@2.js' %}"></script>
+<!--<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>-->
 
 
 
@@ -40,7 +40,7 @@
 
 
 <div class="container-fluid">
-    {% if user.role == 'Логист' or user.role == 'Супер Администратор' or user.role == 'РОП' %}
+    {% if user.role == 'Логист' or user.role == 'Супер Администратор' or user.role == 'РОП' or user.role == 'Менеджер' %}
     <div class="col-auto mb-2">
         <button class="btn btn-primary"
                 data-bs-toggle="collapse"

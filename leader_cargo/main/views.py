@@ -1166,6 +1166,8 @@ def edit_calls(request, call_id):
                             send_telegram_message(lead.manager.telegram_profile.chat_id, f"{lead.manager}\n{lead.pk} - ({lead.call.pk}) - Новый {lead} ", settings.TELEGRAM_BOT_TOKEN)
                 else:
                     messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone} изменена")
+            else:
+                messages.error(request, f"ОШИБКА: {form_edit.errors}")
             referer = request.META.get('HTTP_REFERER', reverse('main:calls'))
             # Добавляем якорь к URL
             if referer:

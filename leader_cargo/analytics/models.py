@@ -237,6 +237,7 @@ class CargoArticle(models.Model):
         ('URAL', 'URAL'),
         ('Мурад', 'Мурад'),
         ('Дин', 'Дин'),
+        ('Лиля', 'Лиля')
     ]
     path_formats = [
         ('Быстрое авто', 'Быстрое авто'),
@@ -344,6 +345,58 @@ class CargoArticle(models.Model):
             self.status = 'Прибыл в РФ'
         self.save()
 
+    def is_empty_manager(self):
+        return self.responsible_manager is None
+
+    def is_empty_path_format(self):
+        return self.path_format is None
+
+    def is_insurance_needed_today(self):
+        today = datetime.datetime.now()
+        return (self.insurance_cost in [None, ''] and
+                self.time_create.year == today.year and
+                self.time_create.month == today.month and
+                self.time_create.day == today.day and
+                parse_float(self.weight) > 10)
+
+    def parsed_weight(self):
+        return parse_float(self.weight)
+
+    def parsed_volume(self):
+        return parse_float(self.volume)
+
+    def parsed_prr(self):
+        return parse_float(self.prr)
+
+    def parsed_tat(self):
+        return parse_float(self.tat_cost)
+
+    def short_status(self):
+        return self.status or 'В пути'
+
+    @classmethod
+    def manager_full_name(cls, manager):
+        return f"{manager.last_name} {manager.first_name}"
+
+    @classmethod
+    def month_label(cls, dt):
+        MONTHS_RU = {
+            1: 'Янв', 2: 'Фев', 3: 'Мар', 4: 'Апр', 5: 'Май', 6: 'Июн',
+            7: 'Июл', 8: 'Авг', 9: 'Сен', 10: 'Окт', 11: 'Ноя', 12: 'Дек'
+        }
+        return f"{MONTHS_RU[dt.month]} {dt.year}"
+
+def percent_filled(empty_count, total_count):
+    if total_count == 0:
+        return 100
+    percent = 100 - int(empty_count / total_count * 100)
+    return percent if percent < 100 else 99 if empty_count != 0 else 100
+
+def parse_float(value):
+    try:
+        return float(value.replace(" ", "").replace(",", "."))
+    except Exception:
+        return 0
 
 class PaymentDocumentsForArticles(models.Model):
     article = models.ForeignKey(CargoArticle, verbose_name='Артикул', on_delete=models.CASCADE, related_name='file_payment_by_client')
