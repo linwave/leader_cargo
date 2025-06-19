@@ -1070,6 +1070,8 @@ def edit_leads(request, lead_id):
             if form_edit.is_valid():
                 form_edit.save()
                 messages.success(request, f"Лид обновлен: {lead}")
+            else:
+                messages.error(request, f"ОШИКБА: {lead}")
             referer = request.META.get('HTTP_REFERER', reverse('main:leads'))
             # Добавляем якорь к URL
             if referer:

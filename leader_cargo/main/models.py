@@ -557,7 +557,7 @@ class Calls(models.Model):
     operator = models.ForeignKey(CustomUser, verbose_name='Ответственный оператор', on_delete=models.SET_NULL, blank=True, null=True, related_name="operator_calls")
     date_call = models.DateTimeField(verbose_name='Дата звонка', blank=True, null=True)
     client_name = models.CharField(verbose_name='ФИО клиента', max_length=255, blank=True, null=True)
-    client_phone = models.CharField(verbose_name='Контактный номер', max_length=255, unique=True)
+    client_phone = models.CharField(verbose_name='Контактный номер', max_length=550, unique=True)
     company_type = models.CharField(max_length=50, verbose_name='Тип компании', blank=True, null=True)
     seller_page = models.URLField(verbose_name='Страница продавца', blank=True, null=True)
     work_years = models.PositiveIntegerField(verbose_name='Сколько лет работает', blank=True, null=True)
