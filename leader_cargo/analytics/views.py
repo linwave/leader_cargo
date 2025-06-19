@@ -317,13 +317,13 @@ class LogisticRequestsEditView(MyLoginMixin, DataMixin, UpdateView):
                     worksheet.write(f'K{row}', good.trademark, cell_format)
                 worksheet.autofit()
                 workbook.close()
-        if new_data.status == 'Новый':
-            logists_china = CustomUser.objects.filter(role='Логист Китай')
-            for log in logists_china:
-                telegram_profile, created = TelegramProfile.objects.get_or_create(user=log)
-                if telegram_profile.is_verified:
-                    send_telegram_message(telegram_profile.chat_id, f"Новый запрос {new_data}\n"
-                                                                    f"https://nextkargo.ru/logistic/logistic-requests/edit/{new_data.pk}", settings.TELEGRAM_BOT_TOKEN)
+            if new_data.status == 'Новый':
+                logists_china = CustomUser.objects.filter(role='Логист Китай')
+                for log in logists_china:
+                    telegram_profile, created = TelegramProfile.objects.get_or_create(user=log)
+                    if telegram_profile.is_verified:
+                        send_telegram_message(telegram_profile.chat_id, f"Новый запрос {new_data}\n"
+                                                                        f"https://nextkargo.ru/logistic/logistic-requests/edit/{new_data.pk}", settings.TELEGRAM_BOT_TOKEN)
         return redirect('analytics:edit_logistic_requests', new_data.pk)
 
     def get(self, request, *args, **kwargs):
