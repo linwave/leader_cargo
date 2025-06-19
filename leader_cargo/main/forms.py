@@ -441,9 +441,13 @@ class AddEmployeesForm(ModelForm):
         super().__init__(*args, **kwargs)
         roles = [
             ('РОП', 'РОП'),
+            ('Администратор', 'Администратор'),
             ('Бухгалтер', 'Бухгалтер'),
+            ('Логист Китай', 'Логист Китай'),
+            ('Логист', 'Логист'),
             ('Менеджер', 'Менеджер'),
             ('Оператор', 'Оператор'),
+            ('Закупщик', 'Закупщик'),
         ]
         self.fields["role"].widget.attrs.update({"class": 'form-control'})
         self.fields["role"].choices = roles
@@ -498,9 +502,13 @@ class CardEmployeesForm(ModelForm):
         super().__init__(*args, **kwargs)
         roles = [
             ('РОП', 'РОП'),
+            ('Администратор', 'Администратор'),
             ('Бухгалтер', 'Бухгалтер'),
+            ('Логист Китай', 'Логист Китай'),
+            ('Логист', 'Логист'),
             ('Менеджер', 'Менеджер'),
             ('Оператор', 'Оператор'),
+            ('Закупщик', 'Закупщик'),
         ]
         self.fields["role"].widget.attrs.update({"class": 'form-control'})
         self.fields["role"].choices = roles

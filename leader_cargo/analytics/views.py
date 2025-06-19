@@ -19,6 +19,9 @@ from django.urls import reverse_lazy, reverse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView, ListView
+
+from telegram_bot.models import TelegramProfile
+from telegram_bot.utils import send_telegram_message
 from .forms import AddCarrierFilesForm, EditTableArticleForm, EditTransportationTariffForClients, AddCarriersListForm, EditCarriersListForm, DeleteCarriersListForm, AddRoadForm, EditRoadForm, DeleteRoadForm, AddRoadToCarriersForm, \
     DeleteRoadToCarriersForm, AddRequestsForLogisticsCalculationsForm, EditRequestsForLogisticsCalculationsForm, AddGoodsRequestLogisticsForm, NewStatusRequestForm, EditGoodsRequestLogisticsForm, EditRoadToCarriersForm, \
     EditPaidByTheClientArticleForm, AddBidRequestLogisticsForm, UpdateRequestForm, AddCargo
@@ -314,6 +317,13 @@ class LogisticRequestsEditView(MyLoginMixin, DataMixin, UpdateView):
                     worksheet.write(f'K{row}', good.trademark, cell_format)
                 worksheet.autofit()
                 workbook.close()
+        if new_data.status == 'Новый':
+            logists_china = CustomUser.objects.filter(role='Логист Китай')
+            for log in logists_china:
+                telegram_profile, created = TelegramProfile.objects.get_or_create(user=log)
+                if telegram_profile.is_verified:
+                    send_telegram_message(telegram_profile.chat_id, f"Новый запрос {new_data}\n"
+                                                                    f"https://nextkargo.ru/logistic/logistic-requests/edit/{new_data.pk}", settings.TELEGRAM_BOT_TOKEN)
         return redirect('analytics:edit_logistic_requests', new_data.pk)
 
     def get(self, request, *args, **kwargs):
