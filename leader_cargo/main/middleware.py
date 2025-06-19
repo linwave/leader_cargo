@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.http import HttpResponseForbidden
+from django.urls import reverse
+
 from .models import MaintenanceMode
 
 class MaintenanceModeMiddleware:
@@ -12,7 +14,7 @@ class MaintenanceModeMiddleware:
         maintenance_mode = MaintenanceMode.objects.first()
         if maintenance_mode and maintenance_mode.is_enabled:
             # Исключение для администраторов (superusers)
-            if not getattr(request.user, 'is_superuser', False):
+            if not request.path.startswith(reverse('admin:index')):
                 return render(request, 'main/maintenance.html', {
                     'message': maintenance_mode.message
                 }, status=503)

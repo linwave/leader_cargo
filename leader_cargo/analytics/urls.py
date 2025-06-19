@@ -48,6 +48,7 @@ urlpatterns = [
     path('carriers-list/price-list-to-carrier-road/<int:carrier_id>/<int:road_id>', views.priceListToCarrierRoad, name='price_list'),
     path('carriers-list/add-price-list-to-carrier-road/<int:carrier_id>/<int:road_id>', views.addPriceListToCarrierRoad, name='add_price_list'),
     path('carriers-list/edit-price-list-to-carrier-road/<int:density_id>', views.editPriceListToCarrierRoad, name='edit_price_list'),
+    path('carriers-list/road/update-ordering/', views.UpdateOrderingView.as_view(), name='update_ordering'),
 
     path('download/<int:file_id>', views.download, name='download_client_payment'),
 

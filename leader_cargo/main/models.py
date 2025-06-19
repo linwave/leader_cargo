@@ -563,7 +563,7 @@ class Calls(models.Model):
     work_years = models.PositiveIntegerField(verbose_name='Сколько лет работает', blank=True, null=True)
     date_registration = models.DateField(verbose_name='Дата регистрации в CRM', blank=True, null=True)
 
-    client_location = models.CharField(verbose_name='Город клиента', max_length=150, blank=True, null=True)
+    client_location = models.CharField(verbose_name='Город клиента', max_length=255, blank=True, null=True)
     description = models.TextField(verbose_name='Комментарий по звонку оператор', max_length=600, blank=True, null=True)
     status_call = models.CharField(default="Не обработано", choices=statuses_operator, verbose_name='Статус заявки', max_length=50)
     date_next_call = models.DateTimeField(verbose_name='Дата следующего звонка', blank=True, null=True)
@@ -808,7 +808,7 @@ class Leads(models.Model):
 
     client_name = models.CharField(verbose_name='ФИО клиента', max_length=255, blank=True, null=True)
     client_phone = models.CharField(verbose_name='Контактный номер', max_length=50, unique=True)
-    client_location = models.CharField(verbose_name='Город клиента', max_length=50, blank=True, null=True)
+    client_location = models.CharField(verbose_name='Город клиента', max_length=255, blank=True, null=True)
     loyalty = models.IntegerField(choices=statuses_loyalty, verbose_name='Статус лояльности', blank=True, null=True)
 
     status_manager = models.CharField(default="Новая", choices=statuses_manager, verbose_name='Статус заявки менеджера', max_length=50)

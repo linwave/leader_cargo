@@ -52,4 +52,21 @@ document.body.addEventListener('htmx:configRequest', (event) => {
 });
 imask_class_int();
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Функция для автоматического изменения высоты textarea
+        function autoResizeTextarea() {
+            const textareas = document.querySelectorAll('.auto-resize');
+            textareas.forEach(textarea => {
+                // Сбрасываем высоту, чтобы правильно рассчитать новую
+                textarea.style.height = 'auto';
+                // Устанавливаем высоту в зависимости от содержимого
+                textarea.style.height = `${textarea.scrollHeight + 10}px`;
+            });
+        }
+
+        // Вызываем функцию при загрузке страницы
+        autoResizeTextarea();
+    });
+</script>
 {% endblock %}

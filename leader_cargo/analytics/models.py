@@ -18,6 +18,8 @@ class RoadsList(models.Model):
     name = models.CharField(max_length=100, verbose_name='Название дороги')
     activity = models.BooleanField(verbose_name='Статус активности дороги', default=True, blank=True, null=True)
     status = models.BooleanField(verbose_name='Статус', default=True)
+    ordering = models.IntegerField(verbose_name='Сортировка', default=1)
+
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
 
@@ -27,6 +29,7 @@ class RoadsList(models.Model):
     class Meta:
         verbose_name = 'Список дорог'
         verbose_name_plural = 'Дороги'
+        ordering = ['ordering']
 
     def all_parameters(self):
         return self.carriersroadparameters_set.all()
@@ -102,8 +105,10 @@ class RequestsForLogisticsCalculations(models.Model):
     carrier = models.ForeignKey(CarriersList, on_delete=models.PROTECT, verbose_name='Перевозчик', blank=True, null=True)
     roads = models.ManyToManyField(RoadsList)
 
-    comments_initiator = models.CharField(max_length=250, verbose_name='Комментарии от инициатора', blank=True, null=True)
-    comments_logist = models.CharField(max_length=250, verbose_name='Комментарии от логиста', blank=True, null=True)
+    comments_initiator = models.CharField(max_length=550, verbose_name='Комментарии от инициатора', blank=True, null=True)
+    comments_logist = models.CharField(max_length=550, verbose_name='Комментарии от логиста', blank=True, null=True)
+    tariff_for_client = models.CharField(max_length=550, verbose_name='Тариф перевозки для клиента', blank=True, null=True)
+
     notification = models.BooleanField(verbose_name='Уведомление по заявке', default=False)
 
     file_path_request = models.FileField(verbose_name='Excel файл товаров по запросу',

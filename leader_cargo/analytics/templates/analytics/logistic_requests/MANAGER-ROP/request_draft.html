@@ -40,17 +40,24 @@
         </div>
         <div class="input-group mb-2" style="width: 600px">
             <span class="input-group-text">Комментарий:</span>
-            <textarea class="form-control" name="comments_initiator" id="comments_initiator" rows="2" wrap="hard">{{my_request.comments_initiator|default:''}}</textarea>
+            <textarea class="form-control auto-resize" name="comments_initiator" id="comments_initiator" rows="2" wrap="hard">{{my_request.comments_initiator|default:''}}</textarea>
         </div>
         {% if my_request.comments_logist %}
         <div class="input-group mb-2" style="width: 600px">
             <span class="input-group-text">Комментарий логиста:</span>
-            <textarea class="form-control" name="comments_logist" id="comments_logist" rows="2" wrap="hard" disabled>{{my_request.comments_logist|default:''}}</textarea>
+            <textarea class="form-control auto-resize" name="comments_logist" id="comments_logist" rows="2" wrap="hard" disabled>{{my_request.comments_logist|default:''}}</textarea>
         </div>
         {% endif %}
         <div class="input-group mb-2" style="width: 600px">
             <input name="files_for_request" type="file" id="files_for_request_input" class="form-control" multiple>
         </div>
+        <div class="input-group mb-2" style="width: 600px">
+        <span class="input-group-text">Тариф перевозки для клиента:</span>
+        <textarea class="form-control auto-resize" name="tariff_for_client" id="tariff_for_client" rows="1" wrap="hard"
+                  hx-post="{% url 'analytics:edit_htmx_logistic_requests' my_request.pk %}"
+                  hx-trigger="keyup changed delay:0.5s"
+                  hx-swap="none">{{my_request.tariff_for_client|default:''}}</textarea>
+    </div>
     </form>
 </div>
 <div class="container-fluid">

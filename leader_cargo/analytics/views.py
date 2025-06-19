@@ -10,11 +10,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import F, Q, FloatField, Sum, Count
 from django.db.models.functions import Cast, TruncMonth
-from django.http import HttpResponse, Http404, FileResponse
+from django.http import HttpResponse, Http404, FileResponse, JsonResponse
+from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView, ListView
 from .forms import AddCarrierFilesForm, EditTableArticleForm, EditTransportationTariffForClients, AddCarriersListForm, EditCarriersListForm, DeleteCarriersListForm, AddRoadForm, EditRoadForm, DeleteRoadForm, AddRoadToCarriersForm, \
     DeleteRoadToCarriersForm, AddRequestsForLogisticsCalculationsForm, EditRequestsForLogisticsCalculationsForm, AddGoodsRequestLogisticsForm, NewStatusRequestForm, EditGoodsRequestLogisticsForm, EditRoadToCarriersForm, \
@@ -328,8 +331,10 @@ def editLogisticRequest(request, request_id):
         if 'comments_logist' in request.POST:
             my_request.comments_logist = request.POST['comments_logist']
             my_request.notification = True
+        if 'tariff_for_client' in request.POST:
+            my_request.tariff_for_client = request.POST['tariff_for_client']
         my_request.save()
-    return render(request, 'analytics/logistic_requests/partial/edit_goods_for_requests_logistic.html')
+    return JsonResponse({'success': True})
 
 
 class NewStatusRequest(MyLoginMixin, DataMixin, UpdateView):
@@ -664,22 +669,48 @@ class BidForGoodsView(MyLoginMixin, DataMixin, TemplateView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         if self.request.GET.get('rate'):
-            rate = RequestsForLogisticsRate.objects.filter(good__pk=kwargs["goods_id"], road__pk=kwargs["road_id"], carrier__pk=kwargs["carrier_id"])
+            rate = RequestsForLogisticsRate.objects.filter(
+                good__pk=kwargs["goods_id"],
+                road__pk=kwargs["road_id"],
+                carrier__pk=kwargs["carrier_id"]
+            )
             if rate:
                 bid = rate[0]
                 bid.bid = self.request.GET.get('rate')
                 bid.save()
             else:
                 good = RequestsForLogisticsGoods.objects.get(pk=kwargs["goods_id"])
-                good.rate.create(bid=self.request.GET.get('rate', ''), road=RoadsList.objects.get(pk=kwargs["road_id"]), carrier=CarriersList.objects.get(pk=kwargs["carrier_id"]))
+                good.rate.create(
+                    bid=self.request.GET.get('rate', ''),
+                    road=RoadsList.objects.get(pk=kwargs["road_id"]),
+                    carrier=CarriersList.objects.get(pk=kwargs["carrier_id"])
+                )
             return dict()
         context = super().get_context_data(**kwargs)
-        context["good"] = RequestsForLogisticsGoods.objects.get(pk=kwargs["goods_id"])
-        context["my_request"] = context["good"].request
-        context["my_roads"] = context["my_request"].roads.all()
-        context['roads'] = RoadsList.objects.all()
-        context['carriers'] = CarriersList.objects.filter(status=True).filter(activity=True)
-        context['my_bids'] = context["good"].rate.all()
+        # Получаем товар с предварительной загрузкой связанных ставок
+        good = RequestsForLogisticsGoods.objects.prefetch_related('rate').get(pk=kwargs["goods_id"])
+        my_bids = good.rate.all()
+
+        # Определяем роль пользователя
+        user_role = self.request.user.role
+
+        # Фильтрация перевозчиков и дорог в зависимости от роли
+        if user_role in ['Супер Администратор', 'Логист']:
+            # Для Логиста и Супер Администратора показываем все дороги и перевозчики
+            roads = RoadsList.objects.all()  # Все дороги, отсортированные по ordering
+            carriers = CarriersList.objects.all()  # Все перевозчики
+        else:
+            # Для других ролей фильтруем перевозчиков по наличию ставок
+            filtered_carriers = set(bid.carrier for bid in my_bids if bid.carrier is not None)
+            roads = RoadsList.objects.all()  # Все дороги, отсортированные по ordering
+            carriers = list(filtered_carriers)  # Только перевозчики с ставками
+
+        context["good"] = good
+        context["my_request"] = good.request
+        context["my_roads"] = good.request.roads.all()
+        context['roads'] = roads
+        context['carriers'] = carriers
+        context['my_bids'] = my_bids
         c_def = self.get_user_context(title="Добавление ставки")
         return dict(list(context.items()) + list(c_def.items()))
 
@@ -3141,3 +3172,25 @@ class DeleteArticleView(MyLoginMixin, DataMixin, DeleteView):
         article = self.get_object()
         article.delete()
         return redirect(request.META.get('HTTP_REFERER'))
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UpdateOrderingView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            # Получаем новый порядок (используем 'ordering', а не 'ordering[]')
+            ordering = request.POST.getlist('ordering')
+
+            # Удаляем 'undefined', если он есть
+            ordering = [item for item in ordering if item != 'undefined']
+
+            # Обновляем порядок в базе данных
+            for index, road_id in enumerate(ordering):
+                road = RoadsList.objects.get(pk=road_id)
+                road.ordering = index + 1  # Новый индекс (начинается с 1)
+                road.save()
+
+            # Возвращаем успешный ответ
+            return JsonResponse({'success': True})
+        except Exception as e:
+            # Возвращаем ошибку в случае исключения
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)

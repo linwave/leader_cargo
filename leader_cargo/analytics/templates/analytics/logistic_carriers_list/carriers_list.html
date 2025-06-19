@@ -135,7 +135,7 @@
     </div>
     <div class="col-auto">
         <div class="table-responsive m-2">
-            <table class="table table-white table-bordered border-dark align-middle table-hover g-1" style="font-size: 0.8rem;text-align:center;" >
+            <table id="sortable-table" class="table table-white table-bordered border-dark align-middle table-hover g-1" style="font-size: 0.8rem;text-align:center;">
                 <thead class="table-dark">
                 <tr>
                     <th scope="col">#</th>
@@ -144,10 +144,10 @@
                     <th scope="col" style="text-align:center;">Удалить</th>
                 </tr>
                 </thead>
-                <tbody class="table-group-divider">
+                <tbody class="table-group-divider" id="sortable-tbody">
                 {% for road in roads %}
                 {% if road.status %}
-                <tr>
+                <tr data-road-id="{{ road.pk }}" data-ordering="{{ road.ordering }}">
                     <th scope="row">{{ forloop.counter }}</th>
                     <th data-bs-toggle="modal" data-bs-target="#modal-main"
                         hx-get="{% url 'analytics:edit_road' road.pk %}" hx-target="#hx-modal-main">
@@ -190,5 +190,27 @@
     document.body.addEventListener('htmx:configRequest', (event) => {
     event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}'
 });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tbody = document.getElementById('sortable-tbody');
+
+        // Initialize SortableJS
+        const sortable = new Sortable(tbody, {
+            animation: 150,
+            handle: 'tr', // Allow dragging rows
+            onEnd: function (evt) {
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const newOrder = rows.map(row => row.dataset.roadId);
+
+                // Send the new order to the server using HTMX
+                htmx.ajax('POST', '{% url "analytics:update_ordering" %}', {
+                    values: { ordering: newOrder },
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    swap: 'none' // No DOM replacement
+                });
+            }
+        });
+    });
 </script>
 {% endblock %}

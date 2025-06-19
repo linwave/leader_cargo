@@ -1071,7 +1071,10 @@ def edit_leads(request, lead_id):
                 form_edit.save()
                 messages.success(request, f"Лид обновлен: {lead}")
             else:
-                messages.error(request, f"ОШИКБА: {lead}")
+                if 'client_phone' in form_edit.errors:
+                    messages.info(request, f"Измените/напишите Контактный номер клиента из всех перечисленных")
+                else:
+                    messages.error(request, f"{form_edit.errors}")
             referer = request.META.get('HTTP_REFERER', reverse('main:leads'))
             # Добавляем якорь к URL
             if referer:
@@ -1165,7 +1168,11 @@ def edit_calls(request, call_id):
                     if lead.manager:
                         telegram_profile, created = TelegramProfile.objects.get_or_create(user=lead.manager)
                         if telegram_profile.is_verified:
-                            send_telegram_message(lead.manager.telegram_profile.chat_id, f"{lead.manager}\n{lead.pk} - ({lead.call.pk}) - Новый {lead} ", settings.TELEGRAM_BOT_TOKEN)
+                            send_telegram_message(lead.manager.telegram_profile.chat_id,
+                                                  f"{lead.manager}\n{lead.pk} - ({lead.call.pk}) - Новый лид:\n Имя клиента: {lead.client_name}\n"
+                                                  f"Номер телефона: {lead.client_phone}"
+                                                  f"Лояльность: {lead.loyalty}"
+                                                  f"Коментарий от оператора: {lead.call.description}", settings.TELEGRAM_BOT_TOKEN)
                 else:
                     messages.success(request, f"Заявка на прозвон {call.client_name} - {call.client_phone} изменена")
             else:
