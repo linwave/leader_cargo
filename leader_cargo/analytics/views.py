@@ -1096,10 +1096,37 @@ class AddCargoView(MyLoginMixin, DataMixin, CreateView):
     role_have_perm = ['Супер Администратор', 'Логист']
     success_url = reverse_lazy('analytics:carrier')
 
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Ручное добавление груза")
-        return dict(list(context.items()) + list(c_def.items()))
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        # Добавляем свой маркер
+        return redirect(f"{self.get_success_url()}?new_cargo_id={self.object.pk}")
+
+    def form_invalid(self, form):
+        # Берем ошибки как текст
+        error_messages = []
+        for field, errs in form.errors.items():
+            for err in errs:
+                error_messages.append(f"{field}: {err}")
+        if form.non_field_errors():
+            error_messages.extend(form.non_field_errors())
+
+        from urllib.parse import urlencode
+        query = urlencode({"form_error": "\n".join(error_messages)})
+        return redirect(f"{reverse('analytics:carrier')}?{query}")
+
+    def get_success_url(self):
+        return reverse('analytics:carrier')
+
+    # def get_context_data(self, *, object_list=None, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context['success_articles'] = "Груз успешно добавлен"  # пример
+    #     c_def = self.get_user_context(title="Ручное добавление груза")
+    #     return dict(list(context.items()) + list(c_def.items()))
+    #
+    # def get_success_url(self):
+    #     # Берём параметр из context или создаём свой
+    #     message = self.get_context_data().get('success_articles', '')
+    #     return f"{reverse('analytics:carrier')}?success_articles={message}"
 
     # def form_valid(self, form):
     #     print(self.request.POST)
@@ -1921,11 +1948,51 @@ class LogisticMainView(MyLoginMixin, DataMixin, CreateView):
                 context['set_query'] += f'&{req}={self.request.GET.get(req)}'
         context['vputi'] = 'В пути'
         context['pribil'] = 'Прибыл в РФ'
-        if self.message['update']:
+
+        # Проверяем, был ли передан id созданного объекта
+        new_cargo_id = self.request.GET.get('new_cargo_id')
+        if new_cargo_id:
+            try:
+                cargo = CargoArticle.objects.get(pk=new_cargo_id)
+                # Создаём структуру сообщения в твоём формате
+                self.message = {
+                    'update': True,
+                    'success_articles': [cargo.article],
+                    'info_articles': [],
+                    'warning_articles': [],
+                    'error': []
+                }
+            except CargoArticle.DoesNotExist:
+                # Если id неправильный, можно показать предупреждение
+                self.message = {
+                    'update': True,
+                    'success_articles': [],
+                    'info_articles': [],
+                    'warning_articles': [f'Груз с id={new_cargo_id} не найден'],
+                    'error': []
+                }
+        form_error = self.request.GET.get('form_error')
+        if form_error:
+            self.message = {
+                'update': True,
+                'success_articles': [],
+                'info_articles': [],
+                'warning_articles': [],
+                'error': [form_error]  # Твой alert покажет ошибки
+            }
+
+        # Передаём сообщения в context
+        if self.message.get('update'):
             context['message'] = self.message
+            self.message['update'] = False
         else:
             context['message'] = []
-        self.message['update'] = False
+
+        # if self.message['update']:
+        #     context['message'] = self.message
+        # else:
+        #     context['message'] = []
+        # self.message['update'] = False
         c_def = self.get_user_context(title="Учет грузов")
         return dict(list(context.items()) + list(c_def.items()))
 
