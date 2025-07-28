@@ -145,8 +145,10 @@
     </div>
 </div>
 {% endif %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<!--<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+<!--<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>-->
+<script src="{% static 'main/js/chart.js' %}"></script>
+<script src="{% static 'main/js/chartjs-plugin-datalabels.js' %}"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const managersWithCalls = JSON.parse('{{ managers_with_calls|escapejs }}');
