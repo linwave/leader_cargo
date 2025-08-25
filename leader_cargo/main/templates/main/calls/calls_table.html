@@ -34,7 +34,7 @@
                         style="cursor: pointer;">
                         <th scope="row">{{ call.pk }}</th>
                         <td>{{ call.operator.get_FI|default:"" }}</td>
-                        <td>{{ call.call_file.get_crm_display }}</td>
+                        <td>{% if call.crm %}{{ call.crm }}{% else %}{{ call.call_file.get_crm_display }}{%endif%}</td>
                         <td>
                             {% if call.work_years %}
                             {{ call.work_years }} {{ call.work_years|pluralize_ru:"год,года,лет" }}

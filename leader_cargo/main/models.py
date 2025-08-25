@@ -534,6 +534,12 @@ class CallsFile(models.Model):
                 'total': total_rows
             }
 
+CRM_CHOICES = [
+        ('Битрикс24', 'Битрикс24'),
+        ('amoCRM', 'amoCRM'),
+        ('Росаккредитация', 'Росаккредитация'),
+        ('Ozon', 'Ozon'),
+    ]
 
 class Calls(models.Model):
     statuses_operator = [
@@ -555,6 +561,8 @@ class Calls(models.Model):
         (2, 'Теплый'),
         (3, 'Горячий'),
     ]
+
+
     operator = models.ForeignKey(CustomUser, verbose_name='Ответственный оператор', on_delete=models.SET_NULL, blank=True, null=True, related_name="operator_calls")
     date_call = models.DateTimeField(verbose_name='Дата звонка', blank=True, null=True)
     client_name = models.CharField(verbose_name='ФИО клиента', max_length=255, blank=True, null=True)
@@ -577,6 +585,14 @@ class Calls(models.Model):
     description_manager = models.TextField(verbose_name='Комментарий по звонку менеджером', max_length=600, blank=True, null=True)
 
     call_file = models.ForeignKey(CallsFile, on_delete=models.SET_NULL, blank=True, null=True)
+
+    crm = models.CharField(
+        max_length=50,
+        choices=CRM_CHOICES,
+        verbose_name='Источник/CRM',
+        blank=True,
+        null=True
+    )
 
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
