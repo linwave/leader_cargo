@@ -240,6 +240,9 @@ class DeleteCarriersListForm(ModelForm):
 class AddCargo(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['path_format'].choices = [('', '---------')] + [
+            (r.name, r.name) for r in RoadsList.objects.filter(activity=True)
+        ]
         for field in self.fields:
             if field == 'time_from_china':
                 continue

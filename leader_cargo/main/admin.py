@@ -9,25 +9,27 @@ from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, E
 from analytics.models import RequestsForLogisticsRate, RequestsForLogisticsGoods, RequestsForLogisticFiles, RoadsList, CarriersList, CargoFiles, CargoArticle, PaymentDocumentsForArticles, RequestsForLogisticsCalculations
 from bills.models import Clients, RequisitesClients, Entity, RequisitesEntity, Bills, BillsFiles
 
+
 @admin.register(MaintenanceMode)
 class MaintenanceModeAdmin(admin.ModelAdmin):
     list_display = ('id', 'is_enabled', 'message')
-    list_editable = ('is_enabled', 'message' )
+    list_editable = ('is_enabled', 'message')
     fields = ('is_enabled', 'message')
+
 
 @admin.register(TelegramProfile)
 class TelegramProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'is_verified', 'chat_id', 'token')
-    list_editable = ('is_verified', 'chat_id', )
+    list_editable = ('is_verified', 'chat_id',)
 
 
 @admin.register(Leads)
 class LeadsAdmin(admin.ModelAdmin):
     list_display = ('pk', 'call', 'manager', 'status_manager', 'client_name', 'client_phone', 'client_location',
-                    'date_next_call_manager',  'description_manager',
+                    'date_next_call_manager', 'description_manager',
                     'time_new', 'time_in_work', 'time_approve_no_other', 'time_create')
     list_display_links = ('pk',)
-    list_filter = ('manager', )
+    list_filter = ('manager',)
     actions = ['delete_empty_manager', 'save_current_state_to_history', 'save_all_leads_to_history']
     search_fields = ('pk', 'client_phone')
 
@@ -90,12 +92,14 @@ class LeadsAdmin(admin.ModelAdmin):
         )
 
     save_all_leads_to_history.short_description = _("Сохранить текущее состояние ВСЕХ лидов в историю")
+
+
 @admin.register(Calls)
 class CallsAdmin(admin.ModelAdmin):
     list_display = ('pk', 'operator', 'status_call', 'client_name', 'client_phone', 'client_location', 'date_next_call', 'time_create',
                     'manager', 'date_to_manager', 'status_manager', 'date_next_call_manager')
     list_display_links = ('pk',)
-    actions = ['clear_all_records', 'create_old_leads']
+    actions = ['clear_all_records', 'create_old_leads', 'clean_city_numbers']
     search_fields = ('pk', 'client_phone')
 
     def get_queryset(self, request):
@@ -139,6 +143,36 @@ class CallsAdmin(admin.ModelAdmin):
         self.message_user(request, "Все звонки были удалены.", level=messages.SUCCESS)
         return HttpResponseRedirect("../")
 
+    @admin.action(description='Очистить городские номера и удалить звонки без мобильных')
+    def clean_city_numbers(self, request, queryset):
+        import re
+
+        def is_mobile(phone):
+            digits = re.sub(r'\D', '', phone)
+            return digits.startswith('79') and len(digits) == 11
+
+        updated = 0
+        deleted = 0
+
+        for call in queryset:
+            phones = [p.strip() for p in call.client_phone.split(',')]
+            mobile_phones = [p for p in phones if is_mobile(p)]
+
+            if mobile_phones:
+                call.client_phone = ', '.join(mobile_phones)
+                call.save()
+                updated += 1
+            else:
+                call.delete()
+                deleted += 1
+
+        self.message_user(
+            request,
+            f"Обновлено записей: {updated}, удалено звонков без мобильных номеров: {deleted}.",
+            level=messages.SUCCESS
+        )
+
+
 @admin.register(CallsFile)
 class CallsFileAdmin(admin.ModelAdmin):
     list_display = ('pk', 'crm', 'user', 'file', 'uploaded_at')
@@ -159,20 +193,20 @@ class ExchangeRatesAdmin(admin.ModelAdmin):
 class ManagerPlansAdmin(admin.ModelAdmin):
     list_display = ('id', 'manager_monthly_net_profit_plan', 'month', 'year', 'manager_id', 'time_create')
     list_display_links = ('id',)
-    list_editable = ('month', 'year', )
+    list_editable = ('month', 'year',)
     search_fields = ('manager_id__first_name', 'manager_id__phone')
 
 
 class BillsFilesAdmin(admin.ModelAdmin):
     list_display = ('id', 'bill', 'name', 'file_path_request', 'time_create')
-    list_display_links = ('id', )
+    list_display_links = ('id',)
     list_editable = ('name',)
     search_fields = ('bill', 'name')
 
 
 class BillsAdmin(admin.ModelAdmin):
     list_display = ('id', 'manager', 'status', 'client', 'nds_status', 'entity', 'summa')
-    list_display_links = ('id', )
+    list_display_links = ('id',)
     search_fields = ('manager', 'entity', 'client')
     list_filter = ('status', 'manager', 'entity', 'client')
 
@@ -200,7 +234,7 @@ class RequisitesClientsAdmin(admin.ModelAdmin):
 
 
 class ClientsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'manager', 'name', 'type', 'inn',  'nds_status', 'phone')
+    list_display = ('id', 'manager', 'name', 'type', 'inn', 'nds_status', 'phone')
     list_display_links = ('id', 'name')
     search_fields = ('manager', 'name', 'inn')
     list_editable = ('nds_status',)
@@ -219,54 +253,54 @@ class CustomCargoArticleAdmin(admin.ModelAdmin):
     list_display = ('id', 'article', 'responsible_manager', 'time_from_china', 'status', 'total_cost', 'weight', 'volume', 'cargo_id', 'time_create')
     list_display_links = ('id', 'article')
     search_fields = ('article', 'responsible_manager__last_name', 'responsible_manager__first_name')
-    list_editable = ('responsible_manager', 'status', )
+    list_editable = ('responsible_manager', 'status',)
     list_filter = ('status', 'time_from_china', 'responsible_manager')
 
 
 class CustomPaymentDocumentsForArticles(admin.ModelAdmin):
     list_display = ('id', 'article', 'file_path', 'balance', 'time_create')
-    list_display_links = ('id', )
+    list_display_links = ('id',)
     search_fields = ('article', 'time_create')
     list_editable = ('balance',)
 
 
 class CustomRequestsForLogisticsCalculations(admin.ModelAdmin):
     list_display = ('name', 'status', 'initiator', 'logist', 'bid', 'time_create', 'time_update')
-    list_display_links = ('name', )
+    list_display_links = ('name',)
     search_fields = ('name', 'initiator')
     list_editable = ('initiator', 'status')
 
 
 class CustomRoadsList(admin.ModelAdmin):
     list_display = ('name', 'activity', 'status', 'time_create')
-    list_display_links = ('name', )
-    search_fields = ('name', )
+    list_display_links = ('name',)
+    search_fields = ('name',)
     list_editable = ('activity', 'status')
 
 
 class CustomCarriersList(admin.ModelAdmin):
     list_display = ('name', 'activity', 'status', 'time_create')
-    list_display_links = ('name', )
-    search_fields = ('name', )
+    list_display_links = ('name',)
+    search_fields = ('name',)
     list_editable = ('activity', 'status')
 
 
 class CustomRequestsForLogisticFiles(admin.ModelAdmin):
     list_display = ('request', 'name', 'file_path_request', 'time_create')
-    list_display_links = ('name', )
-    search_fields = ('request', 'name', )
+    list_display_links = ('name',)
+    search_fields = ('request', 'name',)
 
 
 class CustomRequestsForLogisticsGoods(admin.ModelAdmin):
     list_display = ('request', 'description', 'bid', 'photo_path_logistic_goods', 'time_create')
-    list_display_links = ('request', )
-    search_fields = ('request', )
-    list_editable = ('bid', )
+    list_display_links = ('request',)
+    search_fields = ('request',)
+    list_editable = ('bid',)
 
 
 class CustomRequestsForLogisticsRate(admin.ModelAdmin):
     list_display = ('good', 'carrier', 'road', 'bid', 'active', 'time_create')
-    search_fields = ('good', )
+    search_fields = ('good',)
     list_editable = ('bid', 'active',)
     list_filter = ('road', 'carrier', 'active', 'time_create')
 
