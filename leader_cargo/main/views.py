@@ -919,7 +919,7 @@ class CallsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         # Применение сортировки:
         ordering = f'-{order_by}' if order_dir == 'desc' else order_by
 
-        allowed_fields = ['time_create', 'client_name', 'client_phone', 'status_call', 'work_years ']
+        allowed_fields = ['time_create', 'client_name', 'client_phone', 'status_call', 'work_years']
         if order_by not in allowed_fields:
             order_by = 'time_create'
 
@@ -933,6 +933,9 @@ class CallsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         # Фильтрация по запросу поиска
         if search_query:
             calls_query = Calls.search(search_query, calls_query)
+
+        # Счётчики ДО пагинации
+        filtered_total = calls_query.count()
 
         managers_with_calls = CustomUser.get_new_in_work_leads_count_for_all_managers()
         context['managers_with_calls'] = json.dumps([
@@ -950,11 +953,19 @@ class CallsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         pagination_context = self.paginate_queryset(calls_query, page_size, 'calls')
         context.update(pagination_context)
 
+        # Сколько на текущей странице (с учётом пагинации)
+        pq = context.get('paginated_queryset')
+        page_current = len(pq.object_list) if pq else 0
+        context.update({
+            'filtered_total': filtered_total,  # всего после фильтров (до пагинации)
+            'page_current': page_current,  # на текущей странице
+        })
         context['form'] = form
         context['messages'] = [message for message in messages.get_messages(self.request)]
         context['managers'] = CustomUser.get_managers_and_operators()
         context['selected_manager'] = selected_managers
         context['selected_operator_statuses'] = selected_operator_statuses
+        context['selected_crms'] = selected_crms
         context['page_size'] = str(page_size)  # Передаем значение page_size в контекст
         context['search'] = search_query  # Передаем значение search в контекст
         context['order_by'] = order_by
