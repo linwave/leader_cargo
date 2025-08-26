@@ -591,7 +591,7 @@ class Calls(models.Model):
         choices=CRM_CHOICES,
         verbose_name='Источник/CRM',
         blank=True,
-        null=True
+        null=True, db_index=True
     )
 
     time_create = models.DateTimeField(auto_now_add=True)
@@ -637,7 +637,10 @@ class Calls(models.Model):
         if selected_managers:
             calls_query = calls_query.filter(operator__in=selected_managers)
         if selected_crms:
-            calls_query = calls_query.filter(call_file__crm__in=selected_crms)
+            # Фильтруем по Calls.crm ИЛИ по CallsFile.crm
+            calls_query = calls_query.filter(
+                Q(crm__in=selected_crms) | Q(call_file__crm__in=selected_crms)
+            ).distinct()
         return calls_query
 
     @classmethod
