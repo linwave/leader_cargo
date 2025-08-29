@@ -66,7 +66,8 @@
 <!--TOASTS-->
 {% include "main/components/toasts.html" %}
 {% endif %}
-<section class="home-section">
+<section class="home-section"
+         {% if not user.is_authenticated %}style="left:0;width:100%;"{% endif %}>
     <div class="home-content" style="text-align: center;">
             <span class="text">
             {% if user.is_authenticated %}

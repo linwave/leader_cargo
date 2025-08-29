@@ -1,0 +1,76 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}CRM форма{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:720px;">
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert alert-{{ m.tags }} mb-3">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <h4 class="mb-1">Создание заявки</h4>
+  {% if crm_display %}
+    <div class="text-muted mb-3">Источник: <strong>{{ crm_display }}</strong></div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">{{ form.client_name.label }} <span class="text-danger">*</span></label>
+      {{ form.client_name }}
+      {% if form.client_name.errors %}<div class="text-danger small">{{ form.client_name.errors }}</div>{% endif %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">{{ form.client_phone.label }} <span class="text-danger">*</span></label>
+      {{ form.client_phone }}
+      {% if form.client_phone.errors %}<div class="text-danger small">{{ form.client_phone.errors }}</div>{% endif %}
+    </div>
+
+<!--    <div class="mb-3">-->
+<!--      <label class="form-label">{{ form.client_location.label }}</label>-->
+<!--      {{ form.client_location }}-->
+<!--      {% if form.client_location.errors %}<div class="text-danger small">{{ form.client_location.errors }}</div>{% endif %}-->
+<!--    </div>-->
+
+    <div class="mb-3">
+      <label class="form-label">{{ form.description.label }} <span class="text-danger">*</span></label>
+      {{ form.description }}
+      {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors }}</div>{% endif %}
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" id="submit-btn" class="btn btn-primary" disabled>Отправить</button>
+    </div>
+  </form>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const nameInput  = document.getElementById('id_client_name');
+    const phoneInput = document.getElementById('id_client_phone');
+    const submitBtn  = document.getElementById('submit-btn');
+
+    if (phoneInput) phoneInput.focus();
+
+    // Маска телефона (как у тебя было)
+    const maskOptions = { mask: '+{7} (000) 000-00-00' };
+    const mask_phone  = IMask(phoneInput, maskOptions);
+
+    function validate() {
+      const nameOk  = (nameInput?.value || '').trim().length > 0;
+      const phoneOk = !!(mask_phone && mask_phone.masked && mask_phone.masked.isComplete);
+      submitBtn.disabled = !(nameOk && phoneOk);
+    }
+
+    // Переключаем состояние кнопки при любом вводе
+    nameInput?.addEventListener('input', validate);
+    phoneInput?.addEventListener('input', validate);
+
+    // Первый запуск
+    validate();
+  });
+</script>
+{% endblock %}

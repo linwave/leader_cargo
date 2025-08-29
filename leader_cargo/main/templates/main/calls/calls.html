@@ -73,19 +73,17 @@
             </div>
             <div class="col-6">
                 <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
-                    <option value="Битрикс24" {% if 'Битрикс24' in selected_crms %}selected{% endif %}>Битрикс24</option>
-                    <option value="amoCRM" {% if 'amoCRM' in selected_crms %}selected{% endif %}>amoCRM</option>
-                    <option value="Росаккредитация" {% if 'Росаккредитация' in selected_crms %}selected{% endif %}>Росаккредитация</option>
-                    <option value="Ozon" {% if 'Ozon' in selected_crms %}selected{% endif %}>Ozon</option>
+                    {% for value, label in form.fields.crm.choices %}
+                    <option value="{{ value }}" {% if value in selected_crms %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
                 </select>
             </div>
             {% elif user.role == 'Супер Администратор' or user.role == 'РОП' %}
             <div class="col-12">
                 <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
-                    <option value="Битрикс24" {% if 'Битрикс24' in selected_crms %}selected{% endif %}>Битрикс24</option>
-                    <option value="amoCRM" {% if 'amoCRM' in selected_crms %}selected{% endif %}>amoCRM</option>
-                    <option value="Росаккредитация" {% if 'Росаккредитация' in selected_crms %}selected{% endif %}>Росаккредитация</option>
-                    <option value="Ozon" {% if 'Ozon' in selected_crms %}selected{% endif %}>Ozon</option>
+                    {% for value, label in form.fields.crm.choices %}
+                    <option value="{{ value }}" {% if value in selected_crms %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="col-6">

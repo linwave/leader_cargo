@@ -20,12 +20,13 @@ import random
 
 from django.urls import reverse_lazy
 from django.utils.timezone import make_aware
+from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 
 from telegram_bot.models import TelegramProfile
 from telegram_bot.utils import send_telegram_message
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
-    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsRop, LeadsFilterForm, EditLeadsManager, EditLeadsRop
+    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsRop, LeadsFilterForm, EditLeadsManager, EditLeadsRop, CRMCallForm
 from .models import *
 from .utils import DataMixin, MyLoginMixin, PaginationMixin
 from .tasks import process_excel_file
@@ -1197,3 +1198,98 @@ def edit_calls(request, call_id):
         return render(request, 'main/calls/edit_calls.html',
                       context={'call': call,
                                'form': form})
+
+
+# для наглядности можно оставить константой
+CRM_SOURCE_ALPHA = 'Колл-центр Альфа'
+
+class CRMCallView(DataMixin, View):
+    template_name = 'main/calls/crm_form.html'
+    role_have_perm = ['ALL']
+
+    def get(self, request, **kwargs):
+        form = CRMCallForm()
+        context = self.get_user_context(title="CRM форма")
+        # передадим в шаблон подпись источника
+        context.update({
+            'form': form,
+            'crm_display': CRM_SOURCE_ALPHA
+        })
+        return render(request, self.template_name, context)
+
+    @transaction.atomic
+    def post(self, request):
+        form = CRMCallForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {
+                'form': form,
+                'crm_display': CRM_SOURCE_ALPHA,
+            })
+
+        manager = User.objects.filter(pk=getattr(settings, 'CRM_DEFAULT_MANAGER_ID', 40)).first()
+
+        phone = form.cleaned_data['client_phone']
+        name = form.cleaned_data.get('client_name') or ''
+        city = form.cleaned_data.get('client_location') or ''
+        descr = form.cleaned_data.get('description') or ''
+        now = timezone.now()
+
+        call = Calls.objects.filter(client_phone=phone).first()
+        created = False
+
+        if call is None:
+            call = Calls.objects.create(
+                client_name=name or None,
+                client_phone=phone,
+                client_location=city or None,
+                description=descr or None,
+                status_call='Не обработано',
+                loyalty=None,
+                operator=None,                      # оператор пустой
+                date_to_manager=None,
+                crm=CRM_SOURCE_ALPHA,               # <— важное место
+            )
+            created = True
+        else:
+            # обновляем существующую по этому телефону
+            if name and not call.client_name:
+                call.client_name = name
+            if city:
+                call.client_location = city
+            if descr:
+                stamp = now.strftime('%Y-%m-%d %H:%M')
+                addon = f"[{stamp}] {descr}"
+                call.description = (call.description + "\n" + addon) if call.description else addon
+
+            call.status_call = 'Не обработано'
+            call.crm = CRM_SOURCE_ALPHA           # <— перезапишем источник для консистентности
+            if manager:
+                call.manager = manager
+                call.date_to_manager = now
+                call.status_manager = 'Новая'
+            call.save()
+
+        # Telegram уведомление менеджеру (ты при желании допишешь текст под себя)
+        if manager:
+            prof = TelegramProfile.objects.filter(user=manager, is_verified=True).first()
+            if prof and prof.chat_id:
+                text = (
+                    f"Новая заявка из {CRM_SOURCE_ALPHA}{'' if created else ' (обновл.)'}\n"
+                    f"ID: {call.pk}\n"
+                    f"Клиент: {call.client_name or '—'}\n"
+                    f"Телефон: {call.client_phone}\n"
+                    f"Комментарий: {(descr or '—') if created else 'обновление/см. карточку'}"
+                )
+                try:
+                    send_telegram_message(prof.chat_id, text, settings.TELEGRAM_BOT_TOKEN)
+                except Exception as e:
+                    print(f"TG notify error: {e}")
+
+        messages.success(
+            request,
+            f"{'Создана новая' if created else 'Обновлена существующая'} заявка №{call.pk} "
+            f"(Источник: Колл-центр). "
+            f"{'Менеджеру отправлено уведомление.' if manager else ''}"
+        )
+        # остаёмся на том же URL (/crm/alpha/), чтобы делать заявки одну за другой
+        return redirect(request.path)

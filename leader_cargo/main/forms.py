@@ -1,11 +1,32 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.timezone import now
 
-from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, Calls, CallsFile, Leads
+from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, Calls, CallsFile, Leads, CRM_CHOICES
 from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
+
+User = get_user_model()
+
+class CRMCallForm(forms.Form):
+    client_name = forms.CharField(
+        label='Имя клиента', required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Иван Иванович', "required": "required",})
+    )
+    client_phone = forms.CharField(
+        label='Телефон', required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'type': 'text',
+                'placeholder': '+7 (___) ___-__-__',
+                                      "required": "required",
+                                      "pattern": "^\\+7 \\(\\d{3}\\) \\d{3}-\\d{2}-\\d{2}$",
+                                      })
+    )
+    description = forms.CharField(
+        label='Комментарий', required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 6, 'placeholder': 'Комментарий'})
+    )
 
 
 class RopReportForm(ModelForm):
@@ -793,6 +814,13 @@ class CallsFilterForm(forms.Form):
         ('Отказ', 'Отказ')
     ]
 
+    crm = forms.MultipleChoiceField(
+        choices=CRM_CHOICES,  # берём из модели
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input '}),
+        label='Источник CRM'
+    )
+
     status_call = forms.MultipleChoiceField(
         choices=STATUS_OPERATOR_CHOICES,
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input '}),
@@ -807,7 +835,7 @@ class CallsFilterForm(forms.Form):
         label='Статус заявки менеджера'
     )
     managers = forms.ModelMultipleChoiceField(
-        queryset=CustomUser.get_managers_and_operators(),  # Используем метод для получения менеджеров
+        queryset=CustomUser.get_managers_and_operators_and_rops(),  # Используем метод для получения менеджеров
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         required=False,
         label='Менеджеры'

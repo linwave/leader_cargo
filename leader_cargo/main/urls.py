@@ -14,6 +14,7 @@ urlpatterns = [
     path('calls/new_calls', views.new_calls, name='new_calls'),
     path('calls/add_calls', views.add_calls, name='add_calls'),
     path('calls/edit_calls/<int:call_id>', views.edit_calls, name='edit_calls'),
+    path('crm/form/alpha/', views.CRMCallView.as_view(), name='crm_form_alpha'),
 
     path('leads/', views.LeadsView.as_view(), name='leads'),
     # path('leads/add_leads', views.LeadsView.as_view(), name='add_leads'),

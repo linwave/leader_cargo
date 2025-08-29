@@ -90,6 +90,9 @@ class CustomUser(AbstractUser):
         return cls.objects.filter(role__in=['Менеджер', 'Оператор'])
 
     @classmethod
+    def get_managers_and_operators_and_rops(cls):
+        return cls.objects.filter(role__in=['Менеджер', 'Оператор', 'РОП'])
+    @classmethod
     def get_new_leads_count_for_all_managers(cls):
         managers_with_new_calls = cls.objects.filter(role='Менеджер').annotate(
             new_leads_count=Count('manager_leads', filter=models.Q(manager_leads__status_manager='Новая'))
@@ -539,6 +542,7 @@ CRM_CHOICES = [
         ('amoCRM', 'amoCRM'),
         ('Росаккредитация', 'Росаккредитация'),
         ('Ozon', 'Ozon'),
+        ('Колл-центр Альфа', 'Колл-центр Альфа'),
     ]
 
 class Calls(models.Model):
