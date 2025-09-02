@@ -175,3 +175,16 @@ TELEGRAM_BOT_TOKEN = "7437043774:AAH51LtcPYRjCAJSF4No1T663Fi2XcS8Rv4"
 TELEGRAM_BOT_USERNAME = "magistral_import_bot"
 API_ROSACCRED_TOKEN = "A5C27D361C573580E8075C35F477F5A6E06AD30015BC49433F69074E86150FC6"
 CRM_DEFAULT_MANAGER_ID = 40
+
+API_PARTNERS = {
+    # https://site/api/v1/calls/inbound/2f1c3cb2b3b847a5967c8f2e85d0a16a/
+    "2f1c3cb2b3b847a5967c8f2e85d0a16a": {
+        "crm": "Колл-центр Биг Дата",
+        "token": "BIGDATA_TOKEN_KRAfQTMx1PBT6B9sR58E"
+    },
+    # https://site/api/v1/calls/inbound/a9bbd3e5c4f943f9a1e6b3c7d2e8f011/
+    "a9bbd3e5c4f943f9a1e6b3c7d2e8f011": {
+        "crm": "Колл-центр АЗ",
+        "token": "AZ_TOKEN_6F2BF9E1B0D8AC82C5251CDCEC782141"
+    },
+}

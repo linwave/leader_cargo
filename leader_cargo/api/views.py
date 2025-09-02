@@ -1,6 +1,7 @@
 import re
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.utils import timezone
 from rest_framework import generics
@@ -10,6 +11,8 @@ from analytics.models import CargoArticle
 from django.views.decorators.csrf import csrf_exempt
 
 from main.models import Calls, CustomUser, CRM_CHOICES
+from telegram_bot.models import TelegramProfile
+from telegram_bot.utils import send_telegram_message
 from .serializers import CargoArticleSerializer
 
 API_TOKEN = getattr(settings, "API_ROSACCRED_TOKEN", None)
@@ -243,6 +246,103 @@ def bulk_create_calls_from_rosaccreditation(request):
         "summary": {"created": created, "duplicates": duplicates, "skipped": skipped, "total": len(items)},
         "results": results
     }, status=207 if created and (duplicates or skipped) else (201 if created else 200))
+
+def _client_ip(request):
+    return (request.META.get('HTTP_X_FORWARDED_FOR') or request.META.get('REMOTE_ADDR') or '').split(',')[0].strip()
+
+User = get_user_model()
+
+def _notify_default_manager(call: Calls, crm_source: str, descr: str | None):
+    """
+    Отправляем уведомление одному фиксированному менеджеру:
+    manager = User.objects.filter(pk=settings.CRM_DEFAULT_MANAGER_ID or 40).first()
+    """
+    if not TelegramProfile:
+        return
+    manager_id = getattr(settings, 'CRM_DEFAULT_MANAGER_ID', 40)
+    manager = User.objects.filter(pk=manager_id).first()
+    if not manager:
+        return
+    prof = TelegramProfile.objects.filter(user=manager, is_verified=True).first()
+    if not prof or not getattr(prof, "chat_id", None):
+        return
+    text = (
+        f"Новая заявка из {crm_source}\n"
+        f"ID: {call.pk}\n"
+        f"Клиент: {call.client_name or '—'}\n"
+        f"Телефон: {call.client_phone}\n"
+        f"Комментарий: {(descr or '—')}"
+    )
+    try:
+        send_telegram_message(prof.chat_id, text, settings.TELEGRAM_BOT_TOKEN)
+    except Exception as e:
+        print(f"TG notify error: {e}")
+
+@csrf_exempt
+def create_call_from_partner(request, hook):
+    """
+    Универсальный вебхук для КЦ.
+    URL: /api/v1/calls/inbound/<hook>/
+    settings.API_PARTNERS[hook] = {"crm": "<источник>", "token": "<секрет>"}
+    JSON: { "name": "...", "phone": "...|[...]", "comment": "...", "city": "..." }
+    Заголовок: X-API-Key: <секрет партнёра>
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    partners = getattr(settings, "API_PARTNERS", {})
+    config = partners.get(hook)
+    if not config:
+        return JsonResponse({"detail": "Unknown hook"}, status=404)
+
+    token = request.headers.get("X-API-Key") or request.META.get('HTTP_X_API_KEY')
+    if not token or token != config.get("token"):
+        return JsonResponse({"detail": "Unauthorized"}, status=401)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"detail": "Invalid JSON"}, status=400)
+
+    # имя
+    client_name = (payload.get('name') or '').strip()
+    if not client_name:
+        parts = [
+            (payload.get('last_name') or '').strip(),
+            (payload.get('first_name') or '').strip(),
+            (payload.get('patronymic') or '').strip(),
+        ]
+        client_name = " ".join([p for p in parts if p]).strip()
+
+    # телефоны
+    originals, normalized_incoming = _parse_phones_any(payload.get('phone'))
+    if not client_name or not originals:
+        return JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200)
+    combined_phones = ', '.join(originals)
+
+    # дубликаты по нормализованным
+    existing_norm = _existing_normalized_phones()
+    if any(n in existing_norm for n in normalized_incoming):
+        return JsonResponse({"status": "duplicate", "phone": combined_phones}, status=200)
+
+    crm_source = config.get("crm") or "Партнёрский канал"
+    comment = (payload.get('comment') or '')[:600]
+
+    # создаём без оператора; менеджера НЕ назначаем (только уведомляем)
+    call = Calls.objects.create(
+        client_name=client_name,
+        client_phone=combined_phones,
+        status_call='Не обработано',
+        date_call=timezone.now(),
+        crm=crm_source,
+        description=comment,
+        client_location=payload.get('city') or '',
+    )
+
+    # уведомляем фиксированного менеджера
+    _notify_default_manager(call, crm_source=crm_source, descr=comment)
+
+    return JsonResponse({"status": "created", "id": call.id}, status=201)
 class WomenAPIView(generics.ListAPIView):
     queryset = CargoArticle.objects.all()
     serializer_class = CargoArticleSerializer
