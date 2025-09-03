@@ -278,33 +278,9 @@ def _notify_default_manager(call: Calls, crm_source: str, descr: str | None):
     except Exception as e:
         print(f"TG notify error: {e}")
 
-@csrf_exempt
-def create_call_from_partner(request, hook):
-    """
-    Универсальный вебхук для КЦ.
-    URL: /api/v1/calls/inbound/<hook>/
-    settings.API_PARTNERS[hook] = {"crm": "<источник>", "token": "<секрет>"}
-    JSON: { "name": "...", "phone": "...|[...]", "comment": "...", "city": "..." }
-    Заголовок: X-API-Key: <секрет партнёра>
-    """
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
 
-    partners = getattr(settings, "API_PARTNERS", {})
-    config = partners.get(hook)
-    if not config:
-        return JsonResponse({"detail": "Unknown hook"}, status=404)
-
-    token = request.headers.get("X-API-Key") or request.META.get('HTTP_X_API_KEY')
-    if not token or token != config.get("token"):
-        return JsonResponse({"detail": "Unauthorized"}, status=401)
-
-    try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return JsonResponse({"detail": "Invalid JSON"}, status=400)
-
-    # имя
+def _parse_default_payload(payload):
+    """Ожидает {"name": "...", "phone": "...|[...]", "comment": "..."}"""
     client_name = (payload.get('name') or '').strip()
     if not client_name:
         parts = [
@@ -314,35 +290,254 @@ def create_call_from_partner(request, hook):
         ]
         client_name = " ".join([p for p in parts if p]).strip()
 
-    # телефоны
-    originals, normalized_incoming = _parse_phones_any(payload.get('phone'))
-    if not client_name or not originals:
-        return JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200)
-    combined_phones = ', '.join(originals)
+    phones, _ = _parse_phones_any(payload.get('phone'))
+    comment = (payload.get('comment') or '')[:600]
+    return client_name, phones, comment
 
-    # дубликаты по нормализованным
+
+def _safe_get(d, *path, default=None):
+    cur = d
+    for key in path:
+        if not isinstance(cur, dict) or key not in cur:
+            return default
+        cur = cur[key]
+    return cur
+
+def _collect_az_phones(payload):
+    """
+    Собираем телефоны из:
+      - contact.presented_phones (список строк)
+      - contact.phone1..phone10
+      - current_call.called_phone
+    Возвращаем список строк 'как есть' (без нормализации; нормализуем отдельно для дублей).
+    """
+    phones = []
+
+    # presented_phones: список
+    presented = _safe_get(payload, 'contact', 'presented_phones', default=[])
+    if isinstance(presented, list):
+        phones.extend([str(x).strip() for x in presented if x])
+
+    # phone1..phone10
+    contact = payload.get('contact') or {}
+    for i in range(1, 11):
+        v = contact.get(f'phone{i}')
+        if v:
+            phones.append(str(v).strip())
+
+    # current_call.called_phone
+    c_called = _safe_get(payload, 'current_call', 'called_phone')
+    if c_called:
+        phones.append(str(c_called).strip())
+
+    # почистим пустые и дубликаты, сохранив порядок
+    seen = set()
+    uniq = []
+    for p in phones:
+        if p and p not in seen:
+            uniq.append(p)
+            seen.add(p)
+    return uniq
+
+def _build_az_comment(payload):
+    """
+    Сжато и информативно соберём все основные поля в один текстовый комментарий.
+    """
+    parts = []
+
+    # CONTACT
+    c = payload.get('contact') or {}
+    cf_list = c.get('custom_fields') or []
+    cf_str = "; ".join([f"{x.get('title') or x.get('name')}: {x.get('value')}" for x in cf_list if (x.get('value') is not None and str(x.get('value')).strip() != '')])
+
+    parts.append("— CONTACT —")
+    parts.append(f"id={c.get('id')}, name={c.get('name') or ''}")
+    if c.get('email'):
+        parts.append(f"email={c.get('email')}")
+    if cf_str:
+        parts.append(f"custom_fields: {cf_str}")
+
+    # LEAD
+    l = payload.get('lead') or {}
+    l_cf = l.get('custom_fields') or []
+    l_cf_str = "; ".join([f"{x.get('name')}: {x.get('value')}" for x in l_cf if (x.get('value') is not None and str(x.get('value')).strip() != '')])
+
+    parts.append("\n— LEAD —")
+    parts.append(f"id={l.get('id')}, status={l.get('lead_status_name') or ''}")
+    if l.get('remark'):
+        parts.append(f"remark={l.get('remark')}")
+    if l.get('contact_person'):
+        parts.append(f"contact_person={l.get('contact_person')}")
+    if l.get('visit_plan_date_time'):
+        parts.append(f"visit_plan={l.get('visit_plan_date_time')}")
+    if l.get('created_at'):
+        parts.append(f"created_at={l.get('created_at')}")
+    if l.get('updated_at'):
+        parts.append(f"updated_at={l.get('updated_at')}")
+    if l_cf_str:
+        parts.append(f"lead_custom_fields: {l_cf_str}")
+
+    # CURRENT CALL
+    cc = payload.get('current_call') or {}
+    parts.append("\n— CURRENT_CALL —")
+    parts.append(f"id={cc.get('id')}, result={cc.get('call_result_name') or ''}, duration={cc.get('call_duration')}")
+    if cc.get('remark'):
+        parts.append(f"remark={cc.get('remark')}")
+    if cc.get('user_email'):
+        parts.append(f"user={cc.get('user_email')}")
+    if cc.get('created_at'):
+        parts.append(f"created_at={cc.get('created_at')}")
+    if cc.get('updated_at'):
+        parts.append(f"updated_at={cc.get('updated_at')}")
+
+    comment = "\n".join([p for p in parts if p])[:600]  # ограничиваем 600 символов
+    return comment
+
+def _parse_az_payload(payload):
+    """Парсинг тела КЦ АЗ"""
+    client_name = (
+        _safe_get(payload, 'contact', 'name')
+        or _safe_get(payload, 'lead', 'contact_person')
+        or ''
+    ).strip()
+
+    if not client_name:
+        parts = [
+            (payload.get('last_name') or '').strip(),
+            (payload.get('first_name') or '').strip(),
+            (payload.get('patronymic') or '').strip(),
+        ]
+        client_name = " ".join([p for p in parts if p]).strip()
+
+    phones = _collect_az_phones(payload)
+    comment = _build_az_comment(payload)
+    return client_name, phones, comment
+
+
+# @csrf_exempt
+# def create_call_from_partner(request, hook):
+#     """
+#     Универсальный вебхук для КЦ.
+#     URL: /api/v1/calls/inbound/<hook>/
+#     settings.API_PARTNERS[hook] = {"crm": "<источник>", "token": "<секрет>"}
+#     JSON: { "name": "...", "phone": "...|[...]", "comment": "...", "city": "..." }
+#     Заголовок: X-API-Key: <секрет партнёра>
+#     """
+#     if request.method != "POST":
+#         return HttpResponseNotAllowed(["POST"])
+#
+#     partners = getattr(settings, "API_PARTNERS", {})
+#     config = partners.get(hook)
+#     if not config:
+#         return JsonResponse({"detail": "Unknown hook"}, status=404)
+#
+#     token = request.headers.get("X-API-Key") or request.META.get('HTTP_X_API_KEY')
+#     if not token or token != config.get("token"):
+#         return JsonResponse({"detail": "Unauthorized"}, status=401)
+#
+#     try:
+#         payload = json.loads(request.body.decode("utf-8"))
+#     except Exception:
+#         return JsonResponse({"detail": "Invalid JSON"}, status=400)
+#
+#     # имя
+#     client_name = (payload.get('name') or '').strip()
+#     if not client_name:
+#         parts = [
+#             (payload.get('last_name') or '').strip(),
+#             (payload.get('first_name') or '').strip(),
+#             (payload.get('patronymic') or '').strip(),
+#         ]
+#         client_name = " ".join([p for p in parts if p]).strip()
+#
+#     # телефоны
+#     originals, normalized_incoming = _parse_phones_any(payload.get('phone'))
+#     if not client_name or not originals:
+#         return JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200)
+#     combined_phones = ', '.join(originals)
+#
+#     # дубликаты по нормализованным
+#     existing_norm = _existing_normalized_phones()
+#     if any(n in existing_norm for n in normalized_incoming):
+#         return JsonResponse({"status": "duplicate", "phone": combined_phones}, status=200)
+#
+#     crm_source = config.get("crm") or "Партнёрский канал"
+#     comment = (payload.get('comment') or '')[:600]
+#
+#     # создаём без оператора; менеджера НЕ назначаем (только уведомляем)
+#     call = Calls.objects.create(
+#         client_name=client_name,
+#         client_phone=combined_phones,
+#         status_call='Не обработано',
+#         date_call=timezone.now(),
+#         crm=crm_source,
+#         description=comment,
+#         client_location=payload.get('city') or '',
+#     )
+#
+#     # уведомляем фиксированного менеджера
+#     _notify_default_manager(call, crm_source=crm_source, descr=comment)
+#
+#     return JsonResponse({"status": "created", "id": call.id}, status=201)
+
+@csrf_exempt
+def create_call_from_partner(request, hook):
+    """
+    Универсальный вебхук для всех партнёров (в т.ч. без токена).
+    Формат запроса определяется конфигом в settings.API_PARTNERS.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    partners = getattr(settings, "API_PARTNERS", {})
+    config = partners.get(hook)
+    if not config:
+        return JsonResponse({"detail": "Unknown hook"}, status=404)
+
+    # Проверка токена, если он обязателен
+    if config.get("require_token", True):
+        token = request.headers.get("X-API-Key") or request.META.get('HTTP_X_API_KEY')
+        if not token or token != config.get("token"):
+            return JsonResponse({"detail": "Unauthorized"}, status=401)
+
+    # Чтение JSON
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"detail": "Invalid JSON"}, status=400)
+
+    parser = config.get("parser", "default")
+    crm_source = config.get("crm") or "Партнёр"
+
+    # Универсальный парсинг
+    if parser == "az":
+        client_name, phones_originals, comment = _parse_az_payload(payload)
+    else:
+        client_name, phones_originals, comment = _parse_default_payload(payload)
+
+    if not client_name or not phones_originals:
+        return JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200)
+
+    # Проверка дублей
+    _, normalized_incoming = _parse_phones_any(phones_originals)
     existing_norm = _existing_normalized_phones()
     if any(n in existing_norm for n in normalized_incoming):
-        return JsonResponse({"status": "duplicate", "phone": combined_phones}, status=200)
+        return JsonResponse({"status": "duplicate", "phone": ', '.join(phones_originals)}, status=200)
 
-    crm_source = config.get("crm") or "Партнёрский канал"
-    comment = (payload.get('comment') or '')[:600]
-
-    # создаём без оператора; менеджера НЕ назначаем (только уведомляем)
     call = Calls.objects.create(
         client_name=client_name,
-        client_phone=combined_phones,
+        client_phone=', '.join(phones_originals),
         status_call='Не обработано',
         date_call=timezone.now(),
         crm=crm_source,
         description=comment,
-        client_location=payload.get('city') or '',
     )
 
-    # уведомляем фиксированного менеджера
+    # Уведомление дефолтному менеджеру
     _notify_default_manager(call, crm_source=crm_source, descr=comment)
 
     return JsonResponse({"status": "created", "id": call.id}, status=201)
+
 class WomenAPIView(generics.ListAPIView):
     queryset = CargoArticle.objects.all()
     serializer_class = CargoArticleSerializer
