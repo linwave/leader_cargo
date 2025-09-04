@@ -1,3 +1,4 @@
+import logging
 import re
 
 from django.conf import settings
@@ -15,6 +16,7 @@ from telegram_bot.models import TelegramProfile
 from telegram_bot.utils import send_telegram_message
 from .serializers import CargoArticleSerializer
 
+logger = logging.getLogger("inbound.calls")
 API_TOKEN = getattr(settings, "API_ROSACCRED_TOKEN", None)
 
 def _auth_ok(request):
@@ -250,6 +252,22 @@ def bulk_create_calls_from_rosaccreditation(request):
 def _client_ip(request):
     return (request.META.get('HTTP_X_FORWARDED_FOR') or request.META.get('REMOTE_ADDR') or '').split(',')[0].strip()
 
+def _headers_snapshot(request, mask_keys=("cookie", "authorization", "x-api-key")):
+    out = {}
+    for k, v in request.headers.items():
+        out[k] = "***" if k.lower() in mask_keys else v
+    return out
+
+def _is_browser_request(request):
+    """Эвристика: наличие Origin/Sec-Fetch-Mode/Referer указывает на браузер."""
+    if request.headers.get("Origin"):
+        return True
+    if request.headers.get("Sec-Fetch-Mode"):
+        return True
+    if request.headers.get("Referer"):
+        return True
+    return False
+
 User = get_user_model()
 
 def _notify_default_manager(call: Calls, crm_source: str, descr: str | None):
@@ -414,225 +432,162 @@ def _parse_az_payload(payload):
     return client_name, phones, comment
 
 
-# @csrf_exempt
-# def create_call_from_partner(request, hook):
-#     """
-#     Универсальный вебхук для КЦ.
-#     URL: /api/v1/calls/inbound/<hook>/
-#     settings.API_PARTNERS[hook] = {"crm": "<источник>", "token": "<секрет>"}
-#     JSON: { "name": "...", "phone": "...|[...]", "comment": "...", "city": "..." }
-#     Заголовок: X-API-Key: <секрет партнёра>
-#     """
-#     if request.method != "POST":
-#         return HttpResponseNotAllowed(["POST"])
-#
-#     partners = getattr(settings, "API_PARTNERS", {})
-#     config = partners.get(hook)
-#     if not config:
-#         return JsonResponse({"detail": "Unknown hook"}, status=404)
-#
-#     token = request.headers.get("X-API-Key") or request.META.get('HTTP_X_API_KEY')
-#     if not token or token != config.get("token"):
-#         return JsonResponse({"detail": "Unauthorized"}, status=401)
-#
-#     try:
-#         payload = json.loads(request.body.decode("utf-8"))
-#     except Exception:
-#         return JsonResponse({"detail": "Invalid JSON"}, status=400)
-#
-#     # имя
-#     client_name = (payload.get('name') or '').strip()
-#     if not client_name:
-#         parts = [
-#             (payload.get('last_name') or '').strip(),
-#             (payload.get('first_name') or '').strip(),
-#             (payload.get('patronymic') or '').strip(),
-#         ]
-#         client_name = " ".join([p for p in parts if p]).strip()
-#
-#     # телефоны
-#     originals, normalized_incoming = _parse_phones_any(payload.get('phone'))
-#     if not client_name or not originals:
-#         return JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200)
-#     combined_phones = ', '.join(originals)
-#
-#     # дубликаты по нормализованным
-#     existing_norm = _existing_normalized_phones()
-#     if any(n in existing_norm for n in normalized_incoming):
-#         return JsonResponse({"status": "duplicate", "phone": combined_phones}, status=200)
-#
-#     crm_source = config.get("crm") or "Партнёрский канал"
-#     comment = (payload.get('comment') or '')[:600]
-#
-#     # создаём без оператора; менеджера НЕ назначаем (только уведомляем)
-#     call = Calls.objects.create(
-#         client_name=client_name,
-#         client_phone=combined_phones,
-#         status_call='Не обработано',
-#         date_call=timezone.now(),
-#         crm=crm_source,
-#         description=comment,
-#         client_location=payload.get('city') or '',
-#     )
-#
-#     # уведомляем фиксированного менеджера
-#     _notify_default_manager(call, crm_source=crm_source, descr=comment)
-#
-#     return JsonResponse({"status": "created", "id": call.id}, status=201)
-
-# @csrf_exempt
-# def create_call_from_partner(request, hook):
-#     """
-#     Универсальный вебхук для всех партнёров (в т.ч. без токена).
-#     Формат запроса определяется конфигом в settings.API_PARTNERS.
-#     """
-#     if request.method != "POST":
-#         return HttpResponseNotAllowed(["POST"])
-#
-#     partners = getattr(settings, "API_PARTNERS", {})
-#     config = partners.get(hook)
-#     if not config:
-#         return JsonResponse({"detail": "Unknown hook"}, status=404)
-#
-#     # Проверка токена, если он обязателен
-#     if config.get("require_token", True):
-#         token = request.headers.get("X-API-Key") or request.META.get('HTTP_X_API_KEY')
-#         if not token or token != config.get("token"):
-#             return JsonResponse({"detail": "Unauthorized"}, status=401)
-#
-#     # Чтение JSON
-#     try:
-#         payload = json.loads(request.body.decode("utf-8"))
-#     except Exception:
-#         return JsonResponse({"detail": "Invalid JSON"}, status=400)
-#
-#     parser = config.get("parser", "default")
-#     crm_source = config.get("crm") or "Партнёр"
-#
-#     # Универсальный парсинг
-#     if parser == "az":
-#         client_name, phones_originals, comment = _parse_az_payload(payload)
-#     else:
-#         client_name, phones_originals, comment = _parse_default_payload(payload)
-#
-#     if not client_name or not phones_originals:
-#         return JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200)
-#
-#     # Проверка дублей
-#     _, normalized_incoming = _parse_phones_any(phones_originals)
-#     existing_norm = _existing_normalized_phones()
-#     if any(n in existing_norm for n in normalized_incoming):
-#         return JsonResponse({"status": "duplicate", "phone": ', '.join(phones_originals)}, status=200)
-#
-#     call = Calls.objects.create(
-#         client_name=client_name,
-#         client_phone=', '.join(phones_originals),
-#         status_call='Не обработано',
-#         date_call=timezone.now(),
-#         crm=crm_source,
-#         description=comment,
-#     )
-#
-#     # Уведомление дефолтному менеджеру
-#     _notify_default_manager(call, crm_source=crm_source, descr=comment)
-#
-#     return JsonResponse({"status": "created", "id": call.id}, status=201)
+def _corsify(resp: HttpResponse, origin: str | None, allowed_origins: set[str]):
+    """
+    Если запрос браузерный и origin разрешён — добавляем ACAO.
+    Если allowed_origins пустой, трактуем как “разрешено всё” (не рекомендуется в проде).
+    """
+    if origin and (not allowed_origins or origin in allowed_origins or "*" in allowed_origins):
+        resp["Access-Control-Allow-Origin"] = origin
+        resp["Vary"] = "Origin"
+    return resp
 
 @csrf_exempt
 def create_call_from_partner(request, hook):
     """
-    Универсальный вебхук для всех партнёров (в т.ч. без токена).
-    Формат запроса определяется конфигом в settings.API_PARTNERS.
-
-    Поддержка CORS:
-      - Preflight (OPTIONS) -> 204 + Access-Control-Allow-*
-      - POST-ответы тоже получают Access-Control-Allow-Origin
+    Универсальный вебхук для партнёров.
+    ЛОГИ: канал (browser/server), origin, referer, fetch-mode, IP, заголовки, сырое тело, итоги/ошибки.
+    CORS: preflight + проверка allowed_origins.
+    IP: optional allowlist/denylist per partner.
     """
     partners = getattr(settings, "API_PARTNERS", {})
     config = partners.get(hook)
 
-    # Берём запрошенный Origin (нужен для CORS-ответа)
-    origin = request.headers.get("Origin")
+    origin   = request.headers.get("Origin")
+    referer  = request.headers.get("Referer")
+    sfm      = request.headers.get("Sec-Fetch-Mode")
+    ua       = request.headers.get("User-Agent", "")
+    ip       = _client_ip(request)
+    is_browser = _is_browser_request(request)
+    is_preflight = (request.method == "OPTIONS")
 
-    # Разрешённые origin’ы: из конфигуратора партнёра, либо из глобального CORS_ALLOWED_ORIGINS
-    allowed_origins = set()
-    cfg_allow = (config or {}).get("allowed_origins")  # например: ["https://magimp.ru", "https://www.magimp.ru"]
-    if cfg_allow:
-        allowed_origins.update(cfg_allow)
-    # при желании подхватить глобальные (если используешь django-cors-headers)
-    global_cors = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
-    if global_cors:
-        allowed_origins.update(global_cors)
+    # Разрешённые origin’ы (для браузера)
+    allowed_origins = set((config or {}).get("allowed_origins") or [])
+    # Подмешать глобальные, если есть
+    global_origins = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+    allowed_origins.update(global_origins)
 
-    def _corsify(resp: HttpResponse) -> HttpResponse:
-        """Добавить CORS-заголовки в ответ (если Origin разрешён)."""
-        nonlocal origin
-        if origin and (not allowed_origins or origin in allowed_origins):
-            resp["Access-Control-Allow-Origin"] = origin
-            resp["Vary"] = "Origin"
-        return resp
+    # IP правила
+    allowed_ips = set((config or {}).get("allowed_ips") or [])
+    blocked_ips = set((config or {}).get("blocked_ips") or [])
+    allow_no_origin = (config or {}).get("allow_no_origin", True)
 
-    # --- CORS preflight ---
-    if request.method == "OPTIONS":
+    # Снимок заголовков и raw body для логов
+    try:
+        raw_body = request.body.decode("utf-8", errors="ignore")
+    except Exception:
+        raw_body = "<decode_error>"
+    headers_dump = json.dumps(_headers_snapshot(request), ensure_ascii=False)
+
+    logger.info(
+        "INBOUND %s hook=%s channel=%s preflight=%s ip=%s origin=%s referer=%s fetch=%s ua=%s headers=%s body=%s",
+        request.method, hook, ("browser" if is_browser else "server"), is_preflight,
+        ip, origin, referer, sfm, ua, headers_dump, raw_body
+    )
+
+    # CORS preflight
+    if is_preflight:
         resp = HttpResponse(status=204)
-        # Разрешаем методы/заголовки для браузера
         resp["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         resp["Access-Control-Allow-Headers"] = "Content-Type, X-API-Key"
-        return _corsify(resp)
+        logger.info("INBOUND PRELIGHT OK hook=%s ip=%s origin=%s", hook, ip, origin)
+        return _corsify(resp, origin, allowed_origins)
 
-    # --- Только POST для бизнес-логики ---
+    # Метод
     if request.method != "POST":
-        return _corsify(HttpResponseNotAllowed(["POST", "OPTIONS"]))
+        logger.warning("INBOUND WRONG_METHOD hook=%s method=%s ip=%s", hook, request.method, ip)
+        return _corsify(HttpResponseNotAllowed(["POST", "OPTIONS"]), origin, allowed_origins)
 
-    # Если неизвестный hook — отвечаем 404 (и добавляем CORS)
+    # Хук известен?
     if not config:
-        return _corsify(JsonResponse({"detail": "Unknown hook"}, status=404))
+        logger.warning("INBOUND UNKNOWN_HOOK hook=%s ip=%s", hook, ip)
+        return _corsify(JsonResponse({"detail": "Unknown hook"}, status=404), origin, allowed_origins)
 
-    # Проверка токена, если он обязателен (для некоторых партнёров можно отключить)
+    # Если это браузерный запрос, но origin не в whitelist — отклоняем.
+    if is_browser:
+        if origin is None:
+            logger.warning("INBOUND CORS_NO_ORIGIN hook=%s ip=%s", hook, ip)
+            return _corsify(JsonResponse({"detail": "CORS: missing Origin"}, status=403), origin, allowed_origins)
+        if allowed_origins and origin not in allowed_origins and "*" not in allowed_origins:
+            logger.warning("INBOUND CORS_FORBIDDEN hook=%s ip=%s origin=%s", hook, ip, origin)
+            # Важно: даже при отказе добавим CORS, чтобы браузер увидел корректный ответ
+            resp = JsonResponse({"detail": "CORS: origin not allowed"}, status=403)
+            return _corsify(resp, origin, allowed_origins)
+    else:
+        # server-to-server без Origin
+        if not allow_no_origin and origin is None:
+            logger.warning("INBOUND NO_ORIGIN_DISALLOWED hook=%s ip=%s", hook, ip)
+            return JsonResponse({"detail": "No-Origin requests disallowed"}, status=403)
+
+    # IP deny
+    if ip in blocked_ips:
+        logger.warning("INBOUND BLOCKED_IP hook=%s ip=%s", hook, ip)
+        return _corsify(JsonResponse({"detail": "IP blocked"}, status=403), origin, allowed_origins)
+
+    # IP allow (если список задан)
+    if allowed_ips and ip not in allowed_ips:
+        logger.warning("INBOUND NOT_IN_ALLOWED_IPS hook=%s ip=%s", hook, ip)
+        return _corsify(JsonResponse({"detail": "IP not allowed"}, status=403), origin, allowed_origins)
+
+    # Токен (если требуется)
     if config.get("require_token", True):
         token = request.headers.get("X-API-Key") or request.META.get("HTTP_X_API_KEY")
         if not token or token != config.get("token"):
-            return _corsify(JsonResponse({"detail": "Unauthorized"}, status=401))
+            logger.warning("INBOUND UNAUTHORIZED hook=%s ip=%s", hook, ip)
+            return _corsify(JsonResponse({"detail": "Unauthorized"}, status=401), origin, allowed_origins)
 
-    # Чтение JSON
+    # Парсинг JSON
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return _corsify(JsonResponse({"detail": "Invalid JSON"}, status=400))
+        payload = json.loads(raw_body or "{}")
+    except Exception as e:
+        logger.exception("INBOUND INVALID_JSON hook=%s ip=%s err=%s", hook, ip, e)
+        return _corsify(JsonResponse({"detail": "Invalid JSON"}, status=400), origin, allowed_origins)
 
-    # Определяем парсер и CRM-источник
+    # Парсер & CRM
     parser = config.get("parser", "default")
     crm_source = config.get("crm") or "Партнёр"
 
-    # Универсальный парсинг
-    if parser == "az":
-        client_name, phones_originals, comment = _parse_az_payload(payload)
-    else:
-        client_name, phones_originals, comment = _parse_default_payload(payload)
+    try:
+        if parser == "az":
+            client_name, phones_originals, comment = _parse_az_payload(payload)
+        else:
+            client_name, phones_originals, comment = _parse_default_payload(payload)
 
-    if not client_name or not phones_originals:
-        return _corsify(JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200))
+        if not client_name or not phones_originals:
+            logger.info("INBOUND SKIPPED empty_name_or_phone hook=%s ip=%s", hook, ip)
+            return _corsify(JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200), origin, allowed_origins)
 
-    # Проверка дублей по нормализованным телефонам
-    _, normalized_incoming = _parse_phones_any(phones_originals)
-    existing_norm = _existing_normalized_phones()
-    if any(n in existing_norm for n in normalized_incoming):
-        return _corsify(JsonResponse({"status": "duplicate", "phone": ", ".join(phones_originals)}, status=200))
+        # Дубли
+        _, normalized_incoming = _parse_phones_any(phones_originals)
+        existing_norm = _existing_normalized_phones()
+        if any(n in existing_norm for n in normalized_incoming):
+            logger.info("INBOUND DUPLICATE hook=%s ip=%s phones=%s", hook, ip, ", ".join(phones_originals))
+            return _corsify(JsonResponse({"status": "duplicate", "phone": ", ".join(phones_originals)}, status=200), origin, allowed_origins)
 
-    # Создаём звонок (оператора не назначаем; уведомляем дефолтного менеджера)
-    call = Calls.objects.create(
-        client_name=client_name,
-        client_phone=", ".join(phones_originals),
-        status_call="Не обработано",
-        date_call=timezone.now(),
-        crm=crm_source,
-        description=comment,
-    )
+        # Создаём
+        call = Calls.objects.create(
+            client_name=client_name,
+            client_phone=", ".join(phones_originals),
+            status_call="Не обработано",
+            date_call=timezone.now(),
+            crm=crm_source,
+            description=comment,
+        )
 
-    _notify_default_manager(call, crm_source=crm_source, descr=comment)
+        logger.info(
+            "INBOUND CREATED hook=%s channel=%s ip=%s origin=%s call_id=%s name=%s phones=%s crm=%s",
+            hook, ("browser" if is_browser else "server"), ip, origin, call.id, client_name, ", ".join(phones_originals), crm_source
+        )
 
-    return _corsify(JsonResponse({"status": "created", "id": call.id}, status=201))
+        _notify_default_manager(call, crm_source=crm_source, descr=comment)
+
+        return _corsify(JsonResponse({"status": "created", "id": call.id}, status=201), origin, allowed_origins)
+
+    except Exception as e:
+        logger.exception("INBOUND ERROR hook=%s ip=%s err=%s", hook, ip, e)
+        return _corsify(JsonResponse({"detail": "Server error"}, status=500), origin, allowed_origins)
 
 class WomenAPIView(generics.ListAPIView):
     queryset = CargoArticle.objects.all()
     serializer_class = CargoArticleSerializer
+

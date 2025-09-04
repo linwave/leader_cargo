@@ -153,21 +153,40 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',  # Выводит логи в консоль
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
         },
-        'file': {
-            'class': 'logging.FileHandler',  # Записывает логи в файл
-            'filename': 'debug.log',         # Имя файла для записи
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": str(BASE_DIR / "debug.log"),  # общий лог
+            "encoding": "utf-8",
+        },
+        "inbound_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "inbound_calls.log"),  # отдельный файл для API-запросов
+            "maxBytes": 5 * 1024 * 1024,  # 5 MB
+            "backupCount": 5,
+            "encoding": "utf-8",
         },
     },
-    'root': {
-        'handlers': ['console', 'file'],     # Используемые обработчики
-        'level': 'DEBUG',                    # Уровень логирования
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "DEBUG",   # твой общий уровень
+    },
+    "loggers": {
+        # отдельный логгер для inbound API
+        "inbound.calls": {
+            "handlers": ["inbound_file", "console"],
+            "level": "INFO",
+            "propagate": False,  # чтобы не дублировалось в root
+        },
     },
 }
 
@@ -177,31 +196,53 @@ API_ROSACCRED_TOKEN = "A5C27D361C573580E8075C35F477F5A6E06AD30015BC49433F69074E8
 CRM_DEFAULT_MANAGER_ID = 40
 
 API_PARTNERS = {
-# https://site/api/v1/calls/inbound/2f1c3cb2b3b847a5967c8f2e85d0a16a/
+    "b1c3f4c96a3d4e0e8c5f2a1b7d9e1122": {
+        "crm": "Наш сайт",
+        "parser": "default",
+        "require_token": False,  # без ключа
+        # CORS whitelist по origin (для браузера):
+        "allowed_origins": ["https://magimp.ru", "https://www.magimp.ru"],
+        # Опционально: IP allowlist/denylist (для всех каналов)
+        # "allowed_ips": ["203.0.113.10", "203.0.113.11", "162.254.207.210"],
+        "blocked_ips": ["198.51.100.99"],
+        # Разрешать ли запросы БЕЗ Origin (сервер-к-сервер):
+        "allow_no_origin": True,
+    },
     "2f1c3cb2b3b847a5967c8f2e85d0a16a": {
         "crm": "Колл-центр Биг Дата",
         "token": "BIGDATA_TOKEN_KRAfQTMx1PBT6B9sR58E",
         "require_token": True,
         "parser": "default",
+        "allow_no_origin": True,
     },
-# https://site/api/v1/calls/inbound/a9bbd3e5c4f943f9a1e6b3c7d2e8f011/
     "a9bbd3e5c4f943f9a1e6b3c7d2e8f011": {
         "crm": "Колл-центр АЗ",
-        "token": "AZ_TOKEN_6F2BF9E1B0D8AC82C5251CDCEC782141",  # можно оставить как есть, но...
-        "require_token": False,   # <- токен НЕ обязателен
-        "parser": "az",           # <- используем ваш разбор тела AZ
+        "token": "AZ_TOKEN_6F2BF9E1B0D8AC82C5251CDCEC782141",
+        "require_token": False,
+        "parser": "az",
+        "allow_no_origin": True,
     },
-    "b1c3f4c96a3d4e0e8c5f2a1b7d9e1122": {
-        "crm": "Наш сайт",
-        "parser": "default",
-        "require_token": False,  # без API-ключа
-        "allowed_origins": ["https://magimp.ru", "https://www.magimp.ru"],  # CORS whitelist
-    },
-    # "b1c3f4c96a3d4e0e8c5f2a1b7d9e1122": {
-    #     "crm": "Наш сайт",
-    #     "token": "SITE_TOKEN_XXXXXXXXXXXXXXXXXXXX",
-    #     "require_token": True,     # шлём с сервера, не палим токен
-    #     "parser": "default"
-    # },
-
 }
+
+# API_PARTNERS = {
+# # https://site/api/v1/calls/inbound/2f1c3cb2b3b847a5967c8f2e85d0a16a/
+#     "2f1c3cb2b3b847a5967c8f2e85d0a16a": {
+#         "crm": "Колл-центр Биг Дата",
+#         "token": "BIGDATA_TOKEN_KRAfQTMx1PBT6B9sR58E",
+#         "require_token": True,
+#         "parser": "default",
+#     },
+# # https://site/api/v1/calls/inbound/a9bbd3e5c4f943f9a1e6b3c7d2e8f011/
+#     "a9bbd3e5c4f943f9a1e6b3c7d2e8f011": {
+#         "crm": "Колл-центр АЗ",
+#         "token": "AZ_TOKEN_6F2BF9E1B0D8AC82C5251CDCEC782141",  # можно оставить как есть, но...
+#         "require_token": False,   # <- токен НЕ обязателен
+#         "parser": "az",           # <- используем ваш разбор тела AZ
+#     },
+#     "b1c3f4c96a3d4e0e8c5f2a1b7d9e1122": {
+#         "crm": "Наш сайт",
+#         "parser": "default",
+#         "require_token": False,  # без API-ключа
+#         "allowed_origins": ["https://magimp.ru", "https://www.magimp.ru"],  # CORS whitelist
+#     },
+# }
