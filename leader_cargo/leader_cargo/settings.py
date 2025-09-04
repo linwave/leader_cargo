@@ -191,4 +191,16 @@ API_PARTNERS = {
         "require_token": False,   # <- токен НЕ обязателен
         "parser": "az",           # <- используем ваш разбор тела AZ
     },
+    "b1c3f4c96a3d4e0e8c5f2a1b7d9e1122": {
+        "crm": "Наш сайт",
+        "require_token": False,    # с фронта, без заголовка
+        "parser": "default"        # формат {name, phone, comment, city}
+    },
+    # "b1c3f4c96a3d4e0e8c5f2a1b7d9e1122": {
+    #     "crm": "Наш сайт",
+    #     "token": "SITE_TOKEN_XXXXXXXXXXXXXXXXXXXX",
+    #     "require_token": True,     # шлём с сервера, не палим токен
+    #     "parser": "default"
+    # },
+
 }

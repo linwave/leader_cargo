@@ -545,6 +545,7 @@ CRM_CHOICES = [
         ('Битрикс24', 'Битрикс24'),
         ('amoCRM', 'amoCRM'),
         ('Ozon', 'Ozon'),
+        ('Наш сайт', 'Наш сайт'),
     ]
 
 class Calls(models.Model):
