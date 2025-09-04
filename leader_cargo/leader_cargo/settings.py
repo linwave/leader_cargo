@@ -193,8 +193,9 @@ API_PARTNERS = {
     },
     "b1c3f4c96a3d4e0e8c5f2a1b7d9e1122": {
         "crm": "Наш сайт",
-        "require_token": False,    # с фронта, без заголовка
-        "parser": "default"        # формат {name, phone, comment, city}
+        "parser": "default",
+        "require_token": False,  # без API-ключа
+        "allowed_origins": ["https://magimp.ru", "https://www.magimp.ru"],  # CORS whitelist
     },
     # "b1c3f4c96a3d4e0e8c5f2a1b7d9e1122": {
     #     "crm": "Наш сайт",

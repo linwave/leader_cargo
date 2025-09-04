@@ -2,7 +2,7 @@ import re
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse, HttpResponseNotAllowed
+from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse
 from django.utils import timezone
 from rest_framework import generics
 from datetime import datetime
@@ -480,32 +480,127 @@ def _parse_az_payload(payload):
 #
 #     return JsonResponse({"status": "created", "id": call.id}, status=201)
 
+# @csrf_exempt
+# def create_call_from_partner(request, hook):
+#     """
+#     Универсальный вебхук для всех партнёров (в т.ч. без токена).
+#     Формат запроса определяется конфигом в settings.API_PARTNERS.
+#     """
+#     if request.method != "POST":
+#         return HttpResponseNotAllowed(["POST"])
+#
+#     partners = getattr(settings, "API_PARTNERS", {})
+#     config = partners.get(hook)
+#     if not config:
+#         return JsonResponse({"detail": "Unknown hook"}, status=404)
+#
+#     # Проверка токена, если он обязателен
+#     if config.get("require_token", True):
+#         token = request.headers.get("X-API-Key") or request.META.get('HTTP_X_API_KEY')
+#         if not token or token != config.get("token"):
+#             return JsonResponse({"detail": "Unauthorized"}, status=401)
+#
+#     # Чтение JSON
+#     try:
+#         payload = json.loads(request.body.decode("utf-8"))
+#     except Exception:
+#         return JsonResponse({"detail": "Invalid JSON"}, status=400)
+#
+#     parser = config.get("parser", "default")
+#     crm_source = config.get("crm") or "Партнёр"
+#
+#     # Универсальный парсинг
+#     if parser == "az":
+#         client_name, phones_originals, comment = _parse_az_payload(payload)
+#     else:
+#         client_name, phones_originals, comment = _parse_default_payload(payload)
+#
+#     if not client_name or not phones_originals:
+#         return JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200)
+#
+#     # Проверка дублей
+#     _, normalized_incoming = _parse_phones_any(phones_originals)
+#     existing_norm = _existing_normalized_phones()
+#     if any(n in existing_norm for n in normalized_incoming):
+#         return JsonResponse({"status": "duplicate", "phone": ', '.join(phones_originals)}, status=200)
+#
+#     call = Calls.objects.create(
+#         client_name=client_name,
+#         client_phone=', '.join(phones_originals),
+#         status_call='Не обработано',
+#         date_call=timezone.now(),
+#         crm=crm_source,
+#         description=comment,
+#     )
+#
+#     # Уведомление дефолтному менеджеру
+#     _notify_default_manager(call, crm_source=crm_source, descr=comment)
+#
+#     return JsonResponse({"status": "created", "id": call.id}, status=201)
+
 @csrf_exempt
 def create_call_from_partner(request, hook):
     """
     Универсальный вебхук для всех партнёров (в т.ч. без токена).
     Формат запроса определяется конфигом в settings.API_PARTNERS.
-    """
-    if request.method != "POST":
-        return HttpResponseNotAllowed(["POST"])
 
+    Поддержка CORS:
+      - Preflight (OPTIONS) -> 204 + Access-Control-Allow-*
+      - POST-ответы тоже получают Access-Control-Allow-Origin
+    """
     partners = getattr(settings, "API_PARTNERS", {})
     config = partners.get(hook)
-    if not config:
-        return JsonResponse({"detail": "Unknown hook"}, status=404)
 
-    # Проверка токена, если он обязателен
+    # Берём запрошенный Origin (нужен для CORS-ответа)
+    origin = request.headers.get("Origin")
+
+    # Разрешённые origin’ы: из конфигуратора партнёра, либо из глобального CORS_ALLOWED_ORIGINS
+    allowed_origins = set()
+    cfg_allow = (config or {}).get("allowed_origins")  # например: ["https://magimp.ru", "https://www.magimp.ru"]
+    if cfg_allow:
+        allowed_origins.update(cfg_allow)
+    # при желании подхватить глобальные (если используешь django-cors-headers)
+    global_cors = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+    if global_cors:
+        allowed_origins.update(global_cors)
+
+    def _corsify(resp: HttpResponse) -> HttpResponse:
+        """Добавить CORS-заголовки в ответ (если Origin разрешён)."""
+        nonlocal origin
+        if origin and (not allowed_origins or origin in allowed_origins):
+            resp["Access-Control-Allow-Origin"] = origin
+            resp["Vary"] = "Origin"
+        return resp
+
+    # --- CORS preflight ---
+    if request.method == "OPTIONS":
+        resp = HttpResponse(status=204)
+        # Разрешаем методы/заголовки для браузера
+        resp["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        resp["Access-Control-Allow-Headers"] = "Content-Type, X-API-Key"
+        return _corsify(resp)
+
+    # --- Только POST для бизнес-логики ---
+    if request.method != "POST":
+        return _corsify(HttpResponseNotAllowed(["POST", "OPTIONS"]))
+
+    # Если неизвестный hook — отвечаем 404 (и добавляем CORS)
+    if not config:
+        return _corsify(JsonResponse({"detail": "Unknown hook"}, status=404))
+
+    # Проверка токена, если он обязателен (для некоторых партнёров можно отключить)
     if config.get("require_token", True):
-        token = request.headers.get("X-API-Key") or request.META.get('HTTP_X_API_KEY')
+        token = request.headers.get("X-API-Key") or request.META.get("HTTP_X_API_KEY")
         if not token or token != config.get("token"):
-            return JsonResponse({"detail": "Unauthorized"}, status=401)
+            return _corsify(JsonResponse({"detail": "Unauthorized"}, status=401))
 
     # Чтение JSON
     try:
         payload = json.loads(request.body.decode("utf-8"))
     except Exception:
-        return JsonResponse({"detail": "Invalid JSON"}, status=400)
+        return _corsify(JsonResponse({"detail": "Invalid JSON"}, status=400))
 
+    # Определяем парсер и CRM-источник
     parser = config.get("parser", "default")
     crm_source = config.get("crm") or "Партнёр"
 
@@ -516,27 +611,27 @@ def create_call_from_partner(request, hook):
         client_name, phones_originals, comment = _parse_default_payload(payload)
 
     if not client_name or not phones_originals:
-        return JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200)
+        return _corsify(JsonResponse({"status": "skipped", "reason": "empty_name_or_phone"}, status=200))
 
-    # Проверка дублей
+    # Проверка дублей по нормализованным телефонам
     _, normalized_incoming = _parse_phones_any(phones_originals)
     existing_norm = _existing_normalized_phones()
     if any(n in existing_norm for n in normalized_incoming):
-        return JsonResponse({"status": "duplicate", "phone": ', '.join(phones_originals)}, status=200)
+        return _corsify(JsonResponse({"status": "duplicate", "phone": ", ".join(phones_originals)}, status=200))
 
+    # Создаём звонок (оператора не назначаем; уведомляем дефолтного менеджера)
     call = Calls.objects.create(
         client_name=client_name,
-        client_phone=', '.join(phones_originals),
-        status_call='Не обработано',
+        client_phone=", ".join(phones_originals),
+        status_call="Не обработано",
         date_call=timezone.now(),
         crm=crm_source,
         description=comment,
     )
 
-    # Уведомление дефолтному менеджеру
     _notify_default_manager(call, crm_source=crm_source, descr=comment)
 
-    return JsonResponse({"status": "created", "id": call.id}, status=201)
+    return _corsify(JsonResponse({"status": "created", "id": call.id}, status=201))
 
 class WomenAPIView(generics.ListAPIView):
     queryset = CargoArticle.objects.all()
