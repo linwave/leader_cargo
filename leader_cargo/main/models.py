@@ -580,7 +580,7 @@ class Calls(models.Model):
     date_registration = models.DateField(verbose_name='Дата регистрации в CRM', blank=True, null=True)
 
     client_location = models.CharField(verbose_name='Город клиента', max_length=255, blank=True, null=True)
-    description = models.TextField(verbose_name='Комментарий по звонку оператор', max_length=600, blank=True, null=True)
+    description = models.TextField(verbose_name='Комментарий по звонку оператор', max_length=1200, blank=True, null=True)
     status_call = models.CharField(default="Не обработано", choices=statuses_operator, verbose_name='Статус заявки', max_length=50)
     date_next_call = models.DateTimeField(verbose_name='Дата следующего звонка', blank=True, null=True)
     loyalty = models.IntegerField(choices=statuses_loyalty, verbose_name='Статус лояльности', blank=True, null=True)
@@ -589,7 +589,7 @@ class Calls(models.Model):
     date_to_manager = models.DateTimeField(verbose_name='Дата передачи менеджеру', blank=True, null=True)
     status_manager = models.CharField(default="Новая", choices=statuses_manager, verbose_name='Статус заявки менеджера', max_length=50)
     date_next_call_manager = models.DateTimeField(verbose_name='Дата следующего звонка менеджером', blank=True, null=True)
-    description_manager = models.TextField(verbose_name='Комментарий по звонку менеджером', max_length=600, blank=True, null=True)
+    description_manager = models.TextField(verbose_name='Комментарий по звонку менеджером', max_length=1200, blank=True, null=True)
 
     call_file = models.ForeignKey(CallsFile, on_delete=models.SET_NULL, blank=True, null=True)
 

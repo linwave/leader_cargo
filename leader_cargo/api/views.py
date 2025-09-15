@@ -359,57 +359,51 @@ def _collect_az_phones(payload):
 
 def _build_az_comment(payload):
     """
-    Сжато и информативно соберём все основные поля в один текстовый комментарий.
+    Делает максимально короткий и полезный комментарий.
+    1) Берём «чистую» ремарку оператора (current_call.remark -> lead.remark)
+    2) Нормализуем переносы/пробелы
+    3) Режем до 600 символов
+    4) Если ремарк нет — делаем мини-саммари из ключевых полей
     """
+    # 1) основная ремарка
+    comment = (
+        (_safe_get(payload, 'current_call', 'remark') or '').strip()
+        or (_safe_get(payload, 'lead', 'remark') or '').strip()
+    )
+
+    # 2) нормализация
+    comment = re.sub(r'\r\n?', '\n', comment)             # Windows -> \n
+    lines = [ln.strip() for ln in comment.split('\n')]    # подрежем пробелы по краям строк
+    lines = [ln for ln in lines if ln]                    # уберём пустые
+    comment = '\n'.join(lines)
+
+    if comment:
+        return comment[:600]
+
+    # 4) fallback, если ремарок нет — соберём краткое резюме
     parts = []
 
-    # CONTACT
-    c = payload.get('contact') or {}
-    cf_list = c.get('custom_fields') or []
-    cf_str = "; ".join([f"{x.get('title') or x.get('name')}: {x.get('value')}" for x in cf_list if (x.get('value') is not None and str(x.get('value')).strip() != '')])
+    # Имя из contact/lead
+    contact_name = (_safe_get(payload, 'contact', 'name') or '').strip()
+    lead_contact_person = (_safe_get(payload, 'lead', 'contact_person') or '').strip()
+    name_val = contact_name or lead_contact_person
+    if name_val:
+        parts.append(f"Имя: {name_val}")
 
-    parts.append("— CONTACT —")
-    parts.append(f"id={c.get('id')}, name={c.get('name') or ''}")
-    if c.get('email'):
-        parts.append(f"email={c.get('email')}")
-    if cf_str:
-        parts.append(f"custom_fields: {cf_str}")
+    # Когда перезвонить
+    visit_plan = (_safe_get(payload, 'lead', 'visit_plan_date_time') or '').strip()
+    if visit_plan:
+        parts.append(f"Когда перезвонить: {visit_plan}")
 
-    # LEAD
-    l = payload.get('lead') or {}
-    l_cf = l.get('custom_fields') or []
-    l_cf_str = "; ".join([f"{x.get('name')}: {x.get('value')}" for x in l_cf if (x.get('value') is not None and str(x.get('value')).strip() != '')])
+    # Длительность последнего звонка (как дополнительная деталь)
+    duration = _safe_get(payload, 'current_call', 'call_duration')
+    if duration:
+        parts.append(f"Длительность звонка: {duration} сек.")
 
-    parts.append("\n— LEAD —")
-    parts.append(f"id={l.get('id')}, status={l.get('lead_status_name') or ''}")
-    if l.get('remark'):
-        parts.append(f"remark={l.get('remark')}")
-    if l.get('contact_person'):
-        parts.append(f"contact_person={l.get('contact_person')}")
-    if l.get('visit_plan_date_time'):
-        parts.append(f"visit_plan={l.get('visit_plan_date_time')}")
-    if l.get('created_at'):
-        parts.append(f"created_at={l.get('created_at')}")
-    if l.get('updated_at'):
-        parts.append(f"updated_at={l.get('updated_at')}")
-    if l_cf_str:
-        parts.append(f"lead_custom_fields: {l_cf_str}")
+    # Если совсем нечего — вернём пусто (пусть останется только имя/телефон у Call)
+    fallback = '\n'.join(parts).strip()
+    return fallback[:600] if fallback else ''
 
-    # CURRENT CALL
-    cc = payload.get('current_call') or {}
-    parts.append("\n— CURRENT_CALL —")
-    parts.append(f"id={cc.get('id')}, result={cc.get('call_result_name') or ''}, duration={cc.get('call_duration')}")
-    if cc.get('remark'):
-        parts.append(f"remark={cc.get('remark')}")
-    if cc.get('user_email'):
-        parts.append(f"user={cc.get('user_email')}")
-    if cc.get('created_at'):
-        parts.append(f"created_at={cc.get('created_at')}")
-    if cc.get('updated_at'):
-        parts.append(f"updated_at={cc.get('updated_at')}")
-
-    comment = "\n".join([p for p in parts if p])[:600]  # ограничиваем 600 символов
-    return comment
 
 def _parse_az_payload(payload):
     """Парсинг тела КЦ АЗ"""
