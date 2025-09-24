@@ -991,13 +991,29 @@ class LeadsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         form = LeadsFilterForm(self.request.GET or None)
 
         selected_manager_statuses = self.request.GET.getlist('status_manager')
-        selected_managers = self.request.GET.getlist('managers')
+        selected_managers_raw = self.request.GET.getlist('managers')
+        selected_crms = self.request.GET.getlist('crm')
         page_size = self.request.GET.get('page_size', 30)
         search_query = self.request.GET.get('search', '')
 
-        leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers).order_by('-time_new')
+        # managers: для ORM приводим к int, для шаблона — храним ещё и строковые id
+        selected_managers_ids = []
+        for mid in selected_managers_raw:
+            try:
+                selected_managers_ids.append(int(mid))
+            except (TypeError, ValueError):
+                pass
+        selected_managers_str = [str(x) for x in selected_managers_ids]  # для шаблона
+
+        leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers_ids).order_by('-time_new')
         if search_query:
             leads_query = Leads.search(search_query, leads_query)
+
+        # Фильтр по CRM (берём из связанного Calls: call.crm ИЛИ call.call_file.crm)
+        if selected_crms:
+            leads_query = leads_query.filter(
+                Q(call__crm__in=selected_crms) | Q(call__call_file__crm__in=selected_crms)
+            ).distinct()
 
         managers_with_calls = CustomUser.get_all_status_leads_count_for_all_managers()
 
@@ -1014,15 +1030,24 @@ class LeadsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
             } for m in managers_with_calls
         ])
         context['all_statuses'] = [label for _, label in Leads.statuses_manager]
+        filtered_total = leads_query.count()
 
         pagination_context = self.paginate_queryset(leads_query, page_size, 'leads')
         context.update(pagination_context)
+        pq = context.get('paginated_queryset')
+        page_current = len(pq.object_list) if pq else 0
         context.update({
             'form': form,
             'messages': [m for m in messages.get_messages(self.request)],
             'page_size': str(page_size),
             'selected_manager_statuses': selected_manager_statuses,
+            'selected_managers': selected_managers_str,  # ← чтобы выделялись выбранные менеджеры
+            'selected_crms': selected_crms,  # ← чтобы выделялись выбранные CRM
             'search': search_query,
+
+            'crm_choices': CRM_CHOICES,  # ← вот они, из модели
+            'filtered_total': filtered_total,
+            'page_current': page_current,
         })
         context['all_statuses'] = [label for _, label in Leads.statuses_manager]
         return dict(list(context.items()) + list(c_def.items()))

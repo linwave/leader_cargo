@@ -1,6 +1,15 @@
 {% load custom_filters %}
 <input type="hidden" id="total-pages" value="{{ paginated_queryset.paginator.num_pages }}">
 <div class="container-fluid">
+    <div class="row mb-2">
+  <div class="col-12 d-flex justify-content-between align-items-center">
+      <div class="small text-muted">
+          Показано: <span class="fw-semibold">{{ page_current }}</span>
+          из <span class="fw-semibold">{{ filtered_total }}</span> найденных лидов
+      </div>
+      <span class="badge text-bg-secondary">{{ page_current }} / {{ filtered_total }}</span>
+  </div>
+</div>
     <div class="row">
         <div class="col-12">
             <div class="table-responsive" style="border: 1px solid #000;
@@ -11,6 +20,7 @@
                     <tr style="vertical-align: middle;">
                         <th width="10" scope="col">#</th>
                         <th scope="col">Менеджер</th>
+                        <th scope="col">CRM</th>
                         <th scope="col">Статус</th>
                         <th scope="col">Имя клиента</th>
                         <th scope="col">Контактный номер</th>
@@ -36,6 +46,15 @@
                         style="cursor: pointer;">
                         <th scope="row">{{ lead.pk }} - ({{ lead.call.pk }})</th>
                         <td>{{ lead.manager|default:"" }}</td>
+                        <td>
+                            {% if lead.call %}
+                            {% if lead.call.crm %}
+                            {{ lead.call.crm }}
+                            {% elif lead.call.call_file and lead.call.call_file.crm %}
+                            {{ lead.call.call_file.get_crm_display }}
+                            {% endif %}
+                            {% endif %}
+                        </td>
                         <td>{{ lead.status_manager|default:"" }}</td>
                         <td>{{ lead.client_name|default:"" }}</td>
                         <td>{{ lead.client_phone|default:"" }}</td>

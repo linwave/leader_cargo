@@ -32,14 +32,14 @@
     <!-- Кнопка для скрытия/показа графика -->
     <div class="row">
         {% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
-<!--        <div class="col-auto">-->
-<!--            <a type="button" class="btn btn-sm btn-success"-->
-<!--               data-bs-toggle="modal"-->
-<!--               data-bs-target="#hx-modal"-->
-<!--               hx-target="#hx-modal-body">-->
-<!--                <i class="fa-solid fa-phone"></i> Добавление Лида-->
-<!--            </a>-->
-<!--        </div>-->
+        <!--        <div class="col-auto">-->
+        <!--            <a type="button" class="btn btn-sm btn-success"-->
+        <!--               data-bs-toggle="modal"-->
+        <!--               data-bs-target="#hx-modal"-->
+        <!--               hx-target="#hx-modal-body">-->
+        <!--                <i class="fa-solid fa-phone"></i> Добавление Лида-->
+        <!--            </a>-->
+        <!--        </div>-->
         {% endif %}
         <div class="col-auto">
             <button id="toggle-chart-btn" class="btn btn-sm btn-secondary">Скрыть график</button>
@@ -62,17 +62,24 @@
           id="filter-form" method="GET" action="{% url 'main:leads' %}">
         {% if user.role == 'Оператор' or user.role == 'Менеджер' %}
         <div class="row justify-content-start gy-3">
-            <div class="col-12">
+            <div class="col-6">
                 <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
                 <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
                     {% for value, label in form.fields.status_manager.choices %}
                     <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6">
+                <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in crm_choices %}
+                    <option value="{{ value }}" {% if value in selected_crms %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
         </div>
         {% elif user.role == 'Супер Администратор' or user.role == 'РОП' %}
-        <div class="row justify-content-start gy-3">
+        <div class="row justify-content-start gy-3 mb-2">
             <div class="col-6">
                 <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
                 <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
@@ -82,9 +89,20 @@
                 </select>
             </div>
             <div class="col-6">
+                <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
+                    {% for value, label in crm_choices %}
+                    <option value="{{ value }}" {% if value in selected_crms %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+        </div>
+        <div class="row justify-content-start gy-3">
+
+            <div class="col-12">
                 <select id="managers" name="managers" class="form-select form-select-sm select2" multiple>
                     {% for value, label in form.fields.managers.choices %}
-                    <option value="{{ value }}" {% if value in selected_operator_statuses %}selected{% endif %}>{{ label }}</option>
+                    <option value="{{ value }}" {% if value|stringformat:"s" in selected_managers %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -248,6 +266,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script>
     $(document).ready(function() {
+        $('#crm').select2({
+            placeholder: "Источник CRM",
+            allowClear: true,
+            width: '100%'
+        }).on('change', function(e) {
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
+
         $('#status_call').select2({
             placeholder: "Выбрать статус",
             allowClear: true,
@@ -255,6 +281,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).on('change', function(e) {
             document.getElementById('filter-form').dispatchEvent(new Event('submit'));
         });
+
         $('#status_manager').select2({
             placeholder: "Выбрать статус",
             allowClear: true,
@@ -262,6 +289,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).on('change', function(e) {
             document.getElementById('filter-form').dispatchEvent(new Event('submit'));
         });
+
         $('#managers').select2({
             placeholder: "Выбрать менеджера",
             allowClear: true,

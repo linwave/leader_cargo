@@ -933,9 +933,9 @@ class Leads(models.Model):
     @classmethod
     def filter_by_status(cls, user, selected_manager_statuses=None, selected_managers=None):
         if user.role in ['Супер Администратор', 'РОП']:
-            leads_query = cls.objects.select_related('call', 'manager').order_by('pk').all()
+            leads_query = cls.objects.select_related('call', 'manager', 'call__call_file').order_by('pk').all()
         elif user.role == 'Менеджер':
-            leads_query = cls.objects.filter(manager=user).select_related('call', 'manager').order_by('pk').all()
+            leads_query = cls.objects.filter(manager=user).select_related('call', 'manager', 'call__call_file').order_by('pk').all()
         if selected_manager_statuses:
             leads_query = leads_query.filter(status_manager__in=selected_manager_statuses)
         if selected_managers:
