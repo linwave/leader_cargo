@@ -1,0 +1,27 @@
+<div class="modal-content">
+  <div class="modal-header">
+    <h5 class="modal-title">Удалить расход</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body mb-2">
+    <form id="expense-delete-form"
+          hx-post="{% url 'main:expense_delete_confirm' expense.id %}"
+          hx-target="#expenses-table"
+          hx-swap="innerHTML"
+          hx-headers='{"HX-Trigger":"closeModalAndRefresh"}'>
+      {% csrf_token %}
+      <p>Удалить расход от <b>{{ expense.date_payment|date:"d.m.Y" }}</b> на сумму <b>{{ expense.amount }} ₽</b>?</p>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button form="expense-delete-form" type="submit" class="btn btn-danger btn-sm" id="delete-btn">Удалить</button>
+    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+  </div>
+</div>
+
+<script>
+document.getElementById('expense-delete-form').addEventListener('submit', ()=>{
+  const b = document.getElementById('delete-btn');
+  if (b){ b.disabled = true; b.innerText = 'Удаляю...'; }
+});
+</script>

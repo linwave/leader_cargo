@@ -19,6 +19,10 @@ urlpatterns = [
     path('leads/', views.LeadsView.as_view(), name='leads'),
     # path('leads/add_leads', views.LeadsView.as_view(), name='add_leads'),
     path('leads/edit_leads/<int:lead_id>', views.edit_leads, name='edit_leads'),
+    path("leads/expenses/", views.ExpensesView.as_view(), name="expenses"),
+    path("leads/expenses/create/", views.expense_create, name="expense_create"),
+    path("leads/expenses/<int:pk>/edit/", views.expense_edit, name="expense_edit"),
+    path("leads/expenses/<int:pk>/delete/", views.expense_delete_confirm, name="expense_delete_confirm"),
 
     path('clients/', views.ClientsView.as_view(), name='clients'),
     path('clients/create-client/', views.AddClientView.as_view(), name='create_client'),

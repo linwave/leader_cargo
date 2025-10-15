@@ -5,6 +5,7 @@ import sqlite3
 
 import pandas as pd
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.db.models import Q, Count, Subquery, OuterRef
 from django.urls import reverse
@@ -17,6 +18,11 @@ from telegram_bot.models import TelegramNotification
 logger = logging.getLogger(__name__)
 
 from django.db import models
+
+def expense_upload_to(instance, filename: str) -> str:
+    # uploads/expenses/2025/10/<id>_<filename>
+    dt = instance.date_payment or timezone.localdate()
+    return f"uploads/expenses/{dt:%Y/%m}/{instance.pk or 'new'}_{filename}"
 
 
 def find_best_matches(col_name, possible_names):
@@ -942,3 +948,91 @@ class Leads(models.Model):
             leads_query = leads_query.filter(manager__in=selected_managers)
 
         return leads_query
+
+
+class Expense(models.Model):
+    """
+    Финансовые расходы по источникам (для расчёта CPL).
+    Должны совпадать по 'source' с CRM источниками лидов/звонков.
+    """
+    date_payment = models.DateField(verbose_name="Дата платежа", db_index=True)
+
+    # те же самые источники, что и у Calls.crm
+    source = models.CharField(
+        max_length=50,
+        choices=CRM_CHOICES,
+        verbose_name="Источник",
+        db_index=True,
+    )
+
+    amount = models.DecimalField(
+        verbose_name="Сумма",
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        db_index=True,
+    )
+
+    comment = models.TextField(
+        verbose_name="Комментарий",
+        blank=True,
+        null=True,
+        max_length=2000,
+    )
+
+    receipt_file = models.FileField(
+        verbose_name="Файл платёжки",
+        upload_to=expense_upload_to,
+        blank=True,
+        null=True,
+    )
+
+    created_at = models.DateTimeField(verbose_name="Дата добавления", auto_now_add=True)
+    created_by = models.ForeignKey(
+        CustomUser,
+        verbose_name="Кем добавлено",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="expenses_created",
+    )
+
+    class Meta:
+        verbose_name = "Расход"
+        verbose_name_plural = "Расходы"
+        ordering = ["-date_payment", "-created_at"]
+        indexes = [
+            models.Index(fields=["source", "date_payment"]),
+        ]
+
+    def __str__(self):
+        return f"{self.date_payment:%d.%m.%Y} • {self.source} • {self.amount}₽"
+
+    # ---------- Удобные агрегаторы для отчётов ----------
+
+    @classmethod
+    def sum_total(cls, date_from=None, date_to=None):
+        """
+        Сумма расходов за период (по дате платежа).
+        """
+        qs = cls.objects.all()
+        if date_from:
+            qs = qs.filter(date_payment__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_payment__lte=date_to)
+        agg = qs.aggregate(total=models.Sum("amount"))
+        return agg["total"] or 0
+
+    @classmethod
+    def sum_by_source(cls, date_from=None, date_to=None):
+        """
+        Сумма расходов по каждому источнику за период.
+        Возвращает dict: { 'Биг-дата': Decimal('...'), ... }
+        """
+        qs = cls.objects.all()
+        if date_from:
+            qs = qs.filter(date_payment__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_payment__lte=date_to)
+        rows = qs.values("source").annotate(total=models.Sum("amount")).order_by("source")
+        return {r["source"]: (r["total"] or 0) for r in rows}

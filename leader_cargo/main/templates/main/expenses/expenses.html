@@ -1,0 +1,429 @@
+{# templates/main/expenses/expenses.html #}
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}База расходов{% endblock %}
+
+{% block content %}
+
+{# модалка #}
+<div class="modal fade" id="hx-modal" tabindex="-1" aria-labelledby="modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div id="hx-modal-body"></div>
+  </div>
+</div>
+<div class="container-fluid">
+
+  <div class="row align-items-center mb-2">
+    <div class="col">
+      <h4 class="mb-0">База расходов</h4>
+    </div>
+  </div>
+  {% if messages %}
+  <div class="container-fluid pl-2">
+    <div class="row justify-content-left">
+      {% include "main/components/messages.html"  %}
+    </div>
+  </div>
+  {% endif %}
+  {# Фильтры #}
+  <form id="filter-form"
+        hx-get="{% url 'main:expenses' %}"
+        hx-target="#expenses-table"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="change, submit, keyup delay:0.3s"
+        method="GET" action="{% url 'main:expenses' %}">
+
+    <div class="row gy-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label mb-1 small">Период</label>
+        <div class="btn-group btn-group-sm" id="period-buttons">
+          <button type="button" class="btn btn-outline-secondary period-btn" data-period="today">Сегодня</button>
+          <button type="button" class="btn btn-outline-secondary period-btn" data-period="yesterday">Вчера</button>
+          <button type="button" class="btn btn-outline-secondary period-btn" data-period="week">Неделя</button>
+          <button type="button" class="btn btn-outline-secondary period-btn" data-period="month">Месяц</button>
+          <button type="button" class="btn btn-outline-secondary" id="period-reset">Сброс</button>
+        </div>
+        <input type="hidden" id="period" name="period" value="{{ period }}">
+      </div>
+
+      <div class="col-auto">
+        <label class="form-label mb-1 small">С даты</label>
+        <input type="date" id="date_from" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-1 small">По дату</label>
+        <input type="date" id="date_to" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+
+      <div class="col-4">
+        <label class="form-label mb-1 small">Источник</label>
+        <select id="source" name="source" class="form-select form-select-sm select2" multiple>
+          {% for value, label in crm_choices %}
+          <option value="{{ value }}" {% if value in selected_sources %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-auto">
+        <label class="form-label mb-1 small">Показывать лиды по дате</label>
+        <select id="date_field" name="date_field" class="form-select form-select-sm">
+          <option value="time_new" {% if date_field == 'time_new' %}selected{% endif %}>Дата передачи менеджеру</option>
+          <option value="time_create" {% if date_field == 'time_create' %}selected{% endif %}>Дата создания</option>
+          <option value="time_in_work" {% if date_field == 'time_in_work' %}selected{% endif %}>Дата взятия в работу</option>
+          <option value="date_next_call_manager" {% if date_field == 'date_next_call_manager' %}selected{% endif %}>Дата следующего звонка</option>
+        </select>
+      </div>
+
+      <div class="col-auto">
+        <label class="form-label mb-1 small">На странице</label>
+        <select id="page_size" name="page_size" class="form-select form-select-sm">
+          <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
+          <option value="30" {% if page_size == '30' %}selected{% endif %}>30</option>
+          <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
+          <option value="100" {% if page_size == '100' %}selected{% endif %}>100</option>
+        </select>
+      </div>
+    </div>
+
+  </form>
+  <div class="row mt-2">
+    <div class="col-auto">
+      <button id="toggle-charts-btn" class="btn btn-sm btn-secondary">Скрыть графики</button>
+    </div>
+  </div>
+
+  <div id="charts-wrap" class="row g-3 mt-1">
+    <div class="col-12 col-lg-6">
+      <div class="card">
+        <div class="card-header py-2 small">Расходы по источникам</div>
+        <div class="card-body">
+          <canvas id="chartBySource" height="200"></canvas>
+          <div id="legendBySource" class="mt-2 d-flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card">
+        <div class="card-header py-2 small">Расходы по дням</div>
+        <div class="card-body">
+          <canvas id="chartByDay" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  {# Таблица расходов + сводка по CPL #}
+  <div id="expenses-table">
+    {% include 'main/expenses/_table.html' %}
+  </div>
+</div>
+
+
+<script src="{% static 'main/js/chart.js' %}"></script>
+<script src="{% static 'main/js/chartjs-plugin-datalabels.js' %}"></script>
+<script>
+(function () {
+  let expChartSource = null;
+  let expChartDay = null;
+
+  const HIDDEN_KEY = 'expensesHiddenSources';
+
+  function readJSON(id) {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    try { return JSON.parse(el.textContent); } catch { return null; }
+  }
+
+  function getHiddenSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]')); }
+    catch { return new Set(); }
+  }
+  function saveHiddenSet(set) {
+    localStorage.setItem(HIDDEN_KEY, JSON.stringify([...set]));
+  }
+
+  function filteredData(src, hidden) {
+    // скрытые источники отрисовываем как NaN, чтобы столбец исчез
+    return src.labels.map((label, i) => hidden.has(label) ? NaN : src.data[i]);
+  }
+
+  function renderLegend(container, labels, hidden) {
+    if (!container) return;
+    container.innerHTML = '';
+    labels.forEach(lbl => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm ' + (hidden.has(lbl) ? 'btn-outline-secondary' : 'btn-secondary');
+      btn.textContent = lbl;
+      btn.style.whiteSpace = 'nowrap';
+      btn.addEventListener('click', () => {
+        if (hidden.has(lbl)) hidden.delete(lbl); else hidden.add(lbl);
+        saveHiddenSet(hidden);
+        updateSourceChart(); // обновим график со скрытием
+        renderLegend(container, labels, hidden); // подсветка чипа
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function buildOrUpdateCharts() {
+    const src = readJSON('chart-by-source-data');
+    const day = readJSON('chart-by-day-data');
+    const srcCtx = document.getElementById('chartBySource')?.getContext('2d');
+    const dayCtx = document.getElementById('chartByDay')?.getContext('2d');
+    const legendBox = document.getElementById('legendBySource');
+    const hidden = getHiddenSet();
+
+    // ------- bar: по источникам
+    function createSourceChart() {
+      return new Chart(srcCtx, {
+        type: 'bar',
+        data: {
+          labels: src.labels,
+          datasets: [{
+            label: '₽',
+            data: filteredData(src, hidden),
+            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
+            datalabels: {
+              anchor: 'end', align: 'top',
+              formatter: v => (v && !isNaN(v)) ? v.toLocaleString('ru-RU') : ''
+            }
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            datalabels: { color: '#555' },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const val = ctx.raw;
+                  return (isNaN(val) ? 0 : val).toLocaleString('ru-RU') + ' ₽';
+                }
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('ru-RU') } }
+          },
+          onClick(evt) {
+            const points = expChartSource.getElementsAtEventForMode(evt, 'nearest', {intersect: true}, true);
+            if (!points || !points.length) return;
+            const i = points[0].index;
+            const lbl = src.labels[i];
+            if (hidden.has(lbl)) hidden.delete(lbl); else hidden.add(lbl);
+            saveHiddenSet(hidden);
+            updateSourceChart();
+            renderLegend(legendBox, src.labels, hidden);
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+
+    window.updateSourceChart = function updateSourceChart() { // доступно и из legend
+      if (!expChartSource) return;
+      expChartSource.data.datasets[0].data = filteredData(src, getHiddenSet());
+      expChartSource.update();
+    }
+
+    if (src && srcCtx) {
+      if (!expChartSource) expChartSource = createSourceChart();
+      else {
+        expChartSource.data.labels = src.labels;
+        expChartSource.data.datasets[0].data = filteredData(src, hidden);
+        expChartSource.update();
+      }
+      renderLegend(legendBox, src.labels, hidden);
+    }
+
+    // ------- line: по дням (как и было)
+    if (day && dayCtx) {
+      if (!expChartDay) {
+        expChartDay = new Chart(dayCtx, {
+          type: 'line',
+          data: {
+            labels: day.labels,
+            datasets: [{
+              label: '₽ в день',
+              data: day.data,
+              fill: false,
+              tension: 0.25,
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: {
+                label: ctx => (ctx.raw || 0).toLocaleString('ru-RU') + ' ₽'
+              }}
+            },
+            scales: {
+              x: { ticks: { autoSkip: true, maxTicksLimit: 12 }},
+              y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('ru-RU') } }
+            }
+          }
+        });
+      } else {
+        expChartDay.data.labels = day.labels;
+        expChartDay.data.datasets[0].data = day.data;
+        expChartDay.update();
+      }
+    }
+  }
+
+  // первичная инициализация
+  document.addEventListener('DOMContentLoaded', () => {
+    // показать/скрыть блок графиков (у вас уже есть код с localStorage) — оставляем
+    buildOrUpdateCharts();
+  });
+
+  // перестраиваем после HTMX-обновления таблицы
+  document.body.addEventListener('htmx:afterSwap', (e) => {
+    if (e.target && e.target.id === 'expenses-table') {
+      buildOrUpdateCharts();
+    }
+  });
+})();
+</script>
+<script>
+(function () {
+  const wrap = document.getElementById('charts-wrap');
+  const btn  = document.getElementById('toggle-charts-btn');
+  const KEY  = 'expensesChartsHidden';
+
+  function applyState() {
+    const hidden = localStorage.getItem(KEY) === '1';
+    wrap.classList.toggle('d-none', hidden);
+    btn.textContent = hidden ? 'Показать графики' : 'Скрыть графики';
+  }
+
+  if (wrap && btn) {
+    applyState();
+    btn.addEventListener('click', () => {
+      const hidden = !(localStorage.getItem(KEY) === '1');
+      localStorage.setItem(KEY, hidden ? '1' : '0');
+      applyState();
+    });
+  }
+})();
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // select2
+  if (window.$) {
+    $('#source').select2({ placeholder: "Источник", allowClear: true, width: '100%' })
+      .on('change', () => document.getElementById('filter-form').dispatchEvent(new Event('submit')));
+  }
+
+  const form = document.getElementById('filter-form');
+  const periodInput = document.getElementById('period');
+  const dateFrom = document.getElementById('date_from');
+  const dateTo = document.getElementById('date_to');
+  const dateField = document.getElementById('date_field');
+  const buttons = document.querySelectorAll('.period-btn');
+
+  const resetBtn = document.getElementById('period-reset');
+if (resetBtn) {
+  resetBtn.addEventListener('click', () => {
+    if (periodInput) periodInput.value = '';
+    if (dateFrom) dateFrom.value = '';
+    if (dateTo) dateTo.value = '';
+    refreshActive();
+    form.dispatchEvent(new Event('submit'));
+  });
+}
+
+
+  function refreshActive() {
+    const p = periodInput ? periodInput.value : '';
+    buttons.forEach(btn => {
+      const on = (btn.dataset.period === p) && p !== '';
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  refreshActive();
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      periodInput.value = btn.dataset.period || '';
+      if (dateFrom) dateFrom.value = '';
+      if (dateTo) dateTo.value = '';
+      refreshActive();
+      form.dispatchEvent(new Event('submit'));
+    });
+  });
+
+  function onDateChange() {
+    if (periodInput) periodInput.value = '';
+    refreshActive();
+    form.dispatchEvent(new Event('submit'));
+  }
+  dateFrom && dateFrom.addEventListener('change', onDateChange);
+  dateTo   && dateTo.addEventListener('change', onDateChange);
+  dateField && dateField.addEventListener('change', () => form.dispatchEvent(new Event('submit')));
+
+  document.body.addEventListener('htmx:afterSwap', () => refreshActive());
+});
+</script>
+<script>
+document.body.addEventListener("htmx:afterOnLoad", function(e) {
+  if (e.detail.xhr.getResponseHeader("HX-Trigger") === "closeModalAndRefresh") {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('hx-modal'));
+    modal && modal.hide();
+  }
+});
+</script>
+<script>
+(function(){
+  const modalEl = document.getElementById('hx-modal');
+
+  function onPaste(e){
+    // Не мешаем, если печатают в input/textarea/contentEditable
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (let i=0;i<items.length;i++){
+      const it = items[i];
+      if (it.kind === 'file'){
+        const f = it.getAsFile();
+        const input = modalEl.querySelector('#receipt-input');
+        if (!input) return;
+        const dt = new DataTransfer();
+        dt.items.add(f);
+        input.files = dt.files;
+
+        // показать в дропзоне
+        const dzName = modalEl.querySelector('#dz-file-name');
+        const dzEmpty = modalEl.querySelector('#dz-empty');
+        const dzFile  = modalEl.querySelector('#dz-file');
+        if (dzName && dzEmpty && dzFile){
+          dzEmpty.classList.add('d-none');
+          dzFile.classList.remove('d-none');
+          dzName.textContent = f.name;
+        }
+        break;
+      }
+    }
+  }
+
+  modalEl.addEventListener('shown.bs.modal', ()=> document.addEventListener('paste', onPaste, true));
+  modalEl.addEventListener('hidden.bs.modal', ()=> document.removeEventListener('paste', onPaste, true));
+})();
+</script>
+
+{% endblock %}

@@ -24,12 +24,21 @@ class TelegramProfile(models.Model):
 class TelegramNotification(models.Model):
     lead = models.ForeignKey('main.Leads', on_delete=models.CASCADE, related_name='notifications')
     manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='telegram_notifications')
-    notification_type = models.CharField(max_length=50, choices=[
+
+    NOTIFY_CHOICES = [
+        ('10_min_before', 'За 10 минут до звонка'),
+        ('exact_time', 'В точное время'),
+        # (оставлю старые для совместимости, если где-то использовались)
         ('30_min_before', 'За 30 минут до звонка'),
         ('next_day_9am', 'На следующий день в 9:00'),
-    ])
+    ]
+    notification_type = models.CharField(max_length=50, choices=NOTIFY_CHOICES)
     scheduled_time = models.DateTimeField(verbose_name="Время отправки")
     is_sent = models.BooleanField(default=False, verbose_name="Отправлено")
 
+    # Храним id запланированной celery-задачи, чтобы можно было revoke()
+    task_id = models.CharField(max_length=100, blank=True, null=True, verbose_name='Celery task id')
+
     def __str__(self):
         return f"{self.notification_type} для {self.manager} на {self.scheduled_time}"
+

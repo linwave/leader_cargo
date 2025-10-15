@@ -64,6 +64,9 @@ menu = {
     'Лиды': {'title': 'Лиды', 'url_name': 'main:leads', 'short_url': 'leads', 'display': True,
              'category_name': categories[8], 'menu_role': 'basic'},
 
+    'База расходов': {'title': 'База расходов', 'url_name': 'main:expenses', 'short_url': 'expenses', 'display': True,
+                           'category_name': categories[8], 'menu_role': 'sub'},
+
     'Звонки': {'title': 'Звонки', 'url_name': 'main:calls', 'short_url': 'calls', 'display': True,
                'category_name': categories[7], 'menu_role': 'basic'},
 
@@ -112,7 +115,7 @@ menu_super_admin = [
     {
         'name': categories[8],
         'basic': menu['Лиды'],
-        'sub_menu': []
+        'sub_menu': [menu['База расходов']]
     },
     {
         'name': categories[7],
@@ -170,7 +173,7 @@ menu_rop = [
     {
         'name': categories[8],
         'basic': menu['Лиды'],
-        'sub_menu': []
+        'sub_menu': [menu['База расходов']]
     },
     {
         'name': categories[7],

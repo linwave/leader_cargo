@@ -1,0 +1,139 @@
+{# templates/main/expenses/_table.html #}
+{% load custom_filters %}
+{{ chart_by_source|json_script:"chart-by-source-data" }}
+{{ chart_by_day|json_script:"chart-by-day-data" }}
+<div id="kpi-cards" class="d-flex flex-wrap align-items-center gap-2 my-3">
+  <div class="card shadow-sm border-primary-subtle" style="min-width: 220px;">
+    <div class="card-body py-2">
+      <div class="text-uppercase small text-muted">Всего потрачено</div>
+      <div class="h5 mb-0 fw-semibold">{{ sum_total|floatformat:2 }} ₽</div>
+    </div>
+  </div>
+  <div class="card shadow-sm border-success-subtle" style="min-width: 220px;">
+    <div class="card-body py-2">
+      <div class="text-uppercase small text-muted">Общий CPL</div>
+      <div class="h5 mb-0 fw-semibold">
+        {% if overall_cpl %}{{ overall_cpl|floatformat:2 }} ₽{% else %}—{% endif %}
+      </div>
+    </div>
+  </div>
+  {# кнопку "Добавить расход" тут повторяем, чтобы она не прыгала #}
+  <button class="btn btn-success btn-sm ms-auto"
+          data-bs-toggle="modal"
+          data-bs-target="#hx-modal"
+          hx-get="{% url 'main:expense_create' %}"
+          hx-target="#hx-modal-body">
+    + Добавить расход
+  </button>
+</div>
+<input type="hidden" id="total-pages" value="{{ paginated_queryset.paginator.num_pages }}">
+
+<div class="row g-3">
+  <div class="col-12">
+    <div class="table-responsive" style="border:1px solid #000; overflow:auto; max-height:68vh;">
+      <table class="table table-hover align-middle" style="font-size:0.9rem;">
+        <thead class="table-dark sticky-top">
+        <tr>
+          <th>Дата платежа</th>
+          <th>Источник</th>
+          <th class="text-end">Сумма, ₽</th>
+          <th>Комментарий</th>
+          <th>Файл платежки</th>
+          <th>Дата добавления</th>
+          <th>Действия</th>
+        </tr>
+        </thead>
+        <tbody class="table-light">
+        {% for e in paginated_queryset %}
+        <tr>
+          <td>{{ e.date_payment|date:"d.m.Y" }}</td>
+          <td>{{ e.source }}</td>
+          <td class="text-end">{{ e.amount|floatformat:2 }}</td>
+          <td style="max-width:380px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ e.comment }}</td>
+          <td>
+            {% if e.receipt_file %}
+            <a href="{{ e.receipt_file.url }}" target="_blank" class="text-decoration-none">
+              📎 {{ e.receipt_file.name|slice:"-30:" }}
+            </a>
+            {% else %}
+            —
+            {% endif %}
+          </td>
+          <td>{{ e.created_at|date:"d.m.Y" }}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary"
+                    hx-get="{% url 'main:expense_edit' e.id %}"
+                    hx-target="#hx-modal-body"
+                    data-bs-toggle="modal"
+                    data-bs-target="#hx-modal">
+              ✏️
+            </button>
+            <button class="btn btn-sm btn-outline-danger"
+                    hx-get="{% url 'main:expense_delete_confirm' e.id %}"
+                    hx-target="#hx-modal-body"
+                    data-bs-toggle="modal"
+                    data-bs-target="#hx-modal">
+              🗑️
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center py-4 text-muted">Нет данных</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# CPL по источникам #}
+  <div class="col-12">
+    <h6 class="mb-2">CPL по источникам</h6>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
+        <tr>
+          <th>Источник</th>
+          <th class="text-end">Расходы, ₽</th>
+          <th class="text-end">Лидов</th>
+          <th class="text-end">CPL, ₽</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in summary_rows %}
+        <tr>
+          <td>{{ row.source }}</td>
+          <td class="text-end">{{ row.expense|floatformat:2 }}</td>
+          <td class="text-end">{{ row.leads }}</td>
+          <td class="text-end">{% if row.cpl %}{{ row.cpl|floatformat:2 }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# Пагинация (как у тебя в проектах) #}
+{% if paginated_queryset.paginator.num_pages != 1 %}
+<div class="pagination">
+  <span class="page-links">
+    {% if paginated_queryset.has_previous %}
+      <a href="?page=1&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">&laquo; 1</a>
+      <a href="?page={{ paginated_queryset.previous_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link"><</a>
+    {% endif %}
+    {% for i in page_range_ %}
+      {% if paginated_queryset.number == i %}
+        <span class="current-page page-link">{{ i }}</span>
+      {% else %}
+        <a href="?page={{ i }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ i }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if paginated_queryset.has_next %}
+      <a href="?page={{ paginated_queryset.next_page_number }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">></a>
+      <a href="?page={{ paginated_queryset.paginator.num_pages }}&{{ request.GET|urlencode_after_remove:'page' }}" class="page-link">{{ paginated_queryset.paginator.num_pages }} &raquo;</a>
+    {% endif %}
+    <input type="number" id="pageInput" min="1" max="{{ paginated_queryset.paginator.num_pages }}" value="{{ paginated_queryset.number }}" class="form-control form-control-sm d-inline-block p-2" style="width: 65px;">
+    <button id="goToPage" class="btn btn-sm btn-primary">Перейти</button>
+  </span>
+</div>
+{% endif %}

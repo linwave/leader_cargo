@@ -27,7 +27,7 @@
 <!--    </div>-->
 <!--</div>-->
 {% if user.role == 'Супер Администратор' or  user.role == 'РОП' %}
-<div class="container-fluid">
+<div class="container-fluid mb-2">
     <!-- График -->
     <!-- Кнопка для скрытия/показа графика -->
     <div class="row">
@@ -41,89 +41,137 @@
         <!--            </a>-->
         <!--        </div>-->
         {% endif %}
-        <div class="col-auto">
+        <div class="col-auto mb-2">
             <button id="toggle-chart-btn" class="btn btn-sm btn-secondary">Скрыть график</button>
         </div>
     </div>
-    <div class="row">
+    <div class="row" id="chart-block">
         <div class="col-12">
-            <canvas id="managerCallsChart" style="max-height: 400px;"></canvas>
+            <canvas id="managerCallsChart" style="height: 360px;"></canvas>
         </div>
     </div>
-</div>
+<div id="leads-chart-data" style="display:none">{{ managers_with_calls|safe }}</div>
+
 {% endif %}
 {% if user.role == 'Супер Администратор' or user.role == 'РОП' or user.role == 'Оператор' or user.role == 'Менеджер' %}
-<div class="container-fluid mt-2 mb-2">
-    <form hx-get="{% url 'main:leads' %}"
-          hx-target="#leads-table"
-          hx-trigger="change, submit, keyup delay:0.3s"
-          hx-swap="innerHTML"
-          hx-push-url="true"
-          id="filter-form" method="GET" action="{% url 'main:leads' %}">
-        {% if user.role == 'Оператор' or user.role == 'Менеджер' %}
-        <div class="row justify-content-start gy-3">
-            <div class="col-6">
-                <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
-                <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
-                    {% for value, label in form.fields.status_manager.choices %}
-                    <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-6">
-                <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
-                    {% for value, label in crm_choices %}
-                    <option value="{{ value }}" {% if value in selected_crms %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+<form
+        hx-get="{% url 'main:leads' %}"
+        hx-target="#leads-table"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        hx-trigger="change, submit, keyup delay:300ms"
+        hx-sync="this:replace"
+        hx-vals='{"page":1}'
+        hx-indicator="#leads-loading"
+        id="filter-form"
+        method="GET"
+        action="{% url 'main:leads' %}">
+    {% if user.role == 'Оператор' or user.role == 'Менеджер' %}
+    <div class="row justify-content-start gy-3">
+        <div class="col-6">
+            <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
+            <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
+                {% for value, label in form.fields.status_manager.choices %}
+                <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
         </div>
-        {% elif user.role == 'Супер Администратор' or user.role == 'РОП' %}
-        <div class="row justify-content-start gy-3 mb-2">
-            <div class="col-6">
-                <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
-                <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
-                    {% for value, label in form.fields.status_manager.choices %}
-                    <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-6">
-                <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
-                    {% for value, label in crm_choices %}
-                    <option value="{{ value }}" {% if value in selected_crms %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div class="col-6">
+            <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
+                {% for value, label in crm_choices %}
+                <option value="{{ value }}" {% if value in selected_crms %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    {% elif user.role == 'Супер Администратор' or user.role == 'РОП' %}
+    <div class="row justify-content-start gy-3 mb-2">
+        <div class="col-6">
+            <!--                <label for="status_manager" class="form-label">Статус заявки менеджера</label>-->
+            <select id="status_manager" name="status_manager" class="form-select form-select-sm select2" multiple>
+                {% for value, label in form.fields.status_manager.choices %}
+                <option value="{{ value }}" {% if value in selected_manager_statuses %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-6">
+            <select id="crm" name="crm" class="form-select form-select-sm select2" multiple>
+                {% for value, label in crm_choices %}
+                <option value="{{ value }}" {% if value in selected_crms %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-        </div>
-        <div class="row justify-content-start gy-3">
+    </div>
+    <div class="row justify-content-start gy-3">
 
-            <div class="col-12">
-                <select id="managers" name="managers" class="form-select form-select-sm select2" multiple>
-                    {% for value, label in form.fields.managers.choices %}
-                    <option value="{{ value }}" {% if value|stringformat:"s" in selected_managers %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div class="col-12">
+            <select id="managers" name="managers" class="form-select form-select-sm select2" multiple>
+                {% for value, label in form.fields.managers.choices %}
+                <option value="{{ value }}" {% if value|stringformat:"s" in selected_managers %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
         </div>
-        {% endif %}
-        <div class="row justify-content-between mt-2">
-            <div class="col-4">
-                <input type="text" id="search" name="search" class="form-control form-control-sm" placeholder="Поиск..." value="{{ search }}">
+    </div>
+    {% endif %}
+    <div class="row gy-2 align-items-end mt-2">
+        <div class="col-auto">
+            <label class="form-label mb-1 small">Период</label>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Быстрый период" id="period-buttons">
+                <button type="button" class="btn btn-outline-secondary period-btn" data-period="today">Сегодня</button>
+                <button type="button" class="btn btn-outline-secondary period-btn" data-period="yesterday">Вчера</button>
+                <button type="button" class="btn btn-outline-secondary period-btn" data-period="week">Неделя</button>
+                <button type="button" class="btn btn-outline-secondary period-btn" data-period="month">Месяц</button>
             </div>
-            <div class="col-auto">
-                <select id="page_size" name="page_size" class="form-select form-select-sm">
-                    <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
-                    <option value="30" {% if page_size == '30' %}selected{% endif %}>30</option>
-                    <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
-                    <option value="100" {% if page_size == '100' %}selected{% endif %}>100</option>
-                </select>
-            </div>
+            <input type="hidden" id="period" name="period" value="{{ period }}">
         </div>
-    </form>
-</div>
+        <div class="col-auto">
+            <button type="button" id="reset-dates" class="btn btn-sm btn-outline-secondary">Сбросить даты</button>
+        </div>
+
+        <div class="col-auto">
+            <label for="date_field" class="form-label mb-1 small">Фильтровать по</label>
+            <select id="date_field" name="date_field" class="form-select form-select-sm">
+                <option value="time_new" {% if date_field == 'time_new' %}selected{% endif %}>Дата передачи менеджеру</option>
+                <option value="time_create" {% if date_field == 'time_create' %}selected{% endif %}>Дата создания</option>
+                <option value="time_in_work" {% if date_field == 'time_in_work' %}selected{% endif %}>Дата взятия в работу</option>
+                <option value="date_next_call_manager" {% if date_field == 'date_next_call_manager' %}selected{% endif %}>Дата следующего звонка</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <label for="date_from" class="form-label mb-1 small">С даты</label>
+            <input type="date" id="date_from" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+        </div>
+
+        <div class="col-auto">
+            <label for="date_to" class="form-label mb-1 small">По дату</label>
+            <input type="date" id="date_to" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+        </div>
+    </div>
+    <div class="row justify-content-between mt-2">
+        <div class="col-4">
+            <input type="text" id="search" name="search" class="form-control form-control-sm" placeholder="Поиск..." value="{{ search }}">
+        </div>
+        <div class="col-auto">
+            <select id="page_size" name="page_size" class="form-select form-select-sm">
+                <option value="20" {% if page_size == '20' %}selected{% endif %}>20</option>
+                <option value="30" {% if page_size == '30' %}selected{% endif %}>30</option>
+                <option value="50" {% if page_size == '50' %}selected{% endif %}>50</option>
+                <option value="100" {% if page_size == '100' %}selected{% endif %}>100</option>
+            </select>
+        </div>
+    </div>
+</form>
+
+<div id="leads-loading" class="spinner-border spinner-border-sm ms-2" role="status"></div>
+<style>
+  /* показывать спиннер только во время запроса */
+  #leads-loading { display: none; }
+  #leads-loading.htmx-request { display: inline-block; }
+</style>
+
 {% endif %}
+    </div>
 {% if messages %}
 <div class="container-fluid pl-2">
     <div class="row justify-content-left">
@@ -136,130 +184,221 @@
 <!--<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>-->
 <script src="{% static 'main/js/chart.js' %}"></script>
 <script src="{% static 'main/js/chartjs-plugin-datalabels.js' %}"></script>
-{{ all_statuses|json_script:"status-list" }}
+<script>
+  function submitHtmxForm() {
+    const f = document.getElementById('filter-form');
+    if (!f) return;
+    if (window.htmx) htmx.trigger(f, 'submit'); else f.requestSubmit();
+  }
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('reset-dates');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      const period = document.getElementById('period');
+      const from   = document.getElementById('date_from');
+      const to     = document.getElementById('date_to');
+      if (period) period.value = '';
+      if (from)   from.value   = '';
+      if (to)     to.value     = '';
+      submitHtmxForm();
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('reset-filters');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      // селекты (select2)
+      const crm = $('#crm');
+      const st  = $('#status_manager');
+      const mgr = $('#managers');
+
+      if (crm.length) crm.val(null).trigger('change');
+      if (st.length)  st.val(null).trigger('change');
+      if (mgr.length) mgr.val(null).trigger('change');
+
+      // поле выбора даты по умолчанию
+      const dateField = document.getElementById('date_field');
+      if (dateField) dateField.value = 'time_new';
+
+      // период и даты
+      const period = document.getElementById('period');
+      const from   = document.getElementById('date_from');
+      const to     = document.getElementById('date_to');
+      if (period) period.value = '';
+      if (from)   from.value   = '';
+      if (to)     to.value     = '';
+
+      // поиск
+      const search = document.getElementById('search');
+      if (search) search.value = '';
+
+      // размер страницы (по желанию вернём в 30)
+      const pageSize = document.getElementById('page_size');
+      if (pageSize) pageSize.value = '30';
+
+      // подсветку пресетов обновим и отправим форму
+      submitHtmxForm();
+    });
+  });
+</script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const managersWithCalls = JSON.parse('{{ managers_with_calls|escapejs }}');
-    const allStatuses = JSON.parse(document.getElementById('status-list').textContent);
-    const statusKeys = allStatuses.map(s => s.toLowerCase().replace(/\s+/g, '_') + '_count');
+  // из контекста приходят один раз — не меняются
+  const statusLabels = JSON.parse('{{ status_labels|escapejs }}');
+  const statusKeys   = JSON.parse('{{ status_keys|escapejs }}');
 
-    const statusColors = [
-        'rgba(75, 192, 192, 0.8)',     // Новая
-        'rgba(255, 99, 132, 0.8)',     // В работе
-        'rgba(255, 206, 86, 0.8)',     // Отложено
-        'rgba(54, 162, 235, 0.8)',     // Утверждена
-        'rgba(153, 102, 255, 0.8)',    // Отказ
-        'rgba(255, 159, 64, 0.8)'      // Не подходит под критерии
-    ];
+  const statusColors = [
+    'rgba(75, 192, 192, 0.8)',
+    'rgba(255, 99, 132, 0.8)',
+    'rgba(255, 206, 86, 0.8)',
+    'rgba(54, 162, 235, 0.8)',
+    'rgba(153, 102, 255, 0.8)',
+    'rgba(255, 159, 64, 0.8)'
+  ];
 
-    const ctx = document.getElementById('managerCallsChart');
-    if (ctx) {
-        const datasets = statusKeys.map((key, index) => ({
-            label: allStatuses[index],
-            data: managersWithCalls.map(m => m[key] || 0),
-            backgroundColor: statusColors[index % statusColors.length],
-            borderColor: statusColors[index % statusColors.length].replace('0.8', '1'),
-            borderWidth: 1,
-            datalabels: {
-                color: '#666',
-                font: { weight: 'normal' },
-                anchor: 'end',
-                align: 'start',
-                formatter: (value) => value > 0 ? value : ''
-            }
-        }));
+  const canvas = document.getElementById('managerCallsChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
 
-        const totalCounts = managersWithCalls.map(m =>
-            statusKeys.reduce((sum, key) => sum + (m[key] || 0), 0)
-        );
+  let totalsForOverlay = [];
 
-        const managerCallsChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: managersWithCalls.map(user => user.name),
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Лиды по менеджерам и статусам',
-                        font: { size: 18, weight: 'bold' },
-                        padding: { top: 10, bottom: 30 }
-                    },
-                    legend: {
-                        position: 'bottom',
-
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(tooltipItem) {
-                                return `${tooltipItem.dataset.label}: ${tooltipItem.raw}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: false,
-                        title: { display: false }
-                    },
-                    y: {
-                        stacked: false,
-                        beginAtZero: true,
-                        title: { display: true, text: 'Количество лидов' }
-                    }
-                }
-            },
-            plugins: [
-                ChartDataLabels,
-                {
-                    id: 'totalsOverlay',
-                    afterDatasetsDraw(chart) {
-                        const { ctx, chartArea: { top }, scales: { x, y } } = chart;
-
-                        managersWithCalls.forEach((manager, index) => {
-                            const total = totalCounts[index];
-                            const xCenter = x.getPixelForValue(index);
-                            const yTop = y.getPixelForValue(y.max) + 20;
-
-                            ctx.save();
-                            ctx.font = '12px sans-serif';
-                            ctx.fillStyle = '#666';
-                            ctx.textAlign = 'center';
-                            ctx.fillText(`Всего: ${total}`, xCenter, top - 10);
-                            ctx.restore();
-                        });
-                    }
-                }
-            ]
-        });
+  const totalsOverlay = {
+    id: 'totalsOverlay',
+    afterDatasetsDraw(chart) {
+      const { ctx, chartArea: { top }, scales: { x } } = chart;
+      totalsForOverlay.forEach((total, idx) => {
+        const xCenter = x.getPixelForValue(idx);
+        ctx.save();
+        ctx.font = '12px sans-serif';
+        ctx.fillStyle = '#666';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Всего: ${total}`, xCenter, top - 10);
+        ctx.restore();
+      });
     }
+  };
 
-    // Скрытие/показ графика
-    const chartContainer = document.getElementById('managerCallsChart');
-    const toggleChartBtn = document.getElementById('toggle-chart-btn');
-
-    if (chartContainer && toggleChartBtn) {
-        const isChartHidden = localStorage.getItem('isChartHidden') === 'true';
-        if (isChartHidden) {
-            chartContainer.style.display = 'none';
-            toggleChartBtn.textContent = 'Показать график';
+  // создаём чарт (пустой)
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: [], datasets: statusKeys.map((_, i) => ({
+      label: statusLabels[i],
+      data: [],
+      backgroundColor: statusColors[i % statusColors.length],
+      borderColor: statusColors[i % statusColors.length].replace('0.8', '1'),
+      borderWidth: 1,
+      datalabels: {
+        color: '#666', font: { weight: 'normal' },
+        anchor: 'end', align: 'start',
+        formatter: (v) => v > 0 ? v : ''
+      }
+    }))},
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { bottom: 28 } },
+      plugins: {
+        title: {
+          display: true,
+          text: 'Лиды по менеджерам и статусам',
+          font: { size: 18, weight: 'bold' },
+          padding: { top: 10, bottom: 30 }
+        },
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: { label: (ti) => `${ti.dataset.label}: ${ti.raw}` } }
+      },
+      scales: {
+        x: {
+          stacked: false,
+          ticks: { maxRotation: 0, minRotation: 0, autoSkip: false },
+          grid: { offset: true }
+        },
+        y: {
+          stacked: false,
+          beginAtZero: true,
+          title: { display: true, text: 'Количество лидов' }
         }
+      }
+    },
+    plugins: [ChartDataLabels, totalsOverlay]
+  });
 
-        toggleChartBtn.addEventListener('click', () => {
-            if (chartContainer.style.display === 'none') {
-                chartContainer.style.display = 'block';
-                toggleChartBtn.textContent = 'Скрыть график';
-                localStorage.setItem('isChartHidden', 'false');
-            } else {
-                chartContainer.style.display = 'none';
-                toggleChartBtn.textContent = 'Показать график';
-                localStorage.setItem('isChartHidden', 'true');
-            }
-        });
+  // функция подстановки новых данных
+  function updateChartFrom(data) {
+    const labels = data.map(u => u.name || '—');
+    const datasetsData = statusKeys.map(key => data.map(u => u[key] || 0));
+    totalsForOverlay = data.map(u => statusKeys.reduce((s, k) => s + (u[k] || 0), 0));
+
+    chart.data.labels = labels;
+    chart.data.datasets.forEach((ds, i) => { ds.data = datasetsData[i]; });
+
+    // чуть адаптируем верхнюю границу оси Y
+    const newMax = Math.max(5, ...totalsForOverlay);
+    chart.options.scales.y.suggestedMax = newMax;
+
+    chart.update();
+  }
+
+// 1) первичная отрисовка + подписка на изменения holder'а
+(function () {
+  const holder = document.getElementById('leads-chart-data');
+  if (!holder) return;
+
+  // первичная отрисовка
+  try {
+    const initial = holder.textContent ? JSON.parse(holder.textContent) : [];
+    updateChartFrom(initial);
+  } catch (e) {
+    console.warn('Bad initial managers_with_calls JSON', e);
+  }
+
+  // любое изменение текста внутри holder'а => перерисовать график
+  const applyFromHolder = () => {
+    try {
+      const fresh = holder.textContent ? JSON.parse(holder.textContent) : [];
+      updateChartFrom(fresh);
+    } catch (e) {
+      console.warn('Bad managers_with_calls JSON after OOB', e);
     }
+  };
+
+  // MutationObserver ловит OOB-замену innerHTML
+  new MutationObserver(applyFromHolder).observe(holder, {
+    characterData: true,
+    childList: true,
+    subtree: true
+  });
+})();
+
+
+
+
+  // кнопка "Скрыть/Показать график" без изменений
+  const toggleBtn   = document.getElementById('toggle-chart-btn');
+const chartBlock  = document.getElementById('chart-block');
+
+if (toggleBtn && chartBlock) {
+  const hidden = localStorage.getItem('chartHidden') === 'true';
+  chartBlock.classList.toggle('d-none', hidden);
+  toggleBtn.textContent = hidden ? 'Показать график' : 'Скрыть график';
+
+  toggleBtn.addEventListener('click', () => {
+    const nowHidden = chartBlock.classList.toggle('d-none');
+    toggleBtn.textContent = nowHidden ? 'Показать график' : 'Скрыть график';
+    localStorage.setItem('chartHidden', nowHidden ? 'true' : 'false');
+
+    // после показа пересчитать размер графика, чтобы он занял ширину
+    if (!nowHidden && typeof chart !== 'undefined') {
+      setTimeout(() => chart.resize(), 0);
+    }
+  });
+}
 });
 </script>
 
@@ -271,7 +410,7 @@ document.addEventListener("DOMContentLoaded", function () {
             allowClear: true,
             width: '100%'
         }).on('change', function(e) {
-            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+            submitHtmxForm();
         });
 
         $('#status_call').select2({
@@ -279,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
             allowClear: true,
             width: '100%'
         }).on('change', function(e) {
-            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+            submitHtmxForm();
         });
 
         $('#status_manager').select2({
@@ -287,7 +426,7 @@ document.addEventListener("DOMContentLoaded", function () {
             allowClear: true,
             width: '100%'
         }).on('change', function(e) {
-            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+            submitHtmxForm();
         });
 
         $('#managers').select2({
@@ -295,7 +434,7 @@ document.addEventListener("DOMContentLoaded", function () {
             allowClear: true,
             width: '100%'
         }).on('change', function(e) {
-            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+            submitHtmxForm();
         });
     });
 </script>
@@ -466,4 +605,53 @@ document.body.addEventListener('htmx:afterSwap', function () {
     initializeEditLeadsForm();
 });
 </script>
+<script>
+(function () {
+  const form        = document.getElementById('filter-form');
+  const periodInput = document.getElementById('period');
+  const dateFrom    = document.getElementById('date_from');
+  const dateTo      = document.getElementById('date_to');
+  const group       = document.getElementById('period-buttons');
+  const buttons     = group ? group.querySelectorAll('.period-btn') : [];
+
+  function refreshActive() {
+    const p = (periodInput && periodInput.value) ? periodInput.value : '';
+    buttons.forEach(btn => {
+      const on = (btn.dataset.period === p) && p !== '';
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  // Инициализация подсветки при загрузке
+  refreshActive();
+
+  // Клик по пресету: ставим значение, чистим ручные даты, подсвечиваем, сабмитим
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (periodInput) periodInput.value = btn.dataset.period || '';
+      if (dateFrom)    dateFrom.value = '';
+      if (dateTo)      dateTo.value   = '';
+      refreshActive();
+      submitHtmxForm();
+    });
+  });
+
+  // Ручная смена дат: сбрасываем пресет и подсветку, сабмитим
+  function onDateChange() {
+    if (periodInput) periodInput.value = '';
+    refreshActive();
+    submitHtmxForm();
+  }
+  dateFrom && dateFrom.addEventListener('change', onDateChange);
+  dateTo   && dateTo.addEventListener('change', onDateChange);
+
+  // На всякий случай: после HTMX-подмен (таблица меняется, фильтры — нет)
+  document.body.addEventListener('htmx:afterSwap', function () {
+    refreshActive();
+  });
+})();
+</script>
+
+
 {% endblock %}

@@ -5,10 +5,15 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html
 
 from telegram_bot.models import TelegramProfile
-from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, ExchangeRates, Calls, CallsFile, Leads, MaintenanceMode
+from .models import CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, ExchangeRates, Calls, CallsFile, Leads, MaintenanceMode, Expense
 from analytics.models import RequestsForLogisticsRate, RequestsForLogisticsGoods, RequestsForLogisticFiles, RoadsList, CarriersList, CargoFiles, CargoArticle, PaymentDocumentsForArticles, RequestsForLogisticsCalculations
 from bills.models import Clients, RequisitesClients, Entity, RequisitesEntity, Bills, BillsFiles
 
+@admin.register(Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    list_display = ("date_payment","source","amount","created_by","created_at")
+    list_filter  = ("source","date_payment","created_at")
+    search_fields = ("comment",)
 
 @admin.register(MaintenanceMode)
 class MaintenanceModeAdmin(admin.ModelAdmin):

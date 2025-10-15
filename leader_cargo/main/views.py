@@ -1,8 +1,10 @@
 import calendar
 import datetime
+import datetime as dt
 import json
 import re
 import uuid
+from decimal import Decimal
 
 import pandas as pd
 from django.conf import settings
@@ -12,21 +14,23 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
+from django.db.models import Q, When, Case, IntegerField, Sum
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.shortcuts import redirect, render, get_object_or_404
 import string
 import random
 
 from django.urls import reverse_lazy
 from django.utils.timezone import make_aware
 from django.views import View
+from django.views.decorators.http import require_POST, require_http_methods
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 
 from telegram_bot.models import TelegramProfile
 from telegram_bot.utils import send_telegram_message
 from .forms import AddEmployeesForm, AddExchangeRatesForm, AddClientsForm, CardEmployeesForm, CardClientsForm, LoginUserForm, AddAppealsForm, AddGoodsForm, CardGoodsForm, UpdateStatusAppealsForm, UpdateAppealsClientForm, \
-    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsRop, LeadsFilterForm, EditLeadsManager, EditLeadsRop, CRMCallForm
+    UpdateAppealsManagerForm, RopReportForm, EditRopReportForm, EditManagerPlanForm, AddManagerPlanForm, EditCallsOperator, CallsFileForm, CallsFilterForm, EditCallsRop, LeadsFilterForm, EditLeadsManager, EditLeadsRop, CRMCallForm, \
+    ExpenseForm
 from .models import *
 from .utils import DataMixin, MyLoginMixin, PaginationMixin
 from .tasks import process_excel_file
@@ -985,6 +989,54 @@ class LeadsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
     login_url = reverse_lazy('main:login')
     role_have_perm = ['Супер Администратор', 'Менеджер', 'РОП']
 
+    def _parse_dates(self, request):
+        tz = timezone.get_current_timezone()
+
+        date_from_str = request.GET.get('date_from')  # 'YYYY-MM-DD'
+        date_to_str = request.GET.get('date_to')
+        period = request.GET.get('period')  # today|yesterday|week|month|''
+
+        def to_date(s):
+            if not s:
+                return None
+            try:
+                return dt.datetime.strptime(s, "%Y-%m-%d").date()
+            except ValueError:
+                return None
+
+        df = to_date(date_from_str)
+        dt_ = to_date(date_to_str)  # переименовал чтобы не перекрывать модуль dt
+
+        today = timezone.localdate()
+        if period == 'today':
+            df = dt_ = today
+        elif period == 'yesterday':
+            df = dt_ = today - dt.timedelta(days=1)
+        elif period == 'week':
+            df, dt_ = today - dt.timedelta(days=6), today
+        elif period == 'month':
+            df, dt_ = today - dt.timedelta(days=29), today
+
+        if df and not dt_:
+            dt_ = df
+        if dt_ and not df:
+            df = dt_
+        if df and dt_ and df > dt_:
+            df, dt_ = dt_, df
+
+        def start_of_day(d):
+            naive = dt.datetime.combine(d, dt.time.min)
+            return timezone.make_aware(naive, tz) if settings.USE_TZ else naive
+
+        def end_of_day(d):
+            naive = dt.datetime.combine(d, dt.time.max)
+            return timezone.make_aware(naive, tz) if settings.USE_TZ else naive
+
+        df_dt = start_of_day(df) if df else None
+        dt_dt = end_of_day(dt_) if dt_ else None
+
+        return df_dt, dt_dt, (df.isoformat() if df else ''), (dt_.isoformat() if dt_ else ''), (period or '')
+
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title="Лиды")
@@ -996,96 +1048,119 @@ class LeadsView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         page_size = self.request.GET.get('page_size', 30)
         search_query = self.request.GET.get('search', '')
 
-        # managers: для ORM приводим к int, для шаблона — храним ещё и строковые id
+        # NEW: какое поле даты использовать
+        date_field = self.request.GET.get('date_field', 'time_new')  # time_new|time_create|time_in_work|date_next_call_manager
+
         selected_managers_ids = []
         for mid in selected_managers_raw:
             try:
                 selected_managers_ids.append(int(mid))
             except (TypeError, ValueError):
                 pass
-        selected_managers_str = [str(x) for x in selected_managers_ids]  # для шаблона
+        selected_managers_str = [str(x) for x in selected_managers_ids]
 
-        leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers_ids).order_by('-time_new')
+        # Даты
+        date_from_dt, date_to_dt, date_from_str, date_to_str, period = self._parse_dates(self.request)
+
+        leads_query = Leads.filter_by_status(
+            self.request.user, selected_manager_statuses, selected_managers_ids
+        ).order_by('-time_new')
+
         if search_query:
             leads_query = Leads.search(search_query, leads_query)
 
-        # Фильтр по CRM (берём из связанного Calls: call.crm ИЛИ call.call_file.crm)
         if selected_crms:
             leads_query = leads_query.filter(
                 Q(call__crm__in=selected_crms) | Q(call__call_file__crm__in=selected_crms)
             ).distinct()
 
-        managers_with_calls = CustomUser.get_all_status_leads_count_for_all_managers()
+        # NEW: диапазон по выбранному полю даты + фолбэк на time_create только для time_new
+        def range_q(field, gte_dt, lte_dt):
+            q = Q()
+            if gte_dt: q &= Q(**{f"{field}__gte": gte_dt})
+            if lte_dt: q &= Q(**{f"{field}__lte": lte_dt})
+            return q
 
-        # Список всех статусов
-        all_statuses = [status for status, _ in Leads.statuses_manager]
+        if date_from_dt or date_to_dt:
+            if date_field == 'time_new':
+                base = range_q('time_new', date_from_dt, date_to_dt)
+                fallback = range_q('time_create', date_from_dt, date_to_dt) & Q(time_new__isnull=True)
+                leads_query = leads_query.filter(base | fallback)
+            elif date_field == 'time_create':
+                leads_query = leads_query.filter(range_q('time_create', date_from_dt, date_to_dt))
+            elif date_field == 'time_in_work':
+                leads_query = leads_query.filter(range_q('time_in_work', date_from_dt, date_to_dt))
+            elif date_field == 'date_next_call_manager':
+                leads_query = leads_query.filter(range_q('date_next_call_manager', date_from_dt, date_to_dt))
 
-        context['managers_with_calls'] = json.dumps([
-            {
-                'name': f"{m.first_name} {m.patronymic} {m.last_name}",
-                **{
-                    status.lower().replace(' ', '_') + '_count': getattr(m, status.lower().replace(' ', '_') + '_count', 0)
-                    for status in all_statuses
-                }
-            } for m in managers_with_calls
-        ])
-        context['all_statuses'] = [label for _, label in Leads.statuses_manager]
+        # === ГРАФИК: считаем из leads_query надёжно ===
+        status_pairs = list(Leads.statuses_manager)  # [(value, label), ...]
+        status_labels = [label for _, label in status_pairs]  # подписи в легенде
+        status_keys = [f"st_{i}" for i in range(len(status_pairs))]  # безопасные алиасы
+
+        sum_cases = {
+            status_keys[i]: Sum(
+                Case(
+                    When(status_manager=code, then=1),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            )
+            for i, (code, _label) in enumerate(status_pairs)
+        }
+
+        chart_qs = (
+            leads_query
+            .order_by()  # сброс сортировки перед GROUP BY
+            .values('manager_id',
+                    'manager__first_name', 'manager__patronymic', 'manager__last_name')
+            .annotate(**sum_cases)
+        )
+
+        managers_with_calls = []
+        for r in chart_qs:
+            name = f"{(r.get('manager__first_name') or '')} {(r.get('manager__patronymic') or '')} {(r.get('manager__last_name') or '')}".strip() or '—'
+            row = {'name': name}
+            for k in status_keys:
+                row[k] = int(r.get(k, 0) or 0)
+            managers_with_calls.append(row)
+
+        context['managers_with_calls'] = json.dumps(managers_with_calls, ensure_ascii=False)
+        context['status_labels'] = json.dumps(status_labels, ensure_ascii=False)
+        context['status_keys'] = json.dumps(status_keys, ensure_ascii=False)
+
+        try:
+            page_size = int(page_size)
+        except (TypeError, ValueError):
+            page_size = 30
+
         filtered_total = leads_query.count()
-
         pagination_context = self.paginate_queryset(leads_query, page_size, 'leads')
         context.update(pagination_context)
         pq = context.get('paginated_queryset')
         page_current = len(pq.object_list) if pq else 0
+
         context.update({
             'form': form,
             'messages': [m for m in messages.get_messages(self.request)],
             'page_size': str(page_size),
             'selected_manager_statuses': selected_manager_statuses,
-            'selected_managers': selected_managers_str,  # ← чтобы выделялись выбранные менеджеры
-            'selected_crms': selected_crms,  # ← чтобы выделялись выбранные CRM
+            'selected_managers': selected_managers_str,
+            'selected_crms': selected_crms,
+            'crm_choices': CRM_CHOICES,
             'search': search_query,
 
-            'crm_choices': CRM_CHOICES,  # ← вот они, из модели
+            # даты + выбранное поле
+            'date_from': date_from_str,
+            'date_to': date_to_str,
+            'period': period,
+            'date_field': date_field,
+
             'filtered_total': filtered_total,
             'page_current': page_current,
         })
-        context['all_statuses'] = [label for _, label in Leads.statuses_manager]
-        return dict(list(context.items()) + list(c_def.items()))
 
-    # def get_context_data(self, *, object_list=None, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     c_def = self.get_user_context(title="Лиды")
-    #     form = LeadsFilterForm(self.request.GET or None)
-    #     selected_manager_statuses = self.request.GET.getlist('status_manager')
-    #     selected_managers = self.request.GET.getlist('managers')
-    #     page_size = self.request.GET.get('page_size', 30)  # По умолчанию 30
-    #     search_query = self.request.GET.get('search', '')
-    #     leads_query = Leads.filter_by_status(self.request.user, selected_manager_statuses, selected_managers).order_by('-time_new')
-    #     # Фильтрация по запросу поиска
-    #     if search_query:
-    #         leads_query = Leads.search(search_query, leads_query)
-    #
-    #     # selected_managers = self.request.GET.getlist('managers')
-    #
-    #     managers_with_calls = CustomUser.get_new_in_work_leads_count_for_all_managers()
-    #     context['managers_with_calls'] = json.dumps([
-    #         {
-    #             'first_name': manager.first_name,
-    #             'patronymic': manager.patronymic,
-    #             'last_name': manager.last_name,
-    #             'new_calls_count': manager.new_calls_count,
-    #             'in_progress_calls_count': manager.in_progress_calls_count
-    #         }
-    #         for manager in managers_with_calls
-    #     ])
-    #     pagination_context = self.paginate_queryset(leads_query, page_size, 'leads')
-    #     context.update(pagination_context)
-    #     context['form'] = form
-    #     context['messages'] = [message for message in messages.get_messages(self.request)]
-    #     context['page_size'] = str(page_size)  # Передаем значение page_size в контекст
-    #     context['selected_manager_statuses'] = selected_manager_statuses
-    #     context['search'] = search_query  # Передаем значение search в контекст
-    #     return dict(list(context.items()) + list(c_def.items()))
+        return dict(list(context.items()) + list(c_def.items()))
 
     def get_template_names(self):
         if self.request.htmx.target == 'leads-table':
@@ -1318,3 +1393,311 @@ class CRMCallView(DataMixin, View):
         )
         # остаёмся на том же URL (/crm/alpha/), чтобы делать заявки одну за другой
         return redirect(request.path)
+
+
+
+ROLE_ALLOWED_EXPENSES = ['Супер Администратор', 'РОП']
+
+
+def _parse_period(request):
+    """Возвращает (date_from: date|None, date_to: date|None, date_from_str, date_to_str, period_str)."""
+
+    def to_date(s):
+        if not s:
+            return None
+        try:
+            return dt.datetime.strptime(s, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+
+    period = request.GET.get("period", "")
+    df = to_date(request.GET.get("date_from"))
+    dt_ = to_date(request.GET.get("date_to"))
+
+    today = timezone.localdate()
+
+    if period == "today":
+        df = dt_ = today
+    elif period == "yesterday":
+        df = dt_ = today - dt.timedelta(days=1)
+    elif period == "week":
+        df, dt_ = today - dt.timedelta(days=6), today
+    elif period == "month":
+        df, dt_ = today.replace(day=1), today
+
+    # если введена только одна дата
+    if df and not dt_:
+        dt_ = df
+    if dt_ and not df:
+        df = dt_
+    # нормализуем порядок
+    if df and dt_ and df > dt_:
+        df, dt_ = dt_, df
+
+    # по умолчанию — текущий месяц
+    if not period and not df and not dt_:
+        df, dt_, period = today.replace(day=1), today, "month"
+
+    return df, dt_, (df.isoformat() if df else ""), (dt_.isoformat() if dt_ else ""), period
+
+
+def _leads_count_by_source(date_from=None, date_to=None, date_field='time_new'):
+    """
+    Считает количество лидов по источнику CRM за период.
+    По умолчанию — по time_new (дата передачи менеджеру) c фолбэком на time_create, как мы делали.
+    """
+    qs = Leads.objects.select_related('call', 'call__call_file')
+
+    # фильтр по дате
+    def range_q(field, gte_d, lte_d):
+        q = Q()
+        if gte_d: q &= Q(**{f"{field}__date__gte": gte_d})
+        if lte_d: q &= Q(**{f"{field}__date__lte": lte_d})
+        return q
+
+    if date_from or date_to:
+        if date_field == 'time_new':
+            base = range_q('time_new', date_from, date_to)
+            fallback = range_q('time_create', date_from, date_to) & Q(time_new__isnull=True)
+            qs = qs.filter(base | fallback)
+        elif date_field == 'time_create':
+            qs = qs.filter(range_q('time_create', date_from, date_to))
+        elif date_field == 'time_in_work':
+            qs = qs.filter(range_q('time_in_work', date_from, date_to))
+        elif date_field == 'date_next_call_manager':
+            qs = qs.filter(range_q('date_next_call_manager', date_from, date_to))
+
+    # источник берём из call.crm, если пуст — из call.call_file.crm
+    # считаем по списку CRM_CHOICES
+    result = {label: 0 for (label, _) in CRM_CHOICES}  # если CRM_CHOICES = [('Биг-дата','Биг-дата'), ...]
+    # иногда CRM_CHOICES как (value,label) = одинаковые; используем value
+    result = {value: 0 for (value, _label) in CRM_CHOICES}
+
+    # соберём counts по обоим местам
+    rows1 = qs.filter(call__crm__isnull=False).values('call__crm').annotate(c=models.Count('id'))
+    for r in rows1:
+        result[r['call__crm']] = result.get(r['call__crm'], 0) + r['c']
+
+    rows2 = qs.filter(call__crm__isnull=True, call__call_file__crm__isnull=False)\
+              .values('call__call_file__crm').annotate(c=models.Count('id'))
+    for r in rows2:
+        result[r['call__call_file__crm']] = result.get(r['call__call_file__crm'], 0) + r['c']
+
+    return result
+
+
+def _expenses_sum_by_source(date_from=None, date_to=None):
+    qs = Expense.objects.all()
+    if date_from:
+        qs = qs.filter(date_payment__gte=date_from)
+    if date_to:
+        qs = qs.filter(date_payment__lte=date_to)
+    rows = qs.values('source').annotate(total=Sum('amount'))
+    return {r['source']: (r['total'] or Decimal('0')) for r in rows}
+
+
+class ExpensesView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
+    login_url = reverse_lazy('main:login')
+    template_name = "main/expenses/expenses.html"
+    role_have_perm = ROLE_ALLOWED_EXPENSES
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="База расходов")
+
+        # период
+        date_from, date_to, df_str, dt_str, period = _parse_period(self.request)
+
+        # фильтры
+        selected_sources = self.request.GET.getlist("source")  # multiple
+        page_size = self.request.GET.get("page_size", 30)
+
+        # список расходов с фильтрами
+        qs = Expense.objects.select_related("created_by").order_by("-date_payment", "-created_at")
+        if date_from:
+            qs = qs.filter(date_payment__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_payment__lte=date_to)
+        if selected_sources:
+            qs = qs.filter(source__in=selected_sources)
+
+        # суммы и CPL
+        # по умолчанию считаем CPL по лидам с датой time_new (как на вкладке Лиды)
+        date_field = self.request.GET.get('date_field', 'time_new')
+        sum_total = qs.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+        leads_by_source = _leads_count_by_source(date_from, date_to, date_field=date_field)
+        expenses_by_source = _expenses_sum_by_source(date_from, date_to)
+
+        # сводка по источникам: [{source, leads, expense, cpl}]
+        sources_list = [value for (value, _label) in CRM_CHOICES]
+        summary_rows = []
+        total_leads = 0
+        for s in sources_list:
+            leads_cnt = int(leads_by_source.get(s, 0) or 0)
+            exp_sum = expenses_by_source.get(s, Decimal("0")) or Decimal("0")
+            total_leads += leads_cnt
+            cpl = (exp_sum / leads_cnt) if leads_cnt > 0 else None
+            summary_rows.append({
+                "source": s,
+                "leads": leads_cnt,
+                "expense": exp_sum,
+                "cpl": cpl,
+            })
+
+        overall_cpl = (sum_total / total_leads) if total_leads > 0 else None
+
+        # пагинация
+        try:
+            page_size = int(page_size)
+        except (TypeError, ValueError):
+            page_size = 30
+        pagination = self.paginate_queryset(qs, page_size, 'expenses')
+        context.update(pagination)
+
+        context.update({
+            "crm_choices": CRM_CHOICES,
+            "selected_sources": selected_sources,
+            "page_size": str(page_size),
+
+            "date_from": df_str,
+            "date_to": dt_str,
+            "period": period,
+            "date_field": date_field,
+
+            "sum_total": sum_total,
+            "overall_cpl": overall_cpl,
+            "summary_rows": summary_rows,
+        })
+        chart_by_source_labels = []
+        chart_by_source_data = []
+        for row in summary_rows:
+            if row["expense"] and row["expense"] > 0:
+                chart_by_source_labels.append(row["source"])
+                chart_by_source_data.append(float(row["expense"]))
+
+        # ----- данные для графика "по дням"
+        by_day = (
+            qs.values("date_payment")
+            .annotate(total=Sum("amount"))
+            .order_by("date_payment")
+        )
+        chart_by_day_labels = [d["date_payment"].strftime("%d.%m.%Y") for d in by_day]
+        chart_by_day_data = [float(d["total"] or 0) for d in by_day]
+
+        context.update({
+            "chart_by_source": {"labels": chart_by_source_labels, "data": chart_by_source_data},
+            "chart_by_day": {"labels": chart_by_day_labels, "data": chart_by_day_data},
+        })
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def render_to_response(self, context, **response_kwargs):
+        request = self.request
+        if request.headers.get('HX-Request'):
+            # при HTMX возвращаем только таблицу
+            return render(request, "main/expenses/_table.html", context)
+        return super().render_to_response(context, **response_kwargs)
+@login_required
+@require_http_methods(["GET", "POST"])
+def expense_create(request):
+    if getattr(request.user, "role", "") not in ROLE_ALLOWED_EXPENSES:
+        return HttpResponseBadRequest("Недостаточно прав")
+
+    if request.method == "GET":
+        form = ExpenseForm()
+        return render(request, "main/expenses/_form.html", {
+            "form": form,
+            "action_url": reverse("main:expense_create"),
+            "title": "Добавить расход",
+        })
+
+    form = ExpenseForm(request.POST, request.FILES)
+    if form.is_valid():
+        exp = form.save(commit=False)
+        exp.created_by = request.user
+        exp.save()
+        # Обновим таблицу и закроем модалку
+        view = ExpensesView(); view.request = request
+        ctx = view.get_context_data()
+        html = render(request, "main/expenses/_table.html", ctx)
+        resp = HttpResponse(html)
+        resp["HX-Trigger"] = "closeModalAndRefresh"
+        return resp
+
+    return render(request, "main/expenses/_form.html", {
+        "form": form, "action_url": reverse("main:expense_create"), "title": "Добавить расход",
+    }, status=422)
+
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def expense_edit(request, pk):
+    if getattr(request.user, "role", "") not in ROLE_ALLOWED_EXPENSES:
+        return HttpResponseBadRequest("Недостаточно прав")
+    exp = get_object_or_404(Expense, pk=pk)
+
+    if request.method == "GET":
+        form = ExpenseForm(instance=exp)
+        return render(request, "main/expenses/_form.html", {
+            "form": form,
+            "action_url": reverse("main:expense_edit", args=[exp.pk]),
+            "title": "Редактировать расход",
+            "existing_file": exp.receipt_file,
+        })
+
+    if request.method == "POST":
+        form = ExpenseForm(request.POST, request.FILES, instance=exp)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            clear_flag = request.POST.get('receipt_file-clear') == '1'
+            # если очистка запрошена и новый файл не пришёл — удаляем старый
+            if clear_flag and not request.FILES.get('receipt_file'):
+                if obj.receipt_file:
+                    obj.receipt_file.delete(save=False)
+                obj.receipt_file = None
+            obj.save()
+
+            view = ExpensesView();
+            view.request = request
+            ctx = view.get_context_data()
+            html = render(request, "main/expenses/_table.html", ctx)
+            resp = HttpResponse(html)
+            resp["HX-Trigger"] = "closeModalAndRefresh"
+            return resp
+
+    form = ExpenseForm(request.POST, request.FILES, instance=exp)
+    if form.is_valid():
+        form.save()
+        view = ExpensesView(); view.request = request
+        ctx = view.get_context_data()
+        html = render(request, "main/expenses/_table.html", ctx)
+        resp = HttpResponse(html)
+        resp["HX-Trigger"] = "closeModalAndRefresh"
+        return resp
+
+    return render(request, "main/expenses/_form.html", {
+        "form": form,
+        "action_url": reverse("main:expense_edit", args=[exp.pk]),
+        "title": "Редактировать расход",
+        "existing_file": exp.receipt_file,
+    }, status=422)
+
+
+# delete (POST вернёт триггер закрытия)
+@login_required
+@require_http_methods(["GET", "POST"])
+def expense_delete_confirm(request, pk):
+    if getattr(request.user, "role", "") not in ROLE_ALLOWED_EXPENSES:
+        return HttpResponseBadRequest("Недостаточно прав")
+    exp = get_object_or_404(Expense, pk=pk)
+
+    if request.method == "GET":
+        return render(request, "main/expenses/_confirm_delete.html", {"expense": exp})
+
+    exp.delete()
+    view = ExpensesView(); view.request = request
+    ctx = view.get_context_data()
+    html = render(request, "main/expenses/_table.html", ctx)
+    resp = HttpResponse(html)
+    resp["HX-Trigger"] = "closeModalAndRefresh"
+    return resp

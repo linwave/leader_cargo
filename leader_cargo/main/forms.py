@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.timezone import now
 
-from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, Calls, CallsFile, Leads, CRM_CHOICES
+from .models import ExchangeRates, CustomUser, Appeals, Goods, ManagersReports, ManagerPlans, Calls, CallsFile, Leads, CRM_CHOICES, Expense
 from django.forms import ModelForm, TextInput, Select, CharField, Textarea, ImageField, FloatField, FileInput, ClearableFileInput
 
 User = get_user_model()
@@ -879,3 +879,17 @@ class LeadsFilterForm(forms.Form):
 #                 'id': 'name_carrier',
 #             }),
 #         }
+
+class ExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ["date_payment", "source", "amount", "comment", "receipt_file"]
+        widgets = {
+            # ВАЖНО: HTML5 date ожидает YYYY-MM-DD — задаём format
+            "date_payment": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}),
+            "source": forms.Select(attrs={"class": "form-select"}),
+            "amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "comment": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            # спрячем, т.к. сделаем свой dnd/paste
+            "receipt_file": forms.ClearableFileInput(attrs={"class": "d-none", "id": "receipt-input"}),
+        }

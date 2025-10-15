@@ -1,0 +1,170 @@
+{# templates/main/expenses/_form.html #}
+<form id="expense-form"
+      hx-post="{{ action_url }}"
+      hx-target="#expenses-table"
+      hx-swap="innerHTML"
+      enctype="multipart/form-data">
+
+  {% csrf_token %}
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">{{ title }}</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+
+    <div class="modal-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Дата платежа</label>
+          {{ form.date_payment }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Источник</label>
+          {{ form.source }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Сумма, ₽</label>
+          {{ form.amount }}
+        </div>
+        <div class="col-12">
+          <label class="form-label">Комментарий</label>
+          {{ form.comment }}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label d-block">Файл платежки</label>
+
+          {# красивый dnd/paste блок #}
+          <div id="drop-zone"
+               class="border border-2 border-dashed rounded p-4 text-center"
+               style="border-style:dashed; cursor:pointer; outline:0;"
+               tabindex="0">
+            <div id="dz-empty">
+              Перетащите файл сюда, кликните для выбора
+              <div class="small text-muted mt-1">или Ctrl/⌘+V — вставить из буфера</div>
+            </div>
+            <div id="dz-file" class="d-none">
+              <span class="me-2">📎 <span id="dz-file-name"></span></span>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="dz-change-btn">Заменить</button>
+              <button type="button" class="btn btn-sm btn-outline-danger" id="dz-clear-btn">Убрать</button>
+            </div>
+          </div>
+
+          <input type="file" name="receipt_file" id="receipt-input" class="d-none">
+          <input type="hidden" name="receipt_file-clear" id="receipt-clear-flag" value="">
+
+
+          {% if existing_file %}
+          <div class="mt-2">
+            Текущий файл:
+            <a href="{{ existing_file.url }}" target="_blank" rel="noopener noreferrer">
+              📎 {{ existing_file.name|slice:"-40:" }}
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+      <button type="submit" class="btn btn-primary btn-sm" id="save-btn">Сохранить</button>
+    </div>
+  </div>
+</form>
+
+<script>
+(function(){
+  // блокировка двойного клика по "Сохранить"
+  const form = document.getElementById('expense-form');
+  const saveBtn = document.getElementById('save-btn');
+  form.addEventListener('submit', ()=>{ if(saveBtn){ saveBtn.disabled = true; saveBtn.innerText='Сохраняю...'; } });
+
+  // элементы файлового UI
+  const input = document.getElementById('receipt-input');
+  const dz = document.getElementById('drop-zone');
+  const dzEmpty = document.getElementById('dz-empty');
+  const dzFile = document.getElementById('dz-file');
+  const dzName = document.getElementById('dz-file-name');
+  const dzChange = document.getElementById('dz-change-btn');
+  const dzClear = document.getElementById('dz-clear-btn');
+  const clearFlag = document.getElementById('receipt-clear-flag');
+
+  // красивый фокус на dnd-зоне: сразу активируем, чтобы paste работал "сходу"
+  setTimeout(()=> dz && dz.focus(), 50);
+
+  function showFile(f){
+    if (!f) return;
+    clearFlag.value = ''; // выбираем новый — не чистим старый
+    dzEmpty.classList.add('d-none');
+    dzFile.classList.remove('d-none');
+    dzName.textContent = f.name || 'файл';
+  }
+  function clearFile(){
+    input.value = "";
+    clearFlag.value = '1'; // помечаем очистку старого
+    dzFile.classList.add('d-none');
+    dzEmpty.classList.remove('d-none');
+  }
+
+  // клики / dnd
+  dz.addEventListener('click', (e)=>{
+    if (e.target.closest('a,button,label')) return;
+    input.click();
+  });
+  dzChange.addEventListener('click', ()=> input.click());
+  dzClear.addEventListener('click', clearFile);
+  dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('bg-light'); });
+  dz.addEventListener('dragleave', ()=> dz.classList.remove('bg-light'));
+  dz.addEventListener('drop', e=>{
+    e.preventDefault(); dz.classList.remove('bg-light');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]){
+      input.files = e.dataTransfer.files;
+      showFile(input.files[0]);
+    }
+  });
+  input.addEventListener('change', ()=>{
+    if (input.files && input.files[0]) showFile(input.files[0]); else clearFile();
+  });
+
+  // PASTE по всей модалке (но не когда курсор в input/textarea)
+  function onPaste(e){
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+
+    let file = null;
+
+    // 1) items (скриншот из буфера чаще тут)
+    const items = e.clipboardData && e.clipboardData.items;
+    if (items && items.length){
+      for (let i=0;i<items.length;i++){
+        if (items[i].kind === 'file'){
+          file = items[i].getAsFile();
+          break;
+        }
+      }
+    }
+    // 2) files (иногда только тут)
+    if (!file){
+      const files = e.clipboardData && e.clipboardData.files;
+      if (files && files.length) file = files[0];
+    }
+
+    if (file){
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      showFile(file);
+    }
+  }
+
+  // вешаем/снимаем обработчик paste на время жизни модалки
+  document.addEventListener('paste', onPaste, true);
+  const modalEl = document.getElementById('hx-modal');
+  modalEl && modalEl.addEventListener('hidden.bs.modal', ()=> {
+    document.removeEventListener('paste', onPaste, true);
+  }, { once:true });
+})();
+</script>
+
+
