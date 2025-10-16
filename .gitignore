@@ -178,3 +178,4 @@ leader_cargo/telegram_bot/migrations
 leader_cargo/celerybeat-schedule.bak
 leader_cargo/celerybeat-schedule.dat
 leader_cargo/celerybeat-schedule.dir
+leader_cargo/backup_pre_sources.json
