@@ -1,8 +1,11 @@
 import os
 from pathlib import Path
-
+from dotenv import load_dotenv
+import re
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / ".env", override=False)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -33,6 +36,7 @@ INSTALLED_APPS = [
     'simple_history',
     'rest_framework',
     'django_htmx',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -136,7 +140,9 @@ INTERNAL_IPS = [
 
 # Настройки Celery
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
 
 # Использование пула потоков вместо prefork
 CELERY_WORKER_POOL = 'threads'
@@ -159,21 +165,33 @@ LOG_DIR.mkdir(exist_ok=True)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        # Форматтер, вырезающий токены/секреты из любых сообщений
+        "redact": {
+            "()": "main.logfilters.RedactingFormatter",
+            "format": "%(asctime)s %(levelname)s %(name)s: %(message)s",
+        }
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "redact",
         },
         "file": {
-            "class": "logging.FileHandler",
-            "filename": str(BASE_DIR / "debug.log"),  # общий лог
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(BASE_DIR / "debug.log"),
+            "maxBytes": 10 * 1024 * 1024,
+            "backupCount": 5,
             "encoding": "utf-8",
+            "formatter": "redact",
         },
         "inbound_file": {
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": str(LOG_DIR / "inbound_calls.log"),  # отдельный файл для API-запросов
-            "maxBytes": 5 * 1024 * 1024,  # 5 MB
+            "filename": str(LOG_DIR / "inbound_calls.log"),
+            "maxBytes": 5 * 1024 * 1024,
             "backupCount": 5,
             "encoding": "utf-8",
+            "formatter": "redact",
         },
     },
     "root": {
@@ -187,12 +205,17 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,  # чтобы не дублировалось в root
         },
+        # Урезаем болтливость requests/urllib3 чтобы URL с токеном не всплывал
+        "urllib3": {"level": "WARNING"},
+        "urllib3.connectionpool": {"level": "WARNING"},
+        "requests": {"level": "WARNING"},
     },
 }
 
-TELEGRAM_BOT_TOKEN = "7437043774:AAH51LtcPYRjCAJSF4No1T663Fi2XcS8Rv4"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET")
 TELEGRAM_BOT_USERNAME = "magistral_import_bot"
-API_ROSACCRED_TOKEN = "A5C27D361C573580E8075C35F477F5A6E06AD30015BC49433F69074E86150FC6"
+API_ROSACCRED_TOKEN = os.getenv("API_ROSACCRED_TOKEN")
 CRM_DEFAULT_MANAGER_ID = 40
 
 API_PARTNERS = {

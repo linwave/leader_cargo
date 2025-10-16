@@ -4,7 +4,7 @@ from django.core.checks import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.sessions.models import Session
 from django.contrib.auth import get_user_model
@@ -72,6 +72,8 @@ def unlink_telegram(request):
 
 @csrf_exempt
 def telegram_webhook(request):
+    if request.headers.get("X-Telegram-Bot-Api-Secret-Token") != settings.TELEGRAM_WEBHOOK_SECRET:
+        return HttpResponseForbidden("bad secret")
     """
     Обрабатывает входящие сообщения от Telegram.
     """
