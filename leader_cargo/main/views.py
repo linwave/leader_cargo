@@ -4,7 +4,9 @@ import datetime as dt
 import json
 import re
 import uuid
+from collections import defaultdict
 from decimal import Decimal
+from urllib.parse import urlsplit
 
 import pandas as pd
 from django.conf import settings
@@ -15,7 +17,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Q, When, Case, IntegerField, Sum
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.db.models.functions import TruncDate
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, QueryDict
 from django.shortcuts import redirect, render, get_object_or_404
 import string
 import random
@@ -1495,6 +1498,46 @@ def _expenses_sum_by_source(date_from=None, date_to=None):
     rows = qs.values('source').annotate(total=Sum('amount'))
     return {r['source']: (r['total'] or Decimal('0')) for r in rows}
 
+# Невидимые/вариативные символы, которые чаще всего ломают группировку
+_DASHES = "\u2010\u2011\u2012\u2013\u2014\u2212"  # разные тире/минусы
+_NBSP = "\xa0"  # неразрывный пробел
+FILTER_KEYS_SINGLE = ("period", "date_from", "date_to", "page_size", "date_field", "page")
+FILTER_KEYS_MULTI  = ("source",)
+
+def _hx_redirect_to_expenses(request):
+    """
+    Возвращаем 204 + HX-Redirect на /expenses с теми же query-параметрами,
+    что сейчас в адресной строке браузера (HX-Current-URL).
+    Никаких полей из POST не читаем — так избежим коллизии 'source'.
+    """
+    current_url = request.headers.get('HX-Current-URL') or request.META.get('HTTP_REFERER', '')
+    qs = QueryDict('', mutable=True)
+    if current_url:
+        parsed = urlsplit(current_url)
+        qs = QueryDict(parsed.query, mutable=True)
+
+    base = reverse("main:expenses")
+    target = f"{base}?{qs.urlencode()}" if qs else base
+
+    resp = HttpResponse(status=204)
+    resp["HX-Redirect"] = target   # полное обновление страницы (поддерживается даже старыми htmx)
+    return resp
+def _norm_source(s: str) -> str:
+    """Привести строку источника к канону:
+    - все разновидности тире -> обычный '-'
+    - NBSP -> обычный пробел
+    - схлопнуть повторные пробелы
+    - обрезать края
+    - регистр оставляем как есть (подбираем к CRM_CHOICES)
+    """
+    if s is None:
+        return ""
+    s = str(s)
+    for d in _DASHES:
+        s = s.replace(d, "-")
+    s = s.replace(_NBSP, " ")
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
 
 class ExpensesView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
     login_url = reverse_lazy('main:login')
@@ -1512,7 +1555,7 @@ class ExpensesView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
         selected_sources = self.request.GET.getlist("source")  # multiple
         page_size = self.request.GET.get("page_size", 30)
 
-        # список расходов с фильтрами
+        # выборка расходов с фильтрами
         qs = Expense.objects.select_related("created_by").order_by("-date_payment", "-created_at")
         if date_from:
             qs = qs.filter(date_payment__gte=date_from)
@@ -1522,20 +1565,42 @@ class ExpensesView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
             qs = qs.filter(source__in=selected_sources)
 
         # суммы и CPL
-        # по умолчанию считаем CPL по лидам с датой time_new (как на вкладке Лиды)
         date_field = self.request.GET.get('date_field', 'time_new')
         sum_total = qs.aggregate(total=Sum("amount"))["total"] or Decimal("0")
-        leads_by_source = _leads_count_by_source(date_from, date_to, date_field=date_field)
-        expenses_by_source = _expenses_sum_by_source(date_from, date_to)
 
-        # сводка по источникам: [{source, leads, expense, cpl}]
-        sources_list = [value for (value, _label) in CRM_CHOICES]
+        # лиды по источникам (как было)
+        leads_by_source = _leads_count_by_source(date_from, date_to, date_field=date_field)
+
+        # === суммы по источникам из ОТФИЛЬТРОВАННОГО qs с нормализацией ===
+        # сначала копим по "нормализованным" ключам:
+        totals_by_norm = defaultdict(Decimal)
+        for src, amt in qs.values_list("source", "amount"):
+            totals_by_norm[_norm_source(src)] += (amt or 0)
+
+        # далее сопоставляем нормализованные ключи с каноном из CRM_CHOICES:
+        canonical_values = [value for (value, _label) in CRM_CHOICES]
+        norm_to_canonical = {_norm_source(v): v for v in canonical_values}
+
+        expenses_by_source = defaultdict(Decimal)
+        for norm_key, total in totals_by_norm.items():
+            canonical_key = norm_to_canonical.get(norm_key)
+            if canonical_key is None:
+                # источник не из CRM_CHOICES — можно сложить в "Прочее" или пропустить
+                # здесь складываем в "Прочее", если нужно — уберите:
+                canonical_key = "Прочее"
+            expenses_by_source[canonical_key] += total
+
+        # если отфильтрованы источники — показываем только их
+        sources_list = canonical_values[:]
+        if selected_sources:
+            sources_list = [s for s in sources_list if s in selected_sources]
+
         summary_rows = []
-        total_leads = 0
+        total_leads_for_selection = 0
         for s in sources_list:
             leads_cnt = int(leads_by_source.get(s, 0) or 0)
             exp_sum = expenses_by_source.get(s, Decimal("0")) or Decimal("0")
-            total_leads += leads_cnt
+            total_leads_for_selection += leads_cnt
             cpl = (exp_sum / leads_cnt) if leads_cnt > 0 else None
             summary_rows.append({
                 "source": s,
@@ -1544,7 +1609,7 @@ class ExpensesView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
                 "cpl": cpl,
             })
 
-        overall_cpl = (sum_total / total_leads) if total_leads > 0 else None
+        overall_cpl = (sum_total / total_leads_for_selection) if total_leads_for_selection > 0 else None
 
         # пагинация
         try:
@@ -1553,6 +1618,42 @@ class ExpensesView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
             page_size = 30
         pagination = self.paginate_queryset(qs, page_size, 'expenses')
         context.update(pagination)
+
+        # ----- данные для графика "по источникам"
+        chart_by_source_labels = []
+        chart_by_source_data = []
+        for row in summary_rows:
+            if row["expense"] and row["expense"] > 0:
+                chart_by_source_labels.append(row["source"])
+                chart_by_source_data.append(float(row["expense"]))
+
+        # ----- данные для графика "по дням" (SQLite-friendly)
+        chart_by_day_labels = []
+        chart_by_day_data = []
+        try:
+            by_day = (
+                qs.values('date_payment__date')
+                  .annotate(total=Sum('amount'))
+                  .order_by('date_payment__date')
+            )
+            for d in by_day:
+                day = d['date_payment__date']
+                if hasattr(day, 'strftime'):
+                    chart_by_day_labels.append(day.strftime("%d.%m.%Y"))
+                else:
+                    chart_by_day_labels.append(str(day))
+                chart_by_day_data.append(float(d['total'] or 0))
+        except Exception:
+            # Fallback: агрегация в Python
+            totals = {}
+            for dt, amt in qs.values_list('date_payment', 'amount'):
+                if dt is None:
+                    continue
+                day = dt.date() if hasattr(dt, 'date') else dt
+                totals[day] = (totals.get(day, Decimal('0')) + (amt or 0))
+            days_sorted = sorted(totals.keys())
+            chart_by_day_labels = [d.strftime("%d.%m.%Y") if hasattr(d, 'strftime') else str(d) for d in days_sorted]
+            chart_by_day_data = [float(totals[d]) for d in days_sorted]
 
         context.update({
             "crm_choices": CRM_CHOICES,
@@ -1567,24 +1668,7 @@ class ExpensesView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
             "sum_total": sum_total,
             "overall_cpl": overall_cpl,
             "summary_rows": summary_rows,
-        })
-        chart_by_source_labels = []
-        chart_by_source_data = []
-        for row in summary_rows:
-            if row["expense"] and row["expense"] > 0:
-                chart_by_source_labels.append(row["source"])
-                chart_by_source_data.append(float(row["expense"]))
 
-        # ----- данные для графика "по дням"
-        by_day = (
-            qs.values("date_payment")
-            .annotate(total=Sum("amount"))
-            .order_by("date_payment")
-        )
-        chart_by_day_labels = [d["date_payment"].strftime("%d.%m.%Y") for d in by_day]
-        chart_by_day_data = [float(d["total"] or 0) for d in by_day]
-
-        context.update({
             "chart_by_source": {"labels": chart_by_source_labels, "data": chart_by_source_data},
             "chart_by_day": {"labels": chart_by_day_labels, "data": chart_by_day_data},
         })
@@ -1593,9 +1677,9 @@ class ExpensesView(MyLoginMixin, DataMixin, PaginationMixin, TemplateView):
     def render_to_response(self, context, **response_kwargs):
         request = self.request
         if request.headers.get('HX-Request'):
-            # при HTMX возвращаем только таблицу
             return render(request, "main/expenses/_table.html", context)
         return super().render_to_response(context, **response_kwargs)
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def expense_create(request):
@@ -1612,21 +1696,20 @@ def expense_create(request):
 
     form = ExpenseForm(request.POST, request.FILES)
     if form.is_valid():
-        exp = form.save(commit=False)
-        exp.created_by = request.user
-        exp.save()
-        # Обновим таблицу и закроем модалку
-        view = ExpensesView(); view.request = request
-        ctx = view.get_context_data()
-        html = render(request, "main/expenses/_table.html", ctx)
-        resp = HttpResponse(html)
-        resp["HX-Trigger"] = "closeModalAndRefresh"
-        return resp
+        obj = form.save(commit=False)
+        clear_flag = request.POST.get('receipt_file-clear') == '1'
+        if clear_flag and not request.FILES.get('receipt_file'):
+            if obj.receipt_file:
+                obj.receipt_file.delete(save=False)
+            obj.receipt_file = None
+        obj.save()
+        return _hx_redirect_to_expenses(request)
 
     return render(request, "main/expenses/_form.html", {
-        "form": form, "action_url": reverse("main:expense_create"), "title": "Добавить расход",
+        "form": form,
+        "action_url": reverse("main:expense_create"),
+        "title": "Добавить расход",
     }, status=422)
-
 
 
 @login_required
@@ -1645,35 +1728,16 @@ def expense_edit(request, pk):
             "existing_file": exp.receipt_file,
         })
 
-    if request.method == "POST":
-        form = ExpenseForm(request.POST, request.FILES, instance=exp)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            clear_flag = request.POST.get('receipt_file-clear') == '1'
-            # если очистка запрошена и новый файл не пришёл — удаляем старый
-            if clear_flag and not request.FILES.get('receipt_file'):
-                if obj.receipt_file:
-                    obj.receipt_file.delete(save=False)
-                obj.receipt_file = None
-            obj.save()
-
-            view = ExpensesView();
-            view.request = request
-            ctx = view.get_context_data()
-            html = render(request, "main/expenses/_table.html", ctx)
-            resp = HttpResponse(html)
-            resp["HX-Trigger"] = "closeModalAndRefresh"
-            return resp
-
     form = ExpenseForm(request.POST, request.FILES, instance=exp)
     if form.is_valid():
-        form.save()
-        view = ExpensesView(); view.request = request
-        ctx = view.get_context_data()
-        html = render(request, "main/expenses/_table.html", ctx)
-        resp = HttpResponse(html)
-        resp["HX-Trigger"] = "closeModalAndRefresh"
-        return resp
+        obj = form.save(commit=False)
+        clear_flag = request.POST.get('receipt_file-clear') == '1'
+        if clear_flag and not request.FILES.get('receipt_file'):
+            if obj.receipt_file:
+                obj.receipt_file.delete(save=False)
+            obj.receipt_file = None
+        obj.save()
+        return _hx_redirect_to_expenses(request)
 
     return render(request, "main/expenses/_form.html", {
         "form": form,
@@ -1683,7 +1747,6 @@ def expense_edit(request, pk):
     }, status=422)
 
 
-# delete (POST вернёт триггер закрытия)
 @login_required
 @require_http_methods(["GET", "POST"])
 def expense_delete_confirm(request, pk):
@@ -1695,9 +1758,4 @@ def expense_delete_confirm(request, pk):
         return render(request, "main/expenses/_confirm_delete.html", {"expense": exp})
 
     exp.delete()
-    view = ExpensesView(); view.request = request
-    ctx = view.get_context_data()
-    html = render(request, "main/expenses/_table.html", ctx)
-    resp = HttpResponse(html)
-    resp["HX-Trigger"] = "closeModalAndRefresh"
-    return resp
+    return _hx_redirect_to_expenses(request)

@@ -3,6 +3,7 @@
       hx-post="{{ action_url }}"
       hx-target="#expenses-table"
       hx-swap="innerHTML"
+      hx-include="#filter-form"
       enctype="multipart/form-data">
 
   {% csrf_token %}
@@ -78,7 +79,24 @@
   // блокировка двойного клика по "Сохранить"
   const form = document.getElementById('expense-form');
   const saveBtn = document.getElementById('save-btn');
-  form.addEventListener('submit', ()=>{ if(saveBtn){ saveBtn.disabled = true; saveBtn.innerText='Сохраняю...'; } });
+
+  form.addEventListener('submit', ()=> {
+    if (saveBtn){ saveBtn.disabled = true; saveBtn.innerText='Сохраняю...'; }
+
+    // добавим текущие query параметры к форме без hx-vals="js:..."
+    const qs = new URLSearchParams(window.location.search);
+    qs.forEach((v, k) => {
+      if (!form.querySelector(`[name="${k}"]`)) {
+        const input = document.createElement('input');
+        input.type = 'hidden'; input.name = k; input.value = v;
+        form.appendChild(input);
+      }
+    });
+  });
+
+  function resetBtn(){ if(saveBtn){ saveBtn.disabled = false; saveBtn.innerText='Сохранить'; } }
+  document.body.addEventListener('htmx:sendError', resetBtn);
+  document.body.addEventListener('htmx:responseError', resetBtn);
 
   // элементы файлового UI
   const input = document.getElementById('receipt-input');

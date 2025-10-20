@@ -3,16 +3,19 @@
     <h5 class="modal-title">Удалить расход</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
   </div>
+
   <div class="modal-body mb-2">
     <form id="expense-delete-form"
           hx-post="{% url 'main:expense_delete_confirm' expense.id %}"
           hx-target="#expenses-table"
           hx-swap="innerHTML"
-          hx-headers='{"HX-Trigger":"closeModalAndRefresh"}'>
+          hx-include="#filter-form">
       {% csrf_token %}
-      <p>Удалить расход от <b>{{ expense.date_payment|date:"d.m.Y" }}</b> на сумму <b>{{ expense.amount }} ₽</b>?</p>
+      <p>Удалить расход от <b>{{ expense.date_payment|date:"d.m.Y" }}</b>
+         на сумму <b>{{ expense.amount }} ₽</b>?</p>
     </form>
   </div>
+
   <div class="modal-footer">
     <button form="expense-delete-form" type="submit" class="btn btn-danger btn-sm" id="delete-btn">Удалить</button>
     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
@@ -20,8 +23,29 @@
 </div>
 
 <script>
-document.getElementById('expense-delete-form').addEventListener('submit', ()=>{
-  const b = document.getElementById('delete-btn');
-  if (b){ b.disabled = true; b.innerText = 'Удаляю...'; }
-});
+(function () {
+  const form = document.getElementById('expense-delete-form');
+  const btn  = document.getElementById('delete-btn');
+
+  // подхватываем параметры из адресной строки без hx-vals="js:..."
+  form.addEventListener('submit', () => {
+    // UI
+    if (btn) { btn.disabled = true; btn.innerText = 'Удаляю...'; }
+
+    // добавить к форме текущие query-параметры (на случай если фильтры менялись после открытия модалки)
+    const qs = new URLSearchParams(window.location.search);
+    qs.forEach((v, k) => {
+      if (!form.querySelector(`[name="${k}"]`)) {
+        const input = document.createElement('input');
+        input.type = 'hidden'; input.name = k; input.value = v;
+        form.appendChild(input);
+      }
+    });
+  });
+
+  // если вдруг ошибка сети/ответа — вернуть кнопку в норму
+  function resetBtn() { if (btn) { btn.disabled = false; btn.innerText = 'Удалить'; } }
+  document.body.addEventListener('htmx:sendError', resetBtn);
+  document.body.addEventListener('htmx:responseError', resetBtn);
+})();
 </script>
