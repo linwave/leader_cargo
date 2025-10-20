@@ -1427,8 +1427,10 @@ def _parse_period(request):
         df, dt_ = today - dt.timedelta(days=6), today
     elif period == "month":
         df, dt_ = today.replace(day=1), today
+    elif period == "year":  # <-- добавлено
+        df, dt_ = today.replace(month=1, day=1), today
 
-    # если введена только одна дата
+        # если введена только одна дата
     if df and not dt_:
         dt_ = df
     if dt_ and not df:
