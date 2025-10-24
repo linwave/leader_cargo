@@ -11,8 +11,7 @@ load_dotenv(BASE_DIR / ".env", override=False)
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=snv8^q=%u%4ky5nbqz81akfn(l!aehv=r)$i7o7(i_6_17323'
-
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -214,7 +213,7 @@ LOGGING = {
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET")
-TELEGRAM_BOT_USERNAME = "magistral_import_bot"
+TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME")
 API_ROSACCRED_TOKEN = os.getenv("API_ROSACCRED_TOKEN")
 CRM_DEFAULT_MANAGER_ID = 40
 

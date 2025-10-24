@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 import json
 import uuid
 from django.conf import settings
+from django.views.decorators.http import require_POST
 
 from .models import TelegramProfile
 from .utils import send_telegram_message
@@ -18,20 +19,20 @@ from .utils import send_telegram_message
 BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
 BOT_USERNAME = settings.TELEGRAM_BOT_USERNAME
 
-@csrf_exempt  # Отключаем CSRF для вебхука
-def webhook_handler(request):
-    if request.method == 'POST':
-        # Получаем данные из запроса
-        data = json.loads(request.body)
-        print("Received data:", data)
-
-        # Обработка данных (например, текст сообщения)
-        message = data.get('message', {}).get('text')
-        print("Message text:", message)
-
-        # Ответ Telegram'у
-        return HttpResponse("OK")
-    return HttpResponse("Method not allowed", status=405)
+# @csrf_exempt  # Отключаем CSRF для вебхука
+# def webhook_handler(request):
+#     if request.method == 'POST':
+#         # Получаем данные из запроса
+#         data = json.loads(request.body)
+#         print("Received data:", data)
+#
+#         # Обработка данных (например, текст сообщения)
+#         message = data.get('message', {}).get('text')
+#         print("Message text:", message)
+#
+#         # Ответ Telegram'у
+#         return HttpResponse("OK")
+#     return HttpResponse("Method not allowed", status=405)
 
 @login_required
 def link_telegram(request):
@@ -71,44 +72,39 @@ def unlink_telegram(request):
     return redirect('main:home')  # Перенаправляем обратно на страницу профиля
 
 @csrf_exempt
+@require_POST
 def telegram_webhook(request):
+    # Проверяем секрет от Telegram
     if request.headers.get("X-Telegram-Bot-Api-Secret-Token") != settings.TELEGRAM_WEBHOOK_SECRET:
         return HttpResponseForbidden("bad secret")
-    """
-    Обрабатывает входящие сообщения от Telegram.
-    """
-    if request.method == 'POST':
-        try:
-            body = request.body.decode('utf-8')
-            data = json.loads(body)
 
-            chat_id = data['message']['chat']['id']
-            text = data['message']['text']
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({'status': 'error', 'message': 'bad json'}, status=400)
 
-            # Проверяем команду /start с параметром
-            if text.startswith('/start'):
-                token = text.split(' ')[1]  # Извлекаем токен из команды
+    # Обрабатываем только нужные типы апдейтов
+    message = (data.get('message') or {}).get('text')
+    chat_id = ((data.get('message') or {}).get('chat') or {}).get('id')
 
-                # Находим профиль по токену
-                try:
-                    telegram_profile = TelegramProfile.objects.get(token=token)
+    # /start <token> — привязка Telegram-профиля
+    if message and message.startswith('/start'):
+        parts = message.split(' ', 1)
+        token = parts[1].strip() if len(parts) > 1 else None
+        if token:
+            from .models import TelegramProfile
+            from .utils import send_telegram_message
 
-                    # Привязываем chat_id к пользователю
-                    telegram_profile.chat_id = chat_id
-                    telegram_profile.is_verified = True
-                    telegram_profile.token = None  # Очищаем токен после использования
-                    telegram_profile.save()
+            try:
+                tp = TelegramProfile.objects.get(token=token)
+                tp.chat_id = chat_id
+                tp.is_verified = True
+                tp.token = None
+                tp.save()
+                send_telegram_message(chat_id, "Ваш аккаунт успешно привязан!", settings.TELEGRAM_BOT_TOKEN)
+                return JsonResponse({'status': 'ok'})
+            except TelegramProfile.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'bad link token'}, status=400)
 
-                    send_telegram_message(chat_id, "Ваш аккаунт успешно привязан!", BOT_TOKEN)
-                    return JsonResponse({'status': 'ok'})
-
-                except TelegramProfile.DoesNotExist:
-                    send_telegram_message(chat_id, "Ошибка привязки. Неверный токен.", BOT_TOKEN)
-
-            return JsonResponse({'status': 'error', 'message': 'Invalid command'})
-
-        except Exception as e:
-            print(f"Ошибка: {e}")
-            return JsonResponse({'status': 'error', 'message': str(e)})
-
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+    # здесь можешь добавить обработку других команд
+    return JsonResponse({'status': 'ok'})
