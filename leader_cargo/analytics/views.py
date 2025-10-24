@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import F, Q, FloatField, Sum, Count
 from django.db.models.functions import Cast, TruncMonth
@@ -221,7 +222,7 @@ class LogisticRequestsEditView(MyLoginMixin, DataMixin, UpdateView):
         context['my_request_description_roads'] = context['my_request'].roads.all().values_list('name', flat=True)
         if context['my_request'].notification and self.request.user.pk == context['my_request'].initiator.pk:
             context['my_request'].notification = False
-            context['my_request'].save()
+            context['my_request'].save(update_fields=['notification'])
         # context['all_bids'] = context['my_request'].rate.all().order_by("road")
         context['all_documents'] = context['my_request'].requestsforlogisticfiles_set.all()
         context['goods'] = context['my_request'].goods.all()
@@ -318,12 +319,20 @@ class LogisticRequestsEditView(MyLoginMixin, DataMixin, UpdateView):
                 worksheet.autofit()
                 workbook.close()
             if new_data.status == 'Новый':
-                logists_china = CustomUser.objects.filter(role='Логист Китай')
-                for log in logists_china:
-                    telegram_profile, created = TelegramProfile.objects.get_or_create(user=log)
-                    if telegram_profile.is_verified:
-                        send_telegram_message(telegram_profile.chat_id, f"Новый запрос {new_data}\n"
-                                                                        f"https://nextkargo.ru/logistic/logistic-requests/edit/{new_data.pk}", settings.TELEGRAM_BOT_TOKEN)
+                recipients = CustomUser.objects.filter(
+                    role__in=['Логист Китай', 'Супер Администратор'],
+                    status=True
+                ).distinct()
+
+                for user in recipients:
+                    telegram_profile, _ = TelegramProfile.objects.get_or_create(user=user)
+                    if getattr(telegram_profile, "is_verified", False) and telegram_profile.chat_id:
+                        send_telegram_message(
+                            telegram_profile.chat_id,
+                            f"Новый запрос {new_data}\n"
+                            f"https://nextkargo.ru/logistic/logistic-requests/edit/{new_data.pk}",
+                            settings.TELEGRAM_BOT_TOKEN
+                        )
         return redirect('analytics:edit_logistic_requests', new_data.pk)
 
     def get(self, request, *args, **kwargs):
@@ -334,17 +343,54 @@ class LogisticRequestsEditView(MyLoginMixin, DataMixin, UpdateView):
 
 def editLogisticRequest(request, request_id):
     my_request = RequestsForLogisticsCalculations.objects.get(pk=request_id)
-    # if request.FILES:
-    #     for file in request.FILES["files_for_request"]:
-    #         my_request.requestsforlogisticfiles_set.create(name=file, file_path_request=file)
+
     if request.POST:
+        notify_about_comment = False
+
         if 'comments_logist' in request.POST:
-            my_request.comments_logist = request.POST['comments_logist']
+            new_text = (request.POST['comments_logist'] or '').strip()
+            old_text = (my_request.comments_logist or '').strip()
+
+            # сохраняем сам текст всегда
+            my_request.comments_logist = new_text
             my_request.notification = True
+            my_request.save(update_fields=['comments_logist', 'notification'])
+
+            # уведомляем ТОЛЬКО если это финальное событие и текст реально изменился
+            is_final = request.POST.get('final') == '1'
+            if is_final and new_text != old_text:
+                cache_key = f"req:{my_request.pk}:logist_comment_notified"
+                if not cache.get(cache_key):               # троттлинг, например 60 сек
+                    notify_about_comment = True
+                    cache.set(cache_key, True, timeout=60)
+
         if 'tariff_for_client' in request.POST:
             my_request.tariff_for_client = request.POST['tariff_for_client']
-        my_request.save()
+            my_request.save(update_fields=['tariff_for_client'])
+
+        if notify_about_comment:
+            print(new_text)
+            recipients = list(CustomUser.objects.filter(role='Супер Администратор', status=True))
+            if my_request.initiator_id:
+                recipients.append(my_request.initiator)
+
+            sent = set()
+            for user in recipients:
+                if not user or user.pk in sent:
+                    continue
+                sent.add(user.pk)
+                tg, _ = TelegramProfile.objects.get_or_create(user=user)
+                if getattr(tg, "is_verified", False) and tg.chat_id:
+                    send_telegram_message(
+                        tg.chat_id,
+                        f"Комментарий от логиста по запросу {my_request}:\n"
+                        f"{(my_request.comments_logist or '')[:500]}\n"
+                        f"https://nextkargo.ru/logistic/logistic-requests/edit/{my_request.pk}",
+                        settings.TELEGRAM_BOT_TOKEN
+                    )
+
     return JsonResponse({'success': True})
+
 
 
 class NewStatusRequest(MyLoginMixin, DataMixin, UpdateView):
@@ -470,10 +516,30 @@ class LogisticRequestsBackToManagerView(MyLoginMixin, DataMixin, UpdateView):
 
     def form_valid(self, form):
         new_data = form.save(commit=False)
-        if new_data.status == 'Новый' or new_data.status == 'В работе' or new_data.status == 'Запрос на изменение' or new_data.status == 'На просчете':
+        if new_data.status in ['Новый', 'В работе', 'Запрос на изменение', 'На просчете']:
             new_data.status = 'Черновик'
             new_data.notification = True
             new_data.save()
+
+            # 🔔 уведомление инициатору и супер-админам
+            recipients = list(CustomUser.objects.filter(role='Супер Администратор', status=True))
+            if new_data.initiator_id:
+                recipients.append(new_data.initiator)
+
+            sent = set()
+            for user in recipients:
+                if not user or user.pk in sent:
+                    continue
+                sent.add(user.pk)
+                tg, _ = TelegramProfile.objects.get_or_create(user=user)
+                if getattr(tg, "is_verified", False) and tg.chat_id:
+                    send_telegram_message(
+                        tg.chat_id,
+                        f"Запрос возвращён в Черновик: {new_data}\n"
+                        f"https://nextkargo.ru/logistic/logistic-requests/edit/{new_data.pk}",
+                        settings.TELEGRAM_BOT_TOKEN
+                    )
+
             return redirect('analytics:logistic_requests')
         return redirect('analytics:edit_logistic_requests', new_data.pk)
 
